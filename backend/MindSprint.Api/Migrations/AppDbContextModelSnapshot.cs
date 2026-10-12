@@ -206,6 +206,50 @@ namespace MindSprint.Api.Migrations
                     b.ToTable("NotebookNotes");
                 });
 
+            modelBuilder.Entity("MindSprint.Api.Models.NotebookGenerationCache", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsJson")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("NotebookId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("SourcesHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotebookId", "Type", "RequestHash", "SourcesHash")
+                        .IsUnique();
+
+                    b.ToTable("NotebookGenerationCaches");
+                });
+
             modelBuilder.Entity("MindSprint.Api.Models.NotebookSource", b =>
                 {
                     b.Property<int>("Id")
@@ -408,6 +452,15 @@ namespace MindSprint.Api.Migrations
                 {
                     b.HasOne("MindSprint.Api.Models.Notebook", null)
                         .WithMany("Notes")
+                        .HasForeignKey("NotebookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MindSprint.Api.Models.NotebookGenerationCache", b =>
+                {
+                    b.HasOne("MindSprint.Api.Models.Notebook", null)
+                        .WithMany()
                         .HasForeignKey("NotebookId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
