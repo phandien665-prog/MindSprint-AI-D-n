@@ -75,3 +75,14 @@ test('provider failure leaves the problem available to retry without signing out
     assert.equal((await api.nbTutor(10, '2x + 3 = 11', 'steps', [])).answer, 'x = 4');
     assert.equal(auth.isLoggedIn(), true);
 });
+
+test('checking sends the problem and submission separately through the shared session', async () => {
+    let payload;
+    const {api, auth} = harness(async (url, options) => {
+        if (url.endsWith('/login')) return reply(200, credentials(1));
+        payload = JSON.parse(options.body); return reply(200, {answer: 'Bước 1 sai', feedback: {status: 'incorrect'}});
+    });
+    await auth.login('user1@example.test', 'test');
+    await api.nbTutorWork(10, {question: '2x + 3 = 11', action: 'check', submission: '2x = 9'});
+    assert.deepEqual(payload, {question: '2x + 3 = 11', action: 'check', submission: '2x = 9'});
+});

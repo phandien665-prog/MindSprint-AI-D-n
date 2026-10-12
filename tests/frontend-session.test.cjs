@@ -7,7 +7,7 @@ const vm = require('node:vm');
 function harness(fetch, saved = {}) {
     const storage = new Map(Object.entries(saved));
     const context = {
-        window: {}, navigator: {userAgent: 'session-test'}, URLSearchParams, FormData,
+        window: {location: {hostname: 'localhost'}}, navigator: {userAgent: 'session-test'}, URLSearchParams, FormData,
         console, setTimeout, fetch,
         localStorage: {
             getItem: key => storage.get(key) ?? null,

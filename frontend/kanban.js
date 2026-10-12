@@ -101,28 +101,47 @@ class KanbanBoard {
       if (!colElement) return;
 
       colElement.addEventListener('dragover', (e) => {
+        if (this.pending) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
+        this.clearDropTargets();
         colElement.classList.add('column-drag-over');
+        const before = this.dropTarget(colElement, e.clientY);
+        if (before) before.classList.add('drop-before');
+        else colElement.classList.add('drop-at-end');
       });
 
       colElement.addEventListener('dragleave', (e) => {
         // Only remove if leaving the column container itself
         if (!colElement.contains(e.relatedTarget)) {
-          colElement.classList.remove('column-drag-over');
+          this.clearDropTargets();
         }
       });
 
       colElement.addEventListener('drop', async (e) => {
         e.preventDefault();
-        colElement.classList.remove('column-drag-over');
+        const before = this.dropTarget(colElement, e.clientY);
+        this.clearDropTargets();
 
         const taskId = e.dataTransfer.getData('text/plain');
         if (!taskId) return;
 
         const targetStatus = status; // 'Todo' | 'InProgress' | 'Completed'
-        await this.handleTaskMove(taskId, targetStatus);
+        await this.handleTaskMove(taskId, targetStatus, before?.dataset.id);
       });
+    });
+  }
+
+  dropTarget(column, clientY) {
+    return Array.from(column.querySelectorAll('.kanban-card:not(.is-dragging)')).find(card => {
+      const rect = card.getBoundingClientRect();
+      return clientY < rect.top + rect.height / 2;
+    });
+  }
+
+  clearDropTargets() {
+    document.querySelectorAll('.column-drag-over, .drop-before, .drop-at-end').forEach(element => {
+      element.classList.remove('column-drag-over', 'drop-before', 'drop-at-end');
     });
   }
 
@@ -164,7 +183,7 @@ class KanbanBoard {
       if (version !== this.version) return false;
       this.tasks = data.map(task => ({ ...task, status: this.normalizeStatus(task.status), due_date: (task.dueDate || '').slice(0, 10) }));
       this.render();
-      showToast(this.tasks.length ? 'Kéo thả thẻ hoặc dùng nút mũi tên để chuyển trạng thái.' : 'Chưa có công việc. Thêm công việc đầu tiên của bạn.');
+      showToast(this.tasks.length ? 'Kéo thả thẻ để sắp xếp; dùng nút mũi tên để đổi vị trí hoặc chuyển cột.' : 'Chưa có công việc. Thêm công việc đầu tiên của bạn.');
       return true;
     } catch (err) {
       if (version !== this.version) return false;
@@ -258,6 +277,12 @@ class KanbanBoard {
     } else if (normStatus === 'Completed') {
       moveButtonsHtml = `<button class="btn-move btn-move-left" title="Chuyển lại Đang làm (InProgress)">←</button>`;
     }
+    const siblings = this.tasks.filter(t => t.status === task.status);
+    const index = siblings.findIndex(t => t.id === task.id);
+    moveButtonsHtml += `
+      <button class="btn-move btn-move-up" title="Đưa lên" aria-label="Đưa lên" ${index === 0 ? 'disabled' : ''}>↑</button>
+      <button class="btn-move btn-move-down" title="Đưa xuống" aria-label="Đưa xuống" ${index === siblings.length - 1 ? 'disabled' : ''}>↓</button>
+    `;
 
     const dueDateHtml = task.due_date ? `
       <span class="card-date" title="Hạn hoàn thành">
@@ -300,6 +325,7 @@ class KanbanBoard {
     // Drag End
     card.addEventListener('dragend', () => {
       card.classList.remove('is-dragging');
+      this.clearDropTargets();
     });
 
     // Edit Button
@@ -341,6 +367,21 @@ class KanbanBoard {
         this.handleTaskMove(task.id, targetStatus);
       });
     }
+    for (const [selector, offset] of [['.btn-move-up', -1], ['.btn-move-down', 1]]) {
+      card.querySelector(selector)?.addEventListener('click', async () => {
+        const siblings = this.tasks.filter(t => t.status === task.status);
+        const index = siblings.findIndex(t => t.id === task.id), position = index + offset;
+        if (position < 0 || position >= siblings.length) return;
+        const before = siblings[position + (offset > 0 ? 1 : 0)];
+        const version = this.version;
+        await this.handleTaskMove(task.id, task.status, before?.id);
+        if (version !== this.version) return;
+        const moved = this.columns[task.status]?.querySelector(`[data-id="${task.id}"]`);
+        const button = moved?.querySelector(selector);
+        if (button && !button.disabled) button.focus();
+        else (moved?.querySelector('.btn-move-up:not(:disabled), .btn-move-down:not(:disabled)') || moved?.querySelector('.btn-card-edit'))?.focus();
+      });
+    }
   }
 
   requireAccount() {
@@ -376,13 +417,16 @@ class KanbanBoard {
     }
   }
 
-  async handleTaskMove(taskId, newStatus) {
+  async handleTaskMove(taskId, newStatus, beforeId) {
     if (this.pending) return;
     const task = this.tasks.find(task => String(task.id) === String(taskId));
-    if (!task || task.status === newStatus) return;
+    if (!task) return;
     const status = {Todo: 0, InProgress: 1, Completed: 2}[newStatus];
-    const position = this.tasks.filter(task => task.status === newStatus).length;
-    return this.mutate(() => api.moveTask(taskId, status, position), 'Đã chuyển trạng thái công việc.');
+    const siblings = this.tasks.filter(t => t.status === newStatus && t.id !== task.id);
+    const beforeIndex = siblings.findIndex(t => String(t.id) === String(beforeId));
+    const position = beforeIndex < 0 ? siblings.length : beforeIndex;
+    if (task.status === newStatus && this.tasks.filter(t => t.status === newStatus).findIndex(t => t.id === task.id) === position) return;
+    return this.mutate(() => api.moveTask(taskId, status, position), 'Đã sắp xếp công việc.');
   }
 
   async handleDeleteTask(taskId) {

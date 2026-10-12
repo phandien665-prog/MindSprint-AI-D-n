@@ -6,7 +6,7 @@ const test = require('node:test');
 
 function harness(fetch) {
     const storage = new Map();
-    const context = { window: {}, navigator: { userAgent: 'google-auth-check' },
+    const context = { window: {location: {hostname: 'localhost'}}, navigator: { userAgent: 'google-auth-check' },
         console, setTimeout, URLSearchParams, FormData, fetch,
         localStorage: { getItem: k => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, String(v)), removeItem: k => storage.delete(k) } };
     vm.createContext(context);

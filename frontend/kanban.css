@@ -20,6 +20,8 @@
 #tab-content-kanban .column-drag-over { background: var(--primary-glow); outline: 2px dashed var(--primary-color); }
 #tab-content-kanban .kanban-card { padding: var(--space-step-16); margin-bottom: var(--space-step-12); border: 1px solid var(--border-color); background: var(--bg-primary); border-radius: var(--border-radius-md); cursor: grab; overflow-wrap: anywhere; }
 #tab-content-kanban .kanban-card.is-dragging { opacity: .45; }
+#tab-content-kanban .kanban-card.drop-before { box-shadow: inset 0 3px var(--primary-color); }
+#tab-content-kanban .kanban-column-list.drop-at-end { box-shadow: inset 0 -3px var(--primary-color); }
 #tab-content-kanban .card-top-bar, #tab-content-kanban .card-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-step-8); flex-wrap: wrap; }
 #tab-content-kanban .card-title { font-size: 1rem; margin: var(--space-step-12) 0 var(--space-step-8); line-height: 1.5; }
 #tab-content-kanban .card-desc { margin: 0 0 var(--space-step-12); color: var(--text-secondary); white-space: pre-wrap; font-size: .88rem; line-height: 1.6; }

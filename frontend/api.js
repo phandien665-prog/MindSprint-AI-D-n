@@ -198,6 +198,7 @@
         nbDeleteSource: (id, sid) => request(`/api/notebooks/${id}/sources/${sid}`, { method: 'DELETE' }),
         nbChat: (id, question, history) => request(`/api/notebooks/${id}/chat`, { method: 'POST', body: { question, history } }),
         nbTutor: (id, question, style, history) => request(`/api/notebooks/${id}/tutor`, { method: 'POST', body: { question, style, history } }),
+        nbTutorWork: (id, body) => request(`/api/notebooks/${id}/tutor`, { method: 'POST', body }),
         nbSuggestions: (id) => request(`/api/notebooks/${id}/suggestions`),
         nbGenerate: (id, type, focus, count) => request(`/api/notebooks/${id}/generate`, { method: 'POST', body: { type, focus, count } }),
         nbSaveCards: (id, cards) => request(`/api/notebooks/${id}/save-cards`, { method: 'POST', body: { cards } }),

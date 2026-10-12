@@ -1,5 +1,7 @@
 # Issue #30 — Gia sư giải bài tập
 
+Các hoạt động **Kiểm tra bài làm** (#31) và **Tự luyện** (#32), hợp đồng API và kiểm chứng Sprint 2 được mô tả trong [SPRINT2.md](SPRINT2.md).
+
 Trong **Sổ tay AI**, chọn **Gia sư**, chọn **Từng bước / Ngắn gọn**, nhập đề rồi gửi. Không cần tài liệu nguồn; cần đăng nhập và có sổ tay thuộc tài khoản hiện tại. Có thể hỏi tiếp về một bước, bấm **Bài mới** để xóa ngữ cảnh đang hiển thị, hoặc lưu lời giải bằng **Lưu ghi chú**. Ghi chú đã lưu không bị xóa khi bắt đầu bài mới.
 
 Khi đã thêm tài liệu, Gia sư tự đọc nguồn trong sổ tay hiện tại: có thể nhập **“Hướng dẫn tôi làm câu 1 trong tài liệu”**. Nếu nhiều tài liệu/chương có cùng số câu, chỉ rõ tên tài liệu/chương. Không cần chép lại đề khi nguồn có đủ nội dung. Đề gõ đầy đủ vẫn là đề chính, không bị thay bằng bài khác trong nguồn.
