@@ -106,6 +106,19 @@ public class NotebookNote
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
+/// <summary>Persistent cache for AI answers and generated study materials, scoped to one notebook.</summary>
+public class NotebookGenerationCache
+{
+    public int Id { get; set; }
+    public int NotebookId { get; set; }
+    public string Type { get; set; } = "";
+    public string RequestHash { get; set; } = "";
+    public string SourcesHash { get; set; } = "";
+    public bool IsJson { get; set; }
+    public string ContentJson { get; set; } = "";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
 // ─────────────────────────────────────────
 // #14 – Đồng bộ streak, lịch học, thống kê
 // ─────────────────────────────────────────

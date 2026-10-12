@@ -156,7 +156,7 @@ public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFact
         if (src.Count == 0) return BadRequest(new { message = "Hãy thêm ít nhất một nguồn trước." });
         return await Guard(async () =>
         {
-            var (isJson, content) = await ai.GenerateAsync(src, dto.Type, dto.Focus, dto.Count);
+            var (isJson, content) = await ai.GenerateAsync(id, src, dto.Type, dto.Focus, dto.Count);
             return new { type = dto.Type, isJson, content };
         });
     }
