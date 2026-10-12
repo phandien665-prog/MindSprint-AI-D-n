@@ -37,7 +37,7 @@ db.Notebooks.AddRange(new Notebook { Id = 10, UserId = 1, Title = "No sources" }
 await db.SaveChangesAsync();
 ControllerContext Caller(int id) => new() { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, id.ToString())], "check")) } };
 TutorController Controller(TutorService? service = null, int caller = 1) => new(db, service ?? tutor) { ControllerContext = Caller(caller) };
-var sourceAi = new NotebookAi(Gemini());
+var sourceAi = new NotebookAi(db, Gemini());
 using var renderer = new NotebookPageRenderer();
 var sources = new NotebooksController(db, sourceAi, new Factory(handler), new NotebookUrlImporter(renderer)) { ControllerContext = Caller(1) };
 
@@ -77,6 +77,9 @@ db.Notebooks.Add(new Notebook { Id = 30, UserId = 1, Title = "Another notebook w
 await db.SaveChangesAsync();
 handler.Answer = "{\"answer\":\"Theo tài liệu [1].\",\"citations\":[{\"source\":1,\"quote\":\"PRIVATE_SOURCE_CONTENT_SENTINEL\"}]}";
 Check(Status(await sources.Chat(10, new("Nội dung là gì?", []))) == 200 && handler.Prompts.Last().Contains("PRIVATE_SOURCE_CONTENT_SENTINEL"), "existing source route still sends only its notebook sources");
+var promptsAfterFirstSourceChat = handler.Prompts.Count;
+var cachedSourceChat = await sources.Chat(10, new("Nội dung là gì?", []));
+Check(Status(cachedSourceChat) == 200 && handler.Prompts.Count == promptsAfterFirstSourceChat, "repeated source chat reuses the cached answer");
 handler.Answer = "{\"answer\":\"x = 4\",\"needsClarification\":false}";
 await Controller().Solve(10, request);
 Check(handler.Prompts.Last().Contains("PRIVATE_SOURCE_CONTENT_SENTINEL"), "tutor reads sources from its own notebook");
