@@ -179,16 +179,18 @@
 
                         <div class="auth-field">
                             <i class="fas fa-envelope auth-field-icon"></i>
-                            <input class="auth-input" id="auth-email" aria-label="Email" type="email" placeholder="Địa chỉ email" autocomplete="email">
+                            <input class="auth-input" id="auth-email" aria-label="Email" aria-describedby="auth-email-error" type="email" placeholder="Địa chỉ email" autocomplete="email" required>
                         </div>
+                        <p class="auth-validation-message" id="auth-email-error" role="status" aria-live="polite" aria-atomic="true" hidden></p>
 
                         <div class="auth-field">
                             <i class="fas fa-lock auth-field-icon"></i>
-                            <input class="auth-input" id="auth-pass" aria-label="Mật khẩu" type="password" placeholder="Mật khẩu (tối thiểu 6 ký tự)" autocomplete="${isLogin ? 'current-password' : 'new-password'}" style="padding-right:var(--space-2xl)">
+                            <input class="auth-input" id="auth-pass" aria-label="Mật khẩu" aria-describedby="auth-pass-error" type="password" placeholder="Mật khẩu (6–30 ký tự)" autocomplete="${isLogin ? 'current-password' : 'new-password'}" style="padding-right:var(--space-2xl)" required>
                             <button class="auth-pw-toggle" data-act="toggle-pw" type="button" tabindex="-1" title="Hiện/ẩn mật khẩu">
                                 <i class="fas fa-eye" id="pw-eye-icon"></i>
                             </button>
                         </div>
+                        <p class="auth-validation-message" id="auth-pass-error" role="status" aria-live="polite" aria-atomic="true" hidden></p>
                     </div>
 
                     <div class="auth-google-link-fields" id="auth-google-link-fields" hidden>
@@ -240,6 +242,22 @@
             if (!msg) { box.style.display = 'none'; return; }
             txt.textContent = msg;
             box.style.display = 'flex';
+        }
+
+        function validateField(input) {
+            let message = '';
+            if (input.id === 'auth-email') {
+                if (!input.value.trim()) message = 'Vui lòng nhập email.';
+                else if (input.validity.typeMismatch) message = 'Email không hợp lệ.';
+            } else {
+                const length = Array.from(input.value).length;
+                if (length < 6 || length > 30) message = 'Mật khẩu phải có từ 6 đến 30 ký tự.';
+            }
+            const feedback = overlay.querySelector('#' + input.id + '-error');
+            input.setAttribute('aria-invalid', String(!!message));
+            feedback.textContent = message;
+            feedback.hidden = !message;
+            return !message;
         }
 
         function setLoading(btn, loading) {
@@ -358,8 +376,9 @@
             const btn    = overlay.querySelector('#auth-submit-btn');
 
             showError('');
-            if (!/^\S+@\S+\.\S+$/.test(email)) { showError('Email không hợp lệ.'); return; }
-            if (pass.length < 6) { showError('Mật khẩu tối thiểu 6 ký tự.'); return; }
+            const invalid = ['auth-email', 'auth-pass'].map(id => overlay.querySelector('#' + id))
+                .filter(input => !validateField(input));
+            if (invalid.length) { invalid[0].focus(); return; }
             if (mode === 'register' && !name) { showError('Vui lòng nhập tên hiển thị.'); return; }
 
             setLoading(btn, true);
@@ -395,6 +414,12 @@
         }
 
         render();
+
+        overlay.addEventListener('input', (e) => {
+            if (submitting || pendingGoogle || !['auth-email', 'auth-pass'].includes(e.target.id)) return;
+            showError('');
+            validateField(e.target);
+        });
 
         overlay.addEventListener('click', (e) => {
             const act = e.target.closest('[data-act]')?.dataset.act;

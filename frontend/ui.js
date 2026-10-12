@@ -279,8 +279,9 @@
         if (!file || document.querySelector('#nb-panel-file [data-act="add-file"]').disabled) return;
         const transfer = new DataTransfer();
         transfer.items.add(file);
-        document.getElementById('nb-file').files = transfer.files;
-        renderSelectedSourceFile();
+        const input = document.getElementById('nb-file');
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change', {bubbles: true}));
     });
 
     function closeSearch() {

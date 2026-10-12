@@ -2,6 +2,12 @@
 
 Stack đang dùng: **HTML/CSS/JS (Fetch API)** + **C# ASP.NET Core Web API** + **PostgreSQL (EF Core Code First)** + **JWT** + **Gemini API**.
 
+## Kiến trúc và yêu cầu phi chức năng
+
+[Bộ tài liệu kiến trúc](docs/architecture/README.md) mô tả thành phần, dữ liệu, triển khai,
+4 ADR và 14 yêu cầu phi chức năng có tiêu chí đo được. Xem [kế hoạch kiểm thử Sprint 4](docs/architecture/sprint-4-test-plan.md)
+để tra cứu issues #42–#55 trong milestone Sprint 4. Các ngưỡng là mục tiêu đề xuất; chưa có kết quả nghiệm thu.
+
 ## Cấu trúc
 - `frontend/` – giao diện MindSprintAI + `api.js` (client gọi API). Vẫn chạy offline bằng localStorage nếu chưa đăng nhập.
 - `backend/MindSprint.Api/` – Web API:
@@ -40,6 +46,8 @@ giữ nguyên dữ liệu học tập. Khi chưa cấu hình Google, email và D
 ## Kanban tích hợp
 Tab **Công việc** dùng chung `MindSprintAuth` và `MindSprintApi` với Sổ tay AI, thư viện và lịch học. Có thêm/sửa/xóa, kéo thả hoặc nút chuyển cột, tìm kiếm, lọc ưu tiên và hạn hoàn thành. Công việc được lưu vào PostgreSQL theo tài khoản; khi lỗi kết nối, form giữ nguyên để thử lại.
 
+Thả ở nửa trên/dưới thẻ để chọn vị trí trong cùng cột hoặc giữa các cột; vạch màu đánh dấu vị trí chèn. Các nút **Đưa lên/Đưa xuống** dùng được bằng bàn phím và trên điện thoại. Vị trí được tính theo toàn bộ công việc trong cột, kể cả thẻ đang ẩn bởi bộ lọc; tải lại trang vẫn giữ thứ tự đã lưu. API lỗi thì bảng giữ thứ tự cũ để thử lại.
+
 `frontend/kanban.js` ghép logic bảng mới từ `frontend/js/kanban.js` vào giao diện chính. Trạng thái Todo/InProgress/Completed được ánh xạ sang Todo/Doing/Done (0/1/2) của API C#. Migration `AddTaskPriority` bổ sung mức ưu tiên cho công việc cũ với giá trị mặc định Medium.
 
 Bản FastAPI mới kéo về được giữ ở `backend/app`, giao diện ở `frontend/standalone.html` và `frontend/js`. `python run_server.py` mở bản này ở cổng 8000 với dữ liệu/phiên riêng; web chính sử dụng backend C# ở trên.
@@ -73,6 +81,9 @@ Chưa có: PDF dạng ảnh scan (cần OCR), audio bằng giọng AI thật, tr
 ## Kiểm tra
 ```powershell
 node --test tests/frontend-session.test.cjs tests/frontend-text.test.cjs
+dotnet run --project backend/KanbanChecks/KanbanChecks.csproj -c Release
+# Kiểm tra trình duyệt với Edge/Playwright và API mô phỏng, không chạm DB thật:
+node --test tests/kanban-browser.test.cjs
 dotnet run --project tests/GeminiReliability/GeminiReliability.csproj
 # Kiểm tra Kanban với backend đang chạy (tạo tài khoản kiểm thử riêng):
 $env:MINDSPRINT_TEST_API = 'http://localhost:5000'

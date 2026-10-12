@@ -1,0 +1,101 @@
+erDiagram
+    Notebooks ||--o{ NotebookNotes : "NotebookId - FK CASCADE"
+    Notebooks ||--o{ NotebookSources : "NotebookId - FK CASCADE"
+    Users |o--o{ Flashcards : "OwnerId - FK CASCADE"
+    Users ||--o{ RefreshTokens : "UserId - FK CASCADE"
+    Flashcards ||--o{ CardProgresses : "FlashcardId - FK CASCADE"
+    Users ||..o{ CardProgresses : "UserId - logical ref"
+    Users ||..o{ Tasks : "UserId - logical ref"
+    Users ||..o{ Notebooks : "UserId - logical ref"
+    Users ||..o{ UserStudyDays : "UserId - logical ref"
+    Users ||..o{ StudySchedules : "UserId - logical ref"
+
+    Users {
+        int Id PK
+        text Email UK
+        text DisplayName
+        text PasswordHash
+        varchar255 GoogleSubject UK "NULL"
+        timestamptz CreatedAt
+    }
+    RefreshTokens {
+        int Id PK
+        int UserId FK
+        text Token UK
+        timestamptz ExpiresAt
+        bool IsRevoked
+        text DeviceHint "NULL"
+        timestamptz CreatedAt
+    }
+    Flashcards {
+        int Id PK
+        text ExternalId UK
+        text Category
+        text SubCategory "NULL"
+        text Question
+        text Answer
+        text Example "NULL"
+        int OwnerId FK "NULL"
+        timestamptz UpdatedAt
+        int Version
+    }
+    CardProgresses {
+        int Id PK
+        int UserId "Logical ref to Users - no DB FK; Composite unique"
+        int FlashcardId FK "Composite unique"
+        int Repetition
+        int IntervalDays
+        float8 EFactor
+        timestamptz NextReviewDate "NULL"
+        text Status
+    }
+    Tasks {
+        int Id PK
+        int UserId "Logical ref to Users - no DB FK"
+        text Title
+        text Description "NULL"
+        text Priority
+        int Status
+        int Position
+        timestamptz DueDate "NULL"
+        timestamptz CreatedAt
+    }
+    Notebooks {
+        int Id PK
+        int UserId "Logical ref to Users - no DB FK"
+        text Title
+        timestamptz CreatedAt
+    }
+    UserStudyDays {
+        int Id PK
+        int UserId "Logical ref to Users - no DB FK; Composite unique"
+        date StudyDate "Composite unique"
+        int CardsReviewed
+        int MinutesStudied
+        timestamptz LastUpdatedUtc
+    }
+    StudySchedules {
+        int Id PK
+        int UserId "Logical ref to Users - no DB FK"
+        int DayOfWeek
+        time StartTime
+        int DurationMinutes
+        text Label
+        bool IsActive
+    }
+    NotebookSources {
+        int Id PK
+        int NotebookId FK
+        text Title
+        text Type
+        text Origin "NULL"
+        text Content
+        timestamptz CreatedAt
+    }
+    NotebookNotes {
+        int Id PK
+        int NotebookId FK
+        text Title
+        text Content
+        timestamptz CreatedAt
+    }
