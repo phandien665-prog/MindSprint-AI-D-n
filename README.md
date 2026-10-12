@@ -2,6 +2,12 @@
 
 Stack đang dùng: **HTML/CSS/JS (Fetch API)** + **C# ASP.NET Core Web API** + **PostgreSQL (EF Core Code First)** + **JWT** + **Gemini API**.
 
+## Kiến trúc và yêu cầu phi chức năng
+
+[Bộ tài liệu kiến trúc](docs/architecture/README.md) mô tả thành phần, dữ liệu, triển khai,
+4 ADR và 14 yêu cầu phi chức năng có tiêu chí đo được. Xem [kế hoạch kiểm thử Sprint 4](docs/architecture/sprint-4-test-plan.md)
+để tra cứu issues #42–#55 trong milestone Sprint 4. Các ngưỡng là mục tiêu đề xuất; chưa có kết quả nghiệm thu.
+
 ## Cấu trúc
 - `frontend/` – giao diện MindSprintAI + `api.js` (client gọi API). Vẫn chạy offline bằng localStorage nếu chưa đăng nhập.
 - `backend/MindSprint.Api/` – Web API:
