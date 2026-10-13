@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gia sư AI — tám trạng thái</title>
+<link rel="stylesheet" href="../tokens.css?v=39"><link rel="stylesheet" href="../style.css?v=47">
+<style>
+/* Hallmark · component: tutor controls · existing orange system · P5 H5 E4 S5 R5 V4 */
+html,body {height:auto;overflow-x:clip;} body {display:block;padding:var(--space-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-body);} main {max-width:1000px;margin:auto;} h1 {font-size:1.5rem;margin-block:var(--space-lg);} .states {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-md);} .state {min-width:0;padding:var(--space-md);border:1px solid var(--border-color);border-radius:var(--border-radius-lg);background:var(--bg-panel);} .state>p {margin-block:var(--space-md);color:var(--text-secondary);line-height:1.65;} .nb-mode-switch {max-width:100%;} .is-hover {background:var(--accent-soft);color:var(--accent-ink);} .is-focus {outline:2px solid var(--focus-color);outline-offset:2px;} .is-active {transform:scale(.97);} .state .nb-msg {margin-top:var(--space-md);padding:var(--space-md);overflow-wrap:anywhere;} @media(max-width:768px){.states{grid-template-columns:minmax(0,1fr);}} @media(prefers-reduced-motion:reduce){.is-active{transform:none;}}
+</style></head><body><main>
+<h1>Gia sư AI</h1><p>Bản xem thử trạng thái giao diện. Dữ liệu mẫu, không gọi API.</p>
+<div class="states">
+<section class="state"><p>1. Mặc định</p><div class="nb-mode-switch"><button class="nb-mode-btn" aria-checked="true">Theo nguồn</button><button class="nb-mode-btn">Gia sư</button></div></section>
+<section class="state"><p>2. Hover</p><div class="nb-mode-switch"><button class="nb-mode-btn">Theo nguồn</button><button class="nb-mode-btn is-hover">Gia sư</button></div></section>
+<section class="state"><p>3. Focus bàn phím</p><div class="nb-mode-switch"><button class="nb-mode-btn">Theo nguồn</button><button class="nb-mode-btn is-focus" aria-checked="true">Gia sư</button></div></section>
+<section class="state"><p>4. Đang nhấn</p><div class="nb-tutor-style"><button class="is-active" aria-checked="true">Từng bước</button><button>Ngắn gọn</button></div></section>
+<section class="state"><p>5. Disabled khi đang gửi</p><div class="nb-mode-switch"><button class="nb-mode-btn" disabled>Theo nguồn</button><button class="nb-mode-btn" aria-checked="true" disabled>Gia sư</button></div></section>
+<section class="state"><p>6. Loading</p><div class="nb-mode-switch"><button class="nb-mode-btn" disabled>Theo nguồn</button><button class="nb-mode-btn" aria-checked="true" disabled>Gia sư</button></div><p role="status"><span class="nb-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span> Gia sư đang tìm cách giải…</p></section>
+<section class="state"><p>7. Lỗi và thử lại</p><div class="nb-msg bot"><span class="nb-err">AI đang bận. Bạn có thể thử lại.</span><p><button class="nb-chip">Thử lại</button></p></div></section>
+<section class="state"><p>8. Thành công</p><div class="nb-msg bot"><p><strong>Kết quả mẫu:</strong> x = 4.</p><p><button class="nb-icon-btn">Lưu ghi chú</button></p></div></section>
+</div></main></body></html>

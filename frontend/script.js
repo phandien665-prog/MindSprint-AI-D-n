@@ -1,4 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const auth = window.MindSprintAuth;
+    const api = window.MindSprintApi;
+    let activeAccountId = auth?.isLoggedIn() ? String(auth.getCurrentUser().id) : 'guest';
+    let accountVersion = 0;
+    const personalStorage = {
+        key: (key) => activeAccountId === 'guest' ? key : `ms-account:${activeAccountId}:${key}`,
+        getItem(key) { return localStorage.getItem(this.key(key)); },
+        setItem(key, value) { localStorage.setItem(this.key(key), value); }
+    };
+    function readPersonalJSON(key, fallback) {
+        try { return JSON.parse(personalStorage.getItem(key)) ?? fallback; }
+        catch { return fallback; }
+    }
     // ==========================================================================
     // AUTH INITIALIZATION
     // ==========================================================================
@@ -6,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.MindSprintAuth.initAuthUI('#sidebar-auth', '#sidebar-auth');
         window.MindSprintAuth.onAuthChange((user) => {
             const nameEl = document.getElementById('sidebar-user-name');
-            if (nameEl) nameEl.textContent = user ? user.DisplayName : 'Khách';
+            if (nameEl) nameEl.textContent = user ? user.displayName : 'Khách';
         });
     }
 
@@ -161,57 +174,59 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     // Read cards from LocalStorage or use default cards + Oxford vocabulary
-    const storedCards = JSON.parse(localStorage.getItem('flashcards'));
     const oxfordData = typeof OXFORD_VOCAB_DATA !== 'undefined' ? OXFORD_VOCAB_DATA : [];
-    
-    let flashcards;
-    if (storedCards && storedCards.length > 0) {
-        flashcards = [...storedCards];
-        // Tìm các thẻ mới trong database hệ thống chưa được lưu trong localStorage (ví dụ: các thẻ Python mới)
-        const storedIds = new Set(storedCards.map(c => c.id));
-        oxfordData.forEach(card => {
-            if (!storedIds.has(card.id)) {
-                flashcards.push(card);
-            }
-        });
-    } else {
-        flashcards = [...defaultFlashcards, ...oxfordData];
+    function normalizeCards(cards) {
+        return cards.map(card => ({ ...card, repetition: card.repetition ?? 0, interval: card.interval ?? 1,
+            efactor: card.efactor ?? card.eFactor ?? 2.5, nextReviewDate: card.nextReviewDate ?? 0,
+            version: card.version ?? 1, updatedAt: card.updatedAt ?? new Date().toISOString() }));
     }
-
-    // Initialize Spaced Repetition (SRS) fields for all cards if not present
-    flashcards.forEach(card => {
-        if (card.repetition === undefined) card.repetition = 0;
-        if (card.interval === undefined) card.interval = 1;
-        if (card.efactor === undefined) card.efactor = 2.5;
-        if (card.nextReviewDate === undefined) card.nextReviewDate = 0;
-        if (card.version === undefined) card.version = 1; // #9 – optimistic locking
-        if (card.updatedAt === undefined) card.updatedAt = new Date().toISOString();
-    });
+    function loadLocalCards() {
+        const saved = readPersonalJSON('flashcards', null);
+        const cards = Array.isArray(saved) ? [...saved] : [...defaultFlashcards, ...oxfordData];
+        if (activeAccountId === 'guest') {
+            const ids = new Set(cards.map(card => String(card.id)));
+            oxfordData.forEach(card => { if (!ids.has(String(card.id))) cards.push(card); });
+        }
+        return normalizeCards(cards);
+    }
+    let flashcards = loadLocalCards();
     
     // #9 – Offline queue for flashcard operations
     const OFFLINE_QUEUE_KEY = 'ms-offline-queue';
-    let offlineQueue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+    let offlineQueue = readPersonalJSON(OFFLINE_QUEUE_KEY, []);
+    let processingQueue = false;
+    let studyDays = readPersonalJSON('study-days', []);
     
     function saveOfflineQueue() {
-        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(offlineQueue));
+        personalStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(offlineQueue));
     }
     
     async function processOfflineQueue() {
-        if (!MindSprintApi.isLoggedIn() || offlineQueue.length === 0) return;
-        
-        const queue = [...offlineQueue];
-        offlineQueue = [];
-        saveOfflineQueue();
-        
-        for (const op of queue) {
-            try {
-                await op.fn();
-            } catch (e) {
-                // Re-queue failed operations
-                offlineQueue.push(op);
+        if (!api?.isLoggedIn() || processingQueue || offlineQueue.length === 0) return;
+        const version = accountVersion;
+        processingQueue = true;
+        try {
+            for (const op of [...offlineQueue]) {
+                let result;
+                if (op.type === 'create') result = await api.createCard(op.card);
+                else if (op.type === 'update') result = await api.updateCard(op.card);
+                else if (op.type === 'delete') await api.deleteCard(op.cardId, op.version);
+                else if (op.type === 'study') await api.studyUpsertDay(op.day.studyDate, op.day.cardsReviewed, op.day.minutesStudied);
+                else continue;
+                if (version !== accountVersion) return;
+                if (result) {
+                    const card = flashcards.find(card => String(card.id) === String(op.card.id));
+                    if (card) Object.assign(card, {version: result.version, updatedAt: result.updatedAt});
+                }
+                offlineQueue.splice(offlineQueue.indexOf(op), 1);
+                saveOfflineQueue();
             }
+            updateStats();
+        } catch (error) {
+            console.warn('Chưa thể đồng bộ dữ liệu ngoại tuyến:', error.message);
+        } finally {
+            if (version === accountVersion) processingQueue = false;
         }
-        saveOfflineQueue();
     }
     
     // Process queue when online
@@ -242,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 5, day: 6, start: "19:00", end: "20:00", category: "general", note: "Đọc kiến thức khoa học" },
         { id: 6, day: 7, start: "09:00", end: "11:00", category: "mixed", note: "Làm bài trắc nghiệm tổng hợp" }
     ];
-    let timetableSlots = JSON.parse(localStorage.getItem('timetable-slots')) || defaultSlots;
+    let timetableSlots = readPersonalJSON('timetable-slots', activeAccountId === 'guest' ? defaultSlots.map(slot => ({...slot})) : []);
 
     // Notifications State Variables
     let notificationsEnabled = localStorage.getItem('notifications-enabled') === 'true';
@@ -254,13 +269,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingSlotId = null;
 
     // Theo dõi số lượng thẻ học đã ôn trong ngày
-    let studiedToday = new Set(JSON.parse(localStorage.getItem('studied-today') || '[]'));
+    let studiedToday = new Set(JSON.parse(personalStorage.getItem('studied-today') || '[]'));
     const currentDayStr = new Date().toDateString();
-    const lastStudiedDay = localStorage.getItem('last-studied-day');
+    const lastStudiedDay = personalStorage.getItem('last-studied-day');
     if (lastStudiedDay !== currentDayStr) {
         studiedToday.clear();
-        localStorage.setItem('studied-today', JSON.stringify([]));
-        localStorage.setItem('last-studied-day', currentDayStr);
+        personalStorage.setItem('studied-today', JSON.stringify([]));
+        personalStorage.setItem('last-studied-day', currentDayStr);
     }
 
     // PWA Install Event Handler
@@ -407,56 +422,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Đã đăng nhập -> nạp thẻ & tiến độ SRS từ backend (SQL Server)
-        if (window.MindSprintApi && MindSprintApi.isLoggedIn()) {
-            MindSprintApi.getCards().then(cards => {
-                if (Array.isArray(cards) && cards.length) {
-                    flashcards.length = 0;
-                    flashcards.push(...cards);
-                    filterDeck();
-                    updateStats();
-                }
-            }).catch(err => console.warn('Không tải được thẻ từ server:', err.message));
-
-            // #14 – Load study schedule from server
-            MindSprintApi.studyGetSchedule().then(slots => {
-                if (Array.isArray(slots) && slots.length) {
-                    timetableSlots.length = 0;
-                    slots.forEach(s => {
-                        // Convert server format to frontend format
-                        // dayOfWeek: 0=Sun..6=Sat -> dayVal: 2=Mon..8=Sun
-                        const dayVal = s.dayOfWeek === 0 ? 8 : s.dayOfWeek + 2;
-                        const [hh, mm] = s.startTime.split(':').map(Number);
-                        const endMinutes = hh * 60 + mm + s.durationMinutes;
-                        const endH = Math.floor(endMinutes / 60);
-                        const endM = endMinutes % 60;
-                        const startStr = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-                        const endStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-                        
-                        timetableSlots.push({
-                            id: Date.now() + Math.random(), // temporary, will be replaced
-                            serverId: s.id,
-                            day: dayVal,
-                            start: startStr,
-                            end: endStr,
-                            category: s.label?.split(' - ')[0] || 'mixed',
-                            note: s.label?.includes(' - ') ? s.label.split(' - ').slice(1).join(' - ') : '',
-                            durationMinutes: s.durationMinutes,
-                            dayOfWeek: s.dayOfWeek
-                        });
-                    });
-                    localStorage.setItem('timetable-slots', JSON.stringify(timetableSlots));
-                }
-            }).catch(err => console.warn('Không tải được lịch học từ server:', err.message));
-
-            // #14 – Load streak from server
-            MindSprintApi.studyGetStreak().then(streak => {
-                if (streak) {
-                    localStorage.setItem('study-streak', streak.currentStreak.toString());
-                    updateStats(); // updates home streak display
-                }
-            }).catch(err => console.warn('Không tải được streak từ server:', err.message));
-        }
-
         // Setup views
         filterDeck();
         updateStats();
@@ -469,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
             notificationsEnabled = false;
             localStorage.setItem('notifications-enabled', 'false');
             updateNotificationButtonState();
-            alert('Đã tắt toàn bộ thông báo nhắc nhở học tập thành công!');
+            window.MindSprintDialogs.alert('Đã tắt toàn bộ thông báo nhắc nhở học tập thành công!');
             window.history.replaceState({}, document.title, window.location.pathname);
         }
 
@@ -511,11 +476,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        if (tabId === 'flashcards' || tabId === 'quiz') {
-            sidebarCategories.style.display = 'block';
-        } else {
-            sidebarCategories.style.display = 'none';
-        }
+        sidebarCategories.hidden = tabId !== 'flashcards';
+        document.querySelector('.sidebar [data-tab="flashcards"]').setAttribute('aria-expanded', String(tabId === 'flashcards'));
 
         if (tabId === 'timetable') {
             updateTodayWidget();
@@ -635,6 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 : `<span>${totalCount} thẻ học</span>`;
 
             cardDiv.innerHTML = `
+                <span class="deck-feature-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span>
                 <span class="deck-badge ${badgeClass}">${badgeText}</span>
                 <h4 class="deck-title">${subName}</h4>
                 <div class="deck-meta">
@@ -685,18 +648,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const emptyMsgDiv = document.createElement('div');
             emptyMsgDiv.className = 'no-cards-message glass-panel text-center';
-            emptyMsgDiv.style.cssText = 'padding: 3rem; border-radius: var(--border-radius-lg); width: 100%;';
+            emptyMsgDiv.style.cssText = 'padding: var(--space-step-48); border-radius: var(--border-radius-lg); width: 100%;';
             
             if (srsToggle.checked) {
                 emptyMsgDiv.innerHTML = `
-                    <i class="fas fa-check-circle" style="font-size: 3.5rem; color: var(--success-color); margin-bottom: 1.2rem; display: block;"></i>
-                    <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text-primary);">Hoàn thành mục tiêu SRS hôm nay!</h3>
+                    <i class="fas fa-check-circle" style="font-size: 3.5rem; color: var(--success-color); margin-bottom: var(--space-step-20); display: block;"></i>
+                    <h3 style="font-size: 1.3rem; margin-bottom: var(--space-step-8); color: var(--text-primary);">Hoàn thành mục tiêu SRS hôm nay!</h3>
                     <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto;">Chúc mừng bạn đã ôn tập hết các thẻ cần học. Hãy quay lại vào ngày mai hoặc tắt chế độ SRS để học tự do.</p>
                 `;
             } else {
                 emptyMsgDiv.innerHTML = `
-                    <i class="fas fa-folder-open" style="font-size: 3.5rem; color: var(--text-muted); margin-bottom: 1.2rem; display: block;"></i>
-                    <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text-primary);">Không có thẻ học nào</h3>
+                    <i class="fas fa-folder-open" style="font-size: 3.5rem; color: var(--text-muted); margin-bottom: var(--space-step-20); display: block;"></i>
+                    <h3 style="font-size: 1.3rem; margin-bottom: var(--space-step-8); color: var(--text-primary);">Không có thẻ học nào</h3>
                     <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto;">Không tìm thấy bộ thẻ nào phù hợp với bộ lọc hiện tại.</p>
                 `;
             }
@@ -916,7 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const homeFavoriteVal = document.getElementById('home-favorite-val');
         const streakStatBox = document.getElementById('streak-stat-box');
         
-        const streakCount = parseInt(localStorage.getItem('study-streak') || '0', 10);
+        const streakCount = parseInt(personalStorage.getItem('study-streak') || '0', 10);
 
         if (homeStreakVal) {
             homeStreakVal.innerText = streakCount + ' Ngày';
@@ -942,13 +905,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (homeAnsweredVal) {
             // Hiển thị số lượng thẻ đã lật ôn tập thực tế hôm nay
-            homeAnsweredVal.innerText = studiedToday.size + ' Thẻ';
+            const today = new Date().toLocaleDateString('en-CA', {timeZone: 'Asia/Ho_Chi_Minh'});
+            const reviewed = studyDays.find(day => day.studyDate === today)?.cardsReviewed || 0;
+            homeAnsweredVal.innerText = Math.max(studiedToday.size, reviewed) + ' Thẻ';
         }
         if (homeAccuracyVal) {
             // Tỷ lệ thuộc từ thực tế
             const totalKnown = flashcards.filter(c => c.status === 'known').length;
             const accuracyPct = flashcards.length > 0 ? Math.round((totalKnown / flashcards.length) * 100) : 88;
-            homeAccuracyVal.innerText = accuracyPct + '%';
+            homeAccuracyVal.innerText = flashcards.length > 0 ? accuracyPct + '%' : '—';
         }
         if (homeFavoriteVal) {
             // Số lượng bộ thẻ học thực tế trong thư viện
@@ -959,10 +924,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Đồng bộ hóa với số từ đã ôn tập hôm nay trên tab Tổng quan
         const overviewStudiedToday = document.getElementById('overview-studied-today');
         if (overviewStudiedToday) {
-            overviewStudiedToday.innerText = studiedToday.size + ' từ';
+            const today = new Date().toLocaleDateString('en-CA', {timeZone: 'Asia/Ho_Chi_Minh'});
+            const reviewed = studyDays.find(day => day.studyDate === today)?.cardsReviewed || 0;
+            overviewStudiedToday.innerText = Math.max(studiedToday.size, reviewed) + ' từ';
         }
         
-        localStorage.setItem('flashcards', JSON.stringify(flashcards));
+        personalStorage.setItem('flashcards', JSON.stringify(flashcards));
         
         // Cập nhật thống kê Trang chủ và Tổng quan thực tế
         updateOverviewAndSuggestions();
@@ -1010,7 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (needsImprovement) {
                 improveSubEl.innerText = `${needsImprovement.name}`;
             } else {
-                improveSubEl.innerText = 'Không có (Đã thuộc 100%!)';
+                improveSubEl.innerText = total > 0 ? 'Không có (Đã thuộc 100%!)' : 'Thêm bộ thẻ để bắt đầu';
             }
         }
 
@@ -1020,9 +987,9 @@ document.addEventListener('DOMContentLoaded', () => {
             masteryListEl.innerHTML = '';
             
             const catStats = {
-                'english': { total: 0, known: 0, name: '🇺🇸 Tiếng Anh Oxford' },
-                'programming': { total: 0, known: 0, name: '💻 Lập trình Frontend' },
-                'general': { total: 0, known: 0, name: '💡 Kiến thức chung' }
+                'english': { total: 0, known: 0, name: 'Tiếng Anh Oxford' },
+                'programming': { total: 0, known: 0, name: 'Lập trình Frontend' },
+                'general': { total: 0, known: 0, name: 'Kiến thức chung' }
             };
 
             flashcards.forEach(card => {
@@ -1038,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cat = catStats[catKey];
                 if (cat.total > 0) {
                     const pct = Math.round((cat.known / cat.total) * 100);
-                    const barColor = catKey === 'english' ? '#4b41e1' : (catKey === 'programming' ? '#7c3aed' : '#10b981');
+                    const barColor = catKey === 'english' ? 'var(--secondary-color)' : (catKey === 'programming' ? 'var(--primary-color)' : 'var(--success-color)');
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'mastery-item';
                     itemDiv.innerHTML = `
@@ -1072,33 +1039,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 cardDiv.className = 'suggestion-card glass-panel' + (sub.pct >= 80 ? ' ai-glow-border' : '');
                 
                 cardDiv.innerHTML = `
-                    <span class="suggestion-badge ${badgeClass}" style="background: var(--bg-secondary); padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.75rem; align-self: flex-start; letter-spacing: 0.5px;">${badgeText}</span>
-                    <h4 class="suggestion-title" style="font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.5rem;">${sub.name}</h4>
-                    <div class="suggestion-meta" style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                    <span class="deck-feature-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span>
+                    <span class="suggestion-badge ${badgeClass}" style="background: var(--bg-secondary); padding: var(--space-step-4) var(--space-step-8); border-radius: 6px; font-weight: 700; font-size: 0.75rem; align-self: flex-start; letter-spacing: 0.5px;">${badgeText}</span>
+                    <h4 class="suggestion-title" style="font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: var(--space-step-8);">${sub.name}</h4>
+                    <div class="suggestion-meta" style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); margin-top: var(--space-step-8);">
                         <span>${sub.total} thẻ học</span>
                         <span class="suggestion-mastery" style="font-weight: 600; color: var(--primary-color);">Thành thạo ${sub.pct}%</span>
                     </div>
-                    <div class="suggestion-progress-bar" style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; margin-top: 0.5rem;">
+                    <div class="suggestion-progress-bar" style="width: 100%; height: 6px; background: var(--bg-secondary); border-radius: 10px; overflow: hidden; margin-top: var(--space-step-8);">
                         <div class="progress" style="width: ${sub.pct}%; height: 100%; background: var(--primary-color); border-radius: 10px;"></div>
                     </div>
                 `;
 
                 // Sự kiện click học nhanh
+                cardDiv.setAttribute('role', 'button');
+                cardDiv.tabIndex = 0;
+                cardDiv.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); cardDiv.click(); }
+                });
                 cardDiv.addEventListener('click', () => {
                     openStudyModal(sub.name);
                 });
 
                 homeSuggestionsGrid.appendChild(cardDiv);
             });
+            if (!homeSuggestionsGrid.children.length) {
+                homeSuggestionsGrid.innerHTML = '<p class="home-empty-hint">Thư viện đang trống. Tạo bộ thẻ mới hoặc lưu thẻ từ Sổ tay AI để bắt đầu học.</p>';
+            }
         }
     }
 
     function getCategoryName(catKey) {
         const mapping = {
-            'english': '🇺🇸 Tiếng Anh',
-            'programming': '💻 Lập trình',
-            'general': '💡 Kiến thức chung',
-            'mixed': '📚 Tổng hợp'
+            'english': 'Tiếng Anh',
+            'programming': 'Lập trình',
+            'general': 'Kiến thức chung',
+            'mixed': 'Tổng hợp'
         };
         return mapping[catKey] || 'Thẻ học';
     }
@@ -1106,11 +1082,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateCardFeedbackUI(status) {
         btnRemember.style.boxShadow = 'none';
         btnForget.style.boxShadow = 'none';
+        btnRemember.dataset.selected = 'false';
+        btnForget.dataset.selected = 'false';
         
         if (status === 'known') {
-            btnRemember.style.boxShadow = '0 0 15px var(--success-color)';
+            btnRemember.dataset.selected = 'true';
         } else if (status === 'review') {
-            btnForget.style.boxShadow = '0 0 15px var(--danger-color)';
+            btnForget.dataset.selected = 'true';
         }
     }
 
@@ -1148,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // #14 – Upsert study day (VN date)
             const vnDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }); // YYYY-MM-DD in VN timezone
-            MindSprintApi.studyUpsertDay(vnDate, 1, 1).catch(err => console.warn('Sync study day lỗi:', err.message));
+            recordStudyDay(vnDate);
         }
         updateStats();
     }
@@ -1210,7 +1188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Ghi nhận số từ đã ôn trong ngày
                 studiedToday.add(currentCard.id);
-                localStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
+                personalStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
                 checkAndUpdateStreak(true); // Tự động cập nhật chuỗi streak
                 updateStats();
             }
@@ -1234,7 +1212,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Ghi nhận số từ đã ôn trong ngày
                 studiedToday.add(currentCard.id);
-                localStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
+                personalStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
                 checkAndUpdateStreak(true); // Tự động cập nhật chuỗi streak
                 updateStats();
             }
@@ -1262,8 +1240,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         categoryItems.forEach(item => {
             item.addEventListener('click', () => {
-                categoryItems.forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
+                categoryItems.forEach(i => i.classList.toggle('active', i.getAttribute('data-category') === item.getAttribute('data-category')));
+                sidebarCategories.querySelectorAll('.category-item').forEach(i => i.setAttribute('aria-pressed', String(i.classList.contains('active'))));
                 currentCategory = item.getAttribute('data-category');
                 currentSubCategory = 'all';
                 filterDeck();
@@ -1386,6 +1364,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addCardForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const version = accountVersion;
             
             const category = document.getElementById('new-category').value;
             const question = document.getElementById('new-question').value;
@@ -1411,9 +1390,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const syncToServer = async () => {
                 try {
                     const result = await MindSprintApi.createCard(newCard);
+                    if (version !== accountVersion) return;
                     newCard.version = result.version;
                     newCard.updatedAt = result.updatedAt;
+                    updateStats();
                 } catch (err) {
+                    if (version !== accountVersion) return;
                     if (err.isConflict) {
                         // Shouldn't happen on create, but handle anyway
                         console.warn('Create conflict:', err);
@@ -1433,7 +1415,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentIndex = filteredCards.length - 1;
                     renderCard();
                 } else {
-                    alert("Đã thêm thẻ mới thành công! Bạn có thể xem trong mục danh mục tương ứng.");
+                    window.MindSprintDialogs.alert("Đã thêm thẻ mới thành công! Bạn có thể xem trong mục danh mục tương ứng.");
                 }
                 
                 // Sync to server if logged in
@@ -1441,13 +1423,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         await syncToServer();
                     } catch (err) {
-                        if (!navigator.onLine || err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
+                        if (version !== accountVersion) return;
+                        if (!navigator.onLine || !err.status) {
                             // Queue for later
-                            offlineQueue.push({ fn: syncToServer, cardId: newCard.id, type: 'create' });
+                            offlineQueue.push({ card: {...newCard}, type: 'create' });
                             saveOfflineQueue();
                             console.log('Offline: queued card creation');
                         } else {
-                            alert('Lỗi đồng bộ: ' + err.message);
+                            window.MindSprintDialogs.alert('Lỗi đồng bộ: ' + err.message);
                         }
                     }
                 }
@@ -1474,7 +1457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         window.addEventListener('appinstalled', () => {
-            console.log('SmartFlash PWA installed successfully!');
+            console.log('MindSprintAI PWA installed successfully!');
             installBtn.style.display = 'none';
         });
 
@@ -1605,23 +1588,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
-
-        // Sidebar logout link
-        const sidebarLogout = document.querySelector('.footer-link:has(.fa-sign-out-alt)');
-        if (sidebarLogout) {
-            sidebarLogout.style.cursor = 'pointer';
-            sidebarLogout.addEventListener('click', async () => {
-                if (confirm('Bạn có chắc muốn đăng xuất khỏi mọi thiết bị?')) {
-                    try {
-                        await MindSprintApi.revokeAllSessions();
-                    } catch (e) {
-                        console.warn('Logout error:', e.message);
-                    }
-                    MindSprintApi.logout();
-                    location.reload();
-                }
-            });
-        }
     }
 
     function openEditCardModal() {
@@ -1642,6 +1608,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const cardIndex = flashcards.findIndex(c => c.id == currentCard.id);
         if (cardIndex === -1) return;
+        const version = accountVersion;
+        const card = flashcards[cardIndex];
 
         const category = document.getElementById('edit-category').value;
         const question = document.getElementById('edit-question').value;
@@ -1650,19 +1618,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Store old values for rollback
         const oldValues = {
-            category: flashcards[cardIndex].category,
-            question: flashcards[cardIndex].question,
-            answer: flashcards[cardIndex].answer,
-            example: flashcards[cardIndex].example,
-            version: flashcards[cardIndex].version,
-            updatedAt: flashcards[cardIndex].updatedAt
+            category: card.category,
+            question: card.question,
+            answer: card.answer,
+            example: card.example,
+            version: card.version,
+            updatedAt: card.updatedAt
         };
 
         // Optimistic update
-        flashcards[cardIndex].category = category;
-        flashcards[cardIndex].question = question;
-        flashcards[cardIndex].answer = answer;
-        flashcards[cardIndex].example = example;
+        card.category = category;
+        card.question = question;
+        card.answer = answer;
+        card.example = example;
 
         updateStats();
         editModal.classList.remove('active');
@@ -1678,68 +1646,64 @@ document.addEventListener('DOMContentLoaded', () => {
             const syncToServer = async () => {
                 try {
                     const result = await MindSprintApi.updateCard({
-                        ...flashcards[cardIndex],
-                        version: flashcards[cardIndex].version
+                        ...card,
+                        version: card.version
                     });
-                    flashcards[cardIndex].version = result.version;
-                    flashcards[cardIndex].updatedAt = result.updatedAt;
+                    if (version !== accountVersion) return;
+                    card.version = result.version;
+                    card.updatedAt = result.updatedAt;
+                    updateStats();
                 } catch (err) {
+                    if (version !== accountVersion) return;
                     if (err.isConflict) {
                         // Conflict detected - show server version and let user choose
                         const serverCard = err.serverData.serverCard;
-                        const userChoice = confirm(
+                        const userChoice = await window.MindSprintDialogs.confirm(
                             `Thẻ này đã được sửa trên thiết bị khác!\n\n` +
                             `Phiên bản server:\n${serverCard.question}\n${serverCard.answer}\n\n` +
-                            `Chọn "OK" để giữ bản server, "Cancel" để giữ bản cục bộ và ghi đè.`
+                            `Chọn bản trên server hoặc ghi đè bằng bản cục bộ.`,
+                            {title: 'Thẻ có phiên bản mới', confirmText: 'Giữ bản server', cancelText: 'Ghi đè bản cục bộ', dismissValue: null}
                         );
+                        if (version !== accountVersion || userChoice === null) return;
                         
                         if (userChoice) {
                             // Use server version
-                            flashcards[cardIndex].category = serverCard.category;
-                            flashcards[cardIndex].question = serverCard.question;
-                            flashcards[cardIndex].answer = serverCard.answer;
-                            flashcards[cardIndex].example = serverCard.example;
-                            flashcards[cardIndex].version = serverCard.version;
-                            flashcards[cardIndex].updatedAt = serverCard.updatedAt;
+                            card.category = serverCard.category;
+                            card.question = serverCard.question;
+                            card.answer = serverCard.answer;
+                            card.example = serverCard.example;
+                            card.version = serverCard.version;
+                            card.updatedAt = serverCard.updatedAt;
                         } else {
                             // Force push local version with server's version number
                             try {
                                 const forceResult = await MindSprintApi.updateCard({
-                                    ...flashcards[cardIndex],
+                                    ...card,
                                     version: serverCard.version // Use server version to force
                                 });
-                                flashcards[cardIndex].version = forceResult.version;
-                                flashcards[cardIndex].updatedAt = forceResult.updatedAt;
+                                if (version !== accountVersion) return;
+                                card.version = forceResult.version;
+                                card.updatedAt = forceResult.updatedAt;
                             } catch (e) {
+                                if (version !== accountVersion) return;
                                 console.error('Force update failed:', e);
-                                alert('Không thể ghi đè. Vui lòng thử lại.');
+                                window.MindSprintDialogs.alert('Không thể ghi đè. Vui lòng thử lại.');
                                 // Rollback
-                                Object.assign(flashcards[cardIndex], oldValues);
+                                Object.assign(card, oldValues);
                             }
                         }
                         filterDeck();
                         renderCard();
                         updateStats();
-                    } else if (!navigator.onLine || err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
+                    } else if (!navigator.onLine || !err.status) {
                         // Queue for later
-                        offlineQueue.push({ 
-                            fn: async () => {
-                                const result = await MindSprintApi.updateCard({
-                                    ...flashcards[cardIndex],
-                                    version: flashcards[cardIndex].version
-                                });
-                                flashcards[cardIndex].version = result.version;
-                                flashcards[cardIndex].updatedAt = result.updatedAt;
-                            }, 
-                            cardId: flashcards[cardIndex].id, 
-                            type: 'update' 
-                        });
+                        offlineQueue.push({ card: {...card}, type: 'update' });
                         saveOfflineQueue();
                         console.log('Offline: queued card update');
                     } else {
-                        alert('Lỗi đồng bộ: ' + err.message);
+                        window.MindSprintDialogs.alert('Lỗi đồng bộ: ' + err.message);
                         // Rollback on other errors
-                        Object.assign(flashcards[cardIndex], oldValues);
+                        Object.assign(card, oldValues);
                         filterDeck();
                         renderCard();
                         updateStats();
@@ -1750,12 +1714,16 @@ document.addEventListener('DOMContentLoaded', () => {
             syncToServer();
         }
 
-    function deleteCurrentCard() {
+    }
+
+    async function deleteCurrentCard() {
         if (filteredCards.length === 0) return;
         const currentCard = filteredCards[currentIndex];
         const cardVersion = currentCard.version;
+        const version = accountVersion;
 
-        if (confirm(`Bạn có chắc chắn muốn xóa thẻ học này (${currentCard.question}) không?`)) {
+        if (await window.MindSprintDialogs.confirm(`Bạn có chắc chắn muốn xóa thẻ học này (${currentCard.question}) không?`, {title: 'Xóa thẻ học', confirmText: 'Xóa thẻ'})) {
+            if (version !== accountVersion) return;
             // Store for rollback
             const deletedCard = { ...currentCard };
             const deletedIndex = flashcards.findIndex(c => c.id == currentCard.id);
@@ -1779,17 +1747,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         await MindSprintApi.deleteCard(currentCard.id, cardVersion);
                     } catch (err) {
+                        if (version !== accountVersion) return;
                         if (err.isConflict) {
                             // Card was modified, ask user
-                            const userChoice = confirm(
+                            const userChoice = await window.MindSprintDialogs.confirm(
                                 `Thẻ này đã thay đổi trên thiết bị khác!\n\n` +
-                                `Chọn "OK" để xóa theo phiên bản server, "Cancel" để khôi phục thẻ.`
+                                `Bạn muốn xóa theo phiên bản server hay khôi phục thẻ?`,
+                                {title: 'Thẻ có phiên bản mới', confirmText: 'Xóa thẻ', cancelText: 'Khôi phục thẻ'}
                             );
+                            if (version !== accountVersion) return;
                             if (userChoice) {
                                 // Force delete with server version
                                 try {
                                     await MindSprintApi.deleteCard(currentCard.id, err.serverData.serverVersion);
+                                    if (version !== accountVersion) return;
                                 } catch (e) {
+                                    if (version !== accountVersion) return;
                                     console.error('Force delete failed:', e);
                                 }
                             } else {
@@ -1799,19 +1772,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 filterDeck();
                                 renderCard();
                             }
-                        } else if (!navigator.onLine || err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
+                        } else if (!navigator.onLine || !err.status) {
                             // Queue for later
-                            offlineQueue.push({ 
-                                fn: async () => {
-                                    await MindSprintApi.deleteCard(currentCard.id, cardVersion);
-                                }, 
-                                cardId: currentCard.id, 
-                                type: 'delete' 
-                            });
+                            offlineQueue.push({ cardId: currentCard.id, version: cardVersion, type: 'delete' });
                             saveOfflineQueue();
                             console.log('Offline: queued card deletion');
                         } else {
-                            alert('Lỗi đồng bộ xóa: ' + err.message);
+                            window.MindSprintDialogs.alert('Lỗi đồng bộ xóa: ' + err.message);
                             // Restore on error
                             flashcards.splice(deletedIndex, 0, deletedCard);
                             updateStats();
@@ -1883,8 +1850,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Exit ongoing quiz button
-        quizExitOngoingBtn.addEventListener('click', () => {
-            if (confirm("Bạn có chắc chắn muốn dừng bài luyện tập hiện tại? Mọi tiến trình sẽ bị hủy.")) {
+        quizExitOngoingBtn.addEventListener('click', async () => {
+            const version = accountVersion;
+            if (await window.MindSprintDialogs.confirm("Bạn có chắc chắn muốn dừng bài luyện tập hiện tại? Mọi tiến trình sẽ bị hủy.", {title: 'Dừng luyện tập', confirmText: 'Dừng luyện tập'})) {
+                if (version !== accountVersion) return;
                 quizOngoingContainer.style.display = 'none';
                 quizSetupContainer.style.display = 'block';
             }
@@ -1908,8 +1877,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 btn.classList.add('active');
                 btn.style.background = 'var(--primary-color)';
-                btn.style.color = 'white';
-                btn.style.boxShadow = '0 4px 12px var(--primary-glow)';
+                btn.style.color = 'var(--on-accent)';
+                btn.style.boxShadow = 'none';
 
                 const targetMode = btn.getAttribute('data-practice-mode');
                 if (targetMode === 'quiz') {
@@ -1966,8 +1935,10 @@ document.addEventListener('DOMContentLoaded', () => {
             gameStartBtn.addEventListener('click', () => startGame());
         }
         if (gameQuitBtn) {
-            gameQuitBtn.addEventListener('click', () => {
-                if (confirm("Bạn có chắc chắn muốn thoát trò chơi ghép thẻ? Mọi tiến trình sẽ bị hủy.")) {
+            gameQuitBtn.addEventListener('click', async () => {
+                const version = accountVersion;
+                if (await window.MindSprintDialogs.confirm("Bạn có chắc chắn muốn thoát trò chơi ghép thẻ? Mọi tiến trình sẽ bị hủy.", {title: 'Thoát trò chơi', confirmText: 'Thoát trò chơi'})) {
+                    if (version !== accountVersion) return;
                     quitGame();
                 }
             });
@@ -1998,7 +1969,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (cards.length === 0) {
-            alert("Không tìm thấy từ vựng nào phù hợp trong danh mục học này để ôn tập!");
+            window.MindSprintDialogs.alert("Không tìm thấy từ vựng nào phù hợp trong danh mục học này để ôn tập!");
             return;
         }
 
@@ -2090,7 +2061,7 @@ document.addEventListener('DOMContentLoaded', () => {
         quizCurrentOptions.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = 'quiz-option-btn';
-            btn.innerHTML = `<span class="option-prefix">${prefixes[idx]}</span> ${opt}`;
+            btn.innerHTML = `<span class="option-prefix">${prefixes[idx]}</span><span class="option-text">${opt}</span>`;
             btn.addEventListener('click', () => {
                 if (!isQuizAnswered) checkChoiceAnswer(idx, btn);
             });
@@ -2143,7 +2114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Đồng bộ hóa thống kê học tập hôm nay
         studiedToday.add(currentCard.id);
-        localStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
+        personalStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
         checkAndUpdateStreak(true);
         updateStats();
     }
@@ -2191,7 +2162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Đồng bộ hóa thống kê học tập hôm nay
         studiedToday.add(currentCard.id);
-        localStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
+        personalStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
         checkAndUpdateStreak(true);
         updateStats();
     }
@@ -2252,6 +2223,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         timetableForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const version = accountVersion;
+            const slotId = editingSlotId;
 
             const dayVal = parseInt(document.getElementById('slot-day').value, 10);
             const startVal = document.getElementById('slot-start').value;
@@ -2260,7 +2233,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const noteVal = document.getElementById('slot-note').value;
 
             if (startVal >= endVal) {
-                alert("Lỗi: Giờ kết thúc phải muộn hơn giờ bắt đầu học!");
+                window.MindSprintDialogs.alert("Lỗi: Giờ kết thúc phải muộn hơn giờ bắt đầu học!");
                 return;
             }
 
@@ -2270,7 +2243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const durationMinutes = (eh * 60 + em) - (sh * 60 + sm);
 
             // Map dayVal (2=Mon..8=Sun) to DayOfWeek (0=Sun..6=Sat)
-            const dayOfWeek = dayVal === 8 ? 0 : dayVal;
+            const dayOfWeek = dayVal === 8 ? 0 : dayVal - 1;
 
             const newSlot = {
                 day: dayVal,
@@ -2282,50 +2255,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 dayOfWeek: dayOfWeek
             };
 
-            if (editingSlotId === null) {
+            if (slotId === null) {
                 // Add new slot
                 newSlot.id = Date.now();
                 timetableSlots.push(newSlot);
             } else {
                 // Edit existing slot
-                const idx = timetableSlots.findIndex(s => s.id === editingSlotId);
+                const idx = timetableSlots.findIndex(s => s.id === slotId);
                 if (idx !== -1) {
                     timetableSlots[idx] = { ...timetableSlots[idx], ...newSlot };
                 }
             }
 
-            localStorage.setItem('timetable-slots', JSON.stringify(timetableSlots));
+            personalStorage.setItem('timetable-slots', JSON.stringify(timetableSlots));
             
             timetableForm.reset();
             timetableModal.classList.remove('active');
             
             renderTimetable();
             updateTodayWidget();
+            editingSlotId = null;
 
             // #14 – Sync to server if logged in
             if (MindSprintApi.isLoggedIn()) {
                 try {
-                    if (editingSlotId === null) {
+                    if (slotId === null) {
                         // Create new schedule on server
                         const result = await MindSprintApi.studyCreateSchedule(dayOfWeek, startVal, durationMinutes, catVal + (noteVal ? ' - ' + noteVal : ''));
+                        if (version !== accountVersion) return;
                         // Update local slot with server ID
                         const localSlot = timetableSlots.find(s => s.id === newSlot.id);
                         if (localSlot) localSlot.serverId = result.id;
                     } else {
                         // Update existing schedule on server
-                        const localSlot = timetableSlots.find(s => s.id === editingSlotId);
+                        const localSlot = timetableSlots.find(s => s.id === slotId);
                         if (localSlot?.serverId) {
                             await MindSprintApi.studyUpdateSchedule(localSlot.serverId, dayOfWeek, startVal, durationMinutes, catVal + (noteVal ? ' - ' + noteVal : ''));
+                            if (version !== accountVersion) return;
                         }
                     }
-                    localStorage.setItem('timetable-slots', JSON.stringify(timetableSlots));
+                    personalStorage.setItem('timetable-slots', JSON.stringify(timetableSlots));
                 } catch (err) {
+                    if (version !== accountVersion) return;
                     console.warn('Lỗi đồng bộ lịch học:', err.message);
                     // Queue for offline sync if needed
                 }
             }
             
-            editingSlotId = null;
         });
 
         // Toggle browser notifications settings
@@ -2403,17 +2379,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const delBtn = slotDiv.querySelector('.delete-slot-btn');
             delBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm(`Bạn có muốn xóa giờ học (${slot.start} - ${slot.end}) khỏi lịch trình không?`)) {
+                const version = accountVersion;
+                if (await window.MindSprintDialogs.confirm(`Bạn có muốn xóa giờ học (${slot.start} - ${slot.end}) khỏi lịch trình không?`, {title: 'Xóa giờ học', confirmText: 'Xóa giờ học'})) {
+                    if (version !== accountVersion) return;
                     // #14 – Delete from server if logged in
                     if (MindSprintApi.isLoggedIn() && slot.serverId) {
                         try {
                             await MindSprintApi.studyDeleteSchedule(slot.serverId);
+                            if (version !== accountVersion) return;
                         } catch (err) {
+                            if (version !== accountVersion) return;
                             console.warn('Lỗi xóa lịch học trên server:', err.message);
                         }
                     }
                     timetableSlots = timetableSlots.filter(s => s.id !== slot.id);
-                    localStorage.setItem('timetable-slots', JSON.stringify(timetableSlots));
+                    personalStorage.setItem('timetable-slots', JSON.stringify(timetableSlots));
                     renderTimetable();
                     updateTodayWidget();
                 }
@@ -2547,7 +2527,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function toggleNotifications() {
         if (!('Notification' in window)) {
-            alert('Trình duyệt của bạn không hỗ trợ tính năng thông báo!');
+            window.MindSprintDialogs.alert('Trình duyệt của bạn không hỗ trợ tính năng thông báo!');
             return;
         }
         
@@ -2561,13 +2541,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('notifications-enabled', 'true');
                 updateNotificationButtonState();
             } else if (Notification.permission === 'denied') {
-                alert('Bạn đã chặn quyền thông báo của trang web này. Vui lòng nhấp vào biểu tượng ổ khóa ở đầu thanh địa chỉ trình duyệt, chọn Cho phép (Allow) thông báo rồi thử lại!');
+                window.MindSprintDialogs.alert('Bạn đã chặn quyền thông báo của trang web này. Vui lòng nhấp vào biểu tượng ổ khóa ở đầu thanh địa chỉ trình duyệt, chọn Cho phép (Allow) thông báo rồi thử lại!');
             } else {
                 Notification.requestPermission().then(permission => {
                     if (permission === 'granted') {
                         notificationsEnabled = true;
                         localStorage.setItem('notifications-enabled', 'true');
-                        showNotification('SmartFlash', {
+                        showNotification('MindSprintAI', {
                             body: 'Đã kích hoạt thông báo nhắc nhở lịch học thành công!',
                             icon: 'icon-192.jpg'
                         });
@@ -2637,7 +2617,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // 1. Text Notification
                 if (alarmStyle === 'text' || alarmStyle === 'both') {
-                    showNotification('Đến giờ học SmartFlash rồi!', {
+                    showNotification('Đến giờ học MindSprintAI rồi!', {
                         body: `Lịch học: ${slot.start} - ${slot.end} (${catName}${noteText}). Nhấp vào để học ngay!`,
                         icon: 'icon-192.jpg',
                         requireInteraction: true,
@@ -2669,8 +2649,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const today = new Date();
         const todayStr = today.toLocaleDateString('en-CA'); // Định dạng YYYY-MM-DD
         
-        let lastActiveDate = localStorage.getItem('last-active-date');
-        let streak = parseInt(localStorage.getItem('study-streak') || '0', 10);
+        let lastActiveDate = personalStorage.getItem('last-active-date');
+        let streak = parseInt(personalStorage.getItem('study-streak') || '0', 10);
         
         if (!actionTaken) {
             // Kiểm tra khi tải trang xem chuỗi streak có bị đứt hay không
@@ -2686,11 +2666,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Nếu ngày hoạt động cuối cùng không phải hôm nay và không phải hôm qua -> mất streak
                 if (lastActiveDate !== todayStr && lastActiveDate !== yesterdayStr) {
                     streak = 0;
-                    localStorage.setItem('study-streak', '0');
+                    personalStorage.setItem('study-streak', '0');
                 }
             } else {
                 streak = 0;
-                localStorage.setItem('study-streak', '0');
+                personalStorage.setItem('study-streak', '0');
             }
             return streak;
         }
@@ -2713,8 +2693,8 @@ document.addEventListener('DOMContentLoaded', () => {
             streak = 1;
         }
         
-        localStorage.setItem('study-streak', streak.toString());
-        localStorage.setItem('last-active-date', todayStr);
+        personalStorage.setItem('study-streak', streak.toString());
+        personalStorage.setItem('last-active-date', todayStr);
         
         // Kiểm tra xem có trúng mốc cột mốc nào để chúc mừng không
         checkStreakMilestones(streak);
@@ -2727,11 +2707,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const milestones = [30, 50, 100, 200, 300, 365, 400, 500, 600, 700, 800, 900, 1000];
         
         if (milestones.includes(streak)) {
-            const celebratedMilestones = JSON.parse(localStorage.getItem('celebrated-milestones') || '[]');
+            const celebratedMilestones = JSON.parse(personalStorage.getItem('celebrated-milestones') || '[]');
             if (!celebratedMilestones.includes(streak)) {
                 celebrateMilestone(streak);
                 celebratedMilestones.push(streak);
-                localStorage.setItem('celebrated-milestones', JSON.stringify(celebratedMilestones));
+                personalStorage.setItem('celebrated-milestones', JSON.stringify(celebratedMilestones));
             }
         }
     }
@@ -2745,39 +2725,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!modal) return;
         
         let title = `Mốc Chuỗi ${streak} Ngày!`;
-        let desc = `Bạn đã kiên trì học tập liên tiếp ${streak} ngày. Flashcard tự hào về sự bền bỉ của bạn!`;
-        let color = '#7c3aed'; // Màu mặc định: Tím
+        let desc = `Bạn đã kiên trì học tập liên tiếp ${streak} ngày. MindSprintAI tự hào về sự bền bỉ của bạn!`;
+        let color = 'var(--primary-color)'; // Màu mặc định: Tím
         let iconClass = 'fa-fire';
         
         if (streak >= 365) {
             title = `👑 HUYỀN THOẠI 365 NGÀY! 👑`;
-            desc = `Không thể tin được! Bạn đã duy trì thói quen học tập ròng rã suốt 1 năm (${streak} ngày) liên tục! Bạn đã trở thành BẬC THẦY VÔ SONG của Flashcard!`;
-            color = '#ff007f'; // Màu hồng bảy sắc
+            desc = `Không thể tin được! Bạn đã duy trì thói quen học tập ròng rã suốt 1 năm (${streak} ngày) liên tục! Bạn đã trở thành BẬC THẦY VÔ SONG của MindSprintAI!`;
+            color = 'var(--primary-color)'; // Màu hồng bảy sắc
             iconClass = 'fa-crown';
         } else if (streak >= 300) {
             title = `💎 KIM CƯƠNG BẤT HOẠI ${streak} NGÀY! 💎`;
             desc = `Ý chí bền bỉ tựa Kim Cương! Bạn đã học tập liên tục ${streak} ngày. Trí tuệ của bạn đã đạt đến độ sáng ngời tối thượng!`;
-            color = '#b9f2ff'; // Xanh kim cương
+            color = 'var(--secondary-color)'; // Xanh kim cương
             iconClass = 'fa-gem';
         } else if (streak >= 200) {
             title = `✨ CHIẾN BINH BẠCH KIM ${streak} NGÀY! ✨`;
-            desc = `Một thành tựu phi thường! ${streak} ngày bền bỉ cùng tri thức. Flashcard xin ngả mũ thán phục sự kiên định của bạn!`;
-            color = '#e5e4e2'; // Bạch kim
+            desc = `Một thành tựu phi thường! ${streak} ngày bền bỉ cùng tri thức. MindSprintAI xin ngả mũ thán phục sự kiên định của bạn!`;
+            color = 'var(--text-secondary)'; // Bạch kim
             iconClass = 'fa-medal';
         } else if (streak >= 100) {
             title = `🏆 ĐẠI KIỆN TƯỚNG VÀNG ${streak} NGÀY! 🏆`;
             desc = `Cột mốc 100 ngày thần kỳ! Con số 3 chữ số này là minh chứng đanh thép cho sự quyết tâm sắt đá của bạn. Tiếp tục tiến bước vinh quang!`;
-            color = '#ffd700'; // Vàng
+            color = 'var(--warning-color)'; // Vàng
             iconClass = 'fa-trophy';
         } else if (streak >= 50) {
             title = `🥈 CHIẾN BINH BẠC ${streak} NGÀY! 🥈`;
             desc = `Chúc mừng bạn đã cán mốc 50 ngày học tập liên tục! Thói quen học tập của bạn hiện tại đã vô cùng vững chắc.`;
-            color = '#c0c0c0'; // Bạc
+            color = 'var(--text-secondary)'; // Bạc
             iconClass = 'fa-award';
         } else if (streak >= 30) {
             title = `🥉 DẤU ẤN ĐỒNG ${streak} NGÀY! 🥉`;
             desc = `Chúc mừng bạn đã hoàn thành xuất sắc thử thách 30 ngày học tập liên tục đầu tiên! Một cột mốc khởi đầu vô cùng ý nghĩa.`;
-            color = '#cd7f32'; // Đồng
+            color = 'var(--text-secondary)'; // Đồng
             iconClass = 'fa-certificate';
         }
         
@@ -2786,7 +2766,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (iconEl) {
             iconEl.className = `fas ${iconClass} streak-celebration-icon`;
             iconEl.style.color = color;
-            iconEl.style.filter = `drop-shadow(0 0 20px ${color})`;
+            iconEl.style.filter = 'none';
         }
         
         modal.style.display = 'flex';
@@ -2796,10 +2776,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function triggerConfetti() {
-        const colors = ['#ffd700', '#ff007f', '#7f00ff', '#00f0ff', '#10b981', '#ff5722'];
+        const colors = ['var(--warning-color)', 'var(--primary-color)', 'var(--primary-color)', 'var(--secondary-color)', 'var(--success-color)', 'var(--primary-color)'];
         for (let i = 0; i < 100; i++) {
             const confetti = document.createElement('div');
             confetti.className = 'confetti-piece';
+            confetti.setAttribute('aria-hidden', 'true');
             
             confetti.style.left = Math.random() * 100 + 'vw';
             confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
@@ -2856,11 +2837,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     simControlsContainer.style.display = 'flex';
                     if (simLockBadge) {
                         simLockBadge.innerHTML = '<i class="fas fa-lock-open"></i> Đã mở khóa';
-                        simLockBadge.style.background = 'rgba(16, 185, 129, 0.15)';
-                        simLockBadge.style.color = '#10b981';
+                        simLockBadge.style.background = 'var(--success-glow)';
+                        simLockBadge.style.color = 'var(--success-color)';
                     }
                 } else {
-                    alert("Mật khẩu quản trị viên không chính xác!");
+                    window.MindSprintDialogs.alert("Mật khẩu quản trị viên không chính xác!");
                     simPwInput.value = '';
                     simPwInput.focus();
                 }
@@ -2880,13 +2861,13 @@ document.addEventListener('DOMContentLoaded', () => {
             testStreakBtn.addEventListener('click', () => {
                 const targetDays = parseInt(testStreakInput.value, 10);
                 if (isNaN(targetDays) || targetDays < 1) {
-                    alert("Vui lòng nhập số ngày hợp lệ!");
+                    window.MindSprintDialogs.alert("Vui lòng nhập số ngày hợp lệ!");
                     return;
                 }
                 
                 // Cập nhật chuỗi giả lập vào LocalStorage
-                localStorage.setItem('study-streak', targetDays.toString());
-                localStorage.setItem('last-active-date', new Date().toLocaleDateString('en-CA'));
+                personalStorage.setItem('study-streak', targetDays.toString());
+                personalStorage.setItem('last-active-date', new Date().toLocaleDateString('en-CA'));
                 
                 // Đồng bộ và tải lại giao diện
                 updateStats();
@@ -2911,10 +2892,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentTime = `${hours}:${minutes}`;
         
         const todayStr = now.toLocaleDateString('en-CA'); // Định dạng YYYY-MM-DD
-        const lastCheckedStr = localStorage.getItem('last-makeup-check-time');
+        const lastCheckedStr = personalStorage.getItem('last-makeup-check-time');
         
         // Lưu thời điểm kiểm tra hiện tại vào localStorage
-        localStorage.setItem('last-makeup-check-time', `${todayStr} ${currentTime}`);
+        personalStorage.setItem('last-makeup-check-time', `${todayStr} ${currentTime}`);
         
         if (!lastCheckedStr) {
             // Lần đầu chạy app hoặc đã bị xóa cache, không kiểm tra học bù
@@ -2955,22 +2936,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // Tạo container cho modal học bù
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
-        overlay.style.cssText = 'display: flex; z-index: 3500; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);';
+        overlay.style.cssText = 'display: flex; z-index: 3500; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--overlay-color); justify-content: center; align-items: center;';
         
         const content = document.createElement('div');
         content.className = 'modal-content glass-panel text-center';
-        content.style.cssText = 'max-width: 420px; padding: 2.2rem; border-radius: var(--border-radius-lg); position: relative; margin: auto; border: 1px solid var(--border-color); animation: fadeIn 0.3s ease, slideUp 0.3s ease;';
+        content.style.cssText = 'max-width: 420px; padding: var(--space-step-36); border-radius: var(--border-radius-lg); position: relative; margin: auto; border: 1px solid var(--border-color); animation: fadeIn 0.3s ease, slideUp 0.3s ease;';
         
         content.innerHTML = `
             <button class="close-btn" style="position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; font-size: 1.4rem; color: var(--text-muted); cursor: pointer;" type="button"><i class="fas fa-times"></i></button>
-            <div style="margin-bottom: 1.2rem; display: inline-block;">
-                <i class="fas fa-clock-rotate-left" style="font-size: 3.5rem; color: #ffd700; filter: drop-shadow(0 0 10px rgba(255,215,0,0.4));"></i>
+            <div style="margin-bottom: var(--space-step-20); display: inline-block;">
+                <i class="fas fa-clock-rotate-left" style="font-size: 3.5rem; color: var(--warning-color); "></i>
             </div>
-            <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; margin-bottom: 0.8rem; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">🔔 Lịch Học Bù</h2>
-            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.8rem; font-size: 0.95rem;">
+            <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; margin-bottom: var(--space-step-12); color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">🔔 Lịch Học Bù</h2>
+            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-step-28); font-size: 0.95rem;">
                 Hệ thống phát hiện bạn đã bỏ lỡ giờ học môn <strong>${categoryName}</strong> lúc <strong>${start} - ${end}</strong> hôm nay do thiết bị khóa màn hình. Hãy học bù ngay nhé!
             </p>
-            <button class="btn btn-primary btn-large" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" id="makeup-study-now-btn" type="button">
+            <button class="btn btn-primary btn-large" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: var(--space-step-8);" id="makeup-study-now-btn" type="button">
                 <i class="fas fa-book-reader"></i> Học bù ngay bây giờ
             </button>
         `;
@@ -3091,7 +3072,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
             
         if (filtered.length < 3) {
-            alert("Số từ vựng trong chủ đề này quá ít (yêu cầu tối thiểu 3 từ). Vui lòng chọn danh mục/chủ đề khác hoặc thêm thẻ học!");
+            window.MindSprintDialogs.alert("Số từ vựng trong chủ đề này quá ít (yêu cầu tối thiểu 3 từ). Vui lòng chọn danh mục/chủ đề khác hoặc thêm thẻ học!");
             return;
         }
 
@@ -3197,7 +3178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Hiển thị kỷ lục tốt nhất từ trước đến nay của danh mục & chủ đề này
         const recordVal = document.getElementById('game-best-time-val');
-        const savedBest = localStorage.getItem(`game-best-time-${category}-${subcategory}`);
+        const savedBest = personalStorage.getItem(`game-best-time-${category}-${subcategory}`);
         if (recordVal) {
             recordVal.innerText = savedBest ? savedBest : '--';
         }
@@ -3271,7 +3252,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     subcategory = document.getElementById('game-subcategory').value;
                 } catch(e) {}
 
-                const savedBest = localStorage.getItem(`game-best-time-${category}-${subcategory}`);
+                const savedBest = personalStorage.getItem(`game-best-time-${category}-${subcategory}`);
                 const bestTime = savedBest ? parseFloat(savedBest) : Infinity;
 
                 const yourTimeEl = document.getElementById('game-your-time');
@@ -3282,7 +3263,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (gameTime < bestTime) {
                     // Lập kỷ lục mới!
-                    localStorage.setItem(`game-best-time-${category}-${subcategory}`, gameTime.toFixed(1));
+                    personalStorage.setItem(`game-best-time-${category}-${subcategory}`, gameTime.toFixed(1));
                     if (recordTimeEl) recordTimeEl.innerText = gameTime.toFixed(1) + 's';
                     if (newRecordBadge) newRecordBadge.style.display = 'inline-block';
                 } else {
@@ -3397,7 +3378,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add "Tất cả chủ đề"
                 const allOpt = document.createElement('div');
                 allOpt.className = 'option-item active';
-                allOpt.style.cssText = 'padding: 0.6rem 1rem; cursor: pointer; color: var(--text-primary); transition: background 0.2s ease; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem;';
+                allOpt.style.cssText = 'padding: var(--space-step-8) var(--space-step-16); cursor: pointer; color: var(--text-primary); transition: background 0.2s ease; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem;';
                 allOpt.innerHTML = `<span>Tất cả chủ đề</span><i class="fas fa-check check-icon" style="color: var(--primary-color); font-size: 0.8rem;"></i>`;
                 
                 allOpt.addEventListener('click', () => {
@@ -3417,7 +3398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 optionsList.forEach(optVal => {
                     const opt = document.createElement('div');
                     opt.className = 'option-item';
-                    opt.style.cssText = 'padding: 0.6rem 1rem; cursor: pointer; color: var(--text-primary); transition: background 0.2s ease; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem;';
+                    opt.style.cssText = 'padding: var(--space-step-8) var(--space-step-16); cursor: pointer; color: var(--text-primary); transition: background 0.2s ease; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem;';
                     opt.innerHTML = `<span>${optVal}</span><i class="fas fa-check check-icon" style="display: none; color: var(--primary-color); font-size: 0.8rem;"></i>`;
                     
                     opt.addEventListener('click', () => {
@@ -3447,6 +3428,118 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    function scheduleFromServer(slot) {
+        const [hours, minutes] = slot.startTime.split(':').map(Number);
+        const end = hours * 60 + minutes + slot.durationMinutes;
+        return { id: `server-${slot.id}`, serverId: slot.id, day: slot.dayOfWeek === 0 ? 8 : slot.dayOfWeek + 1,
+            start: slot.startTime.slice(0, 5), end: `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`,
+            category: slot.label?.split(' - ')[0] || 'mixed', note: slot.label?.split(' - ').slice(1).join(' - ') || '',
+            durationMinutes: slot.durationMinutes, dayOfWeek: slot.dayOfWeek };
+    }
+
+    async function loadAccountData(user) {
+        const version = ++accountVersion;
+        activeAccountId = user ? String(user.id) : 'guest';
+        flashcards = loadLocalCards();
+        timetableSlots = readPersonalJSON('timetable-slots', user ? [] : defaultSlots.map(slot => ({...slot})));
+        offlineQueue = readPersonalJSON(OFFLINE_QUEUE_KEY, []);
+        studyDays = readPersonalJSON('study-days', []);
+        processingQueue = false;
+        studiedToday = new Set(readPersonalJSON('studied-today', []));
+        if (personalStorage.getItem('last-studied-day') !== new Date().toDateString()) {
+            studiedToday.clear();
+            personalStorage.setItem('studied-today', '[]');
+            personalStorage.setItem('last-studied-day', new Date().toDateString());
+        }
+        currentCategory = 'all'; currentSubCategory = 'all';
+        quizDeck = []; quizWrongAnswers = []; quizCurrentOptions = []; quizScore = 0; quizCurrentIndex = 0;
+        quizSetupContainer.style.display = 'block';
+        quizOngoingContainer.style.display = 'none';
+        quizResultsContainer.style.display = 'none';
+        quizQuestionText.textContent = ''; quizOptionsGrid.innerHTML = ''; wrongAnswersTbody.innerHTML = '';
+        gameDeck = []; resetGameSetup();
+        for (const id of ['game-left-grid', 'game-right-grid']) {
+            const grid = document.getElementById(id);
+            if (grid) grid.innerHTML = '';
+        }
+        editingSlotId = null;
+        addModal.classList.remove('active'); timetableModal.classList.remove('active');
+        const editModal = document.getElementById('edit-modal');
+        editModal?.classList.remove('active');
+        notifiedSlotsToday.clear();
+        stopAlarm();
+        alarmRingOverlay.style.display = 'none';
+        filterDeck(); updateStats(); renderTimetable(); updateTodayWidget();
+        if (!user) return;
+
+        await processOfflineQueue();
+        if (version !== accountVersion) return;
+        const results = await Promise.allSettled([api.getCards(), api.studyGetSchedule(), api.studyGetStreak(), api.studyGetDays()]);
+        if (version !== accountVersion || !auth.isLoggedIn()) return;
+        const [cards, schedule, streak, days] = results;
+        if (cards.status === 'fulfilled') {
+            let merged = cards.value;
+            for (const operation of offlineQueue) {
+                if (operation.type === 'create' || operation.type === 'update') {
+                    merged = merged.filter(card => String(card.id) !== String(operation.card.id));
+                    merged.push(operation.card);
+                } else if (operation.type === 'delete') merged = merged.filter(card => String(card.id) !== String(operation.cardId));
+            }
+            flashcards = normalizeCards(merged);
+        }
+        if (schedule.status === 'fulfilled') {
+            timetableSlots = schedule.value.map(scheduleFromServer);
+            personalStorage.setItem('timetable-slots', JSON.stringify(timetableSlots));
+        }
+        if (streak.status === 'fulfilled') personalStorage.setItem('study-streak', String(streak.value.currentStreak));
+        if (days.status === 'fulfilled') {
+            studyDays = days.value;
+            for (const operation of offlineQueue.filter(op => op.type === 'study')) {
+                studyDays = studyDays.filter(day => day.studyDate !== operation.day.studyDate);
+                studyDays.push(operation.day);
+            }
+            personalStorage.setItem('study-days', JSON.stringify(studyDays));
+        }
+        results.filter(result => result.status === 'rejected').forEach(result => console.warn('Chưa tải được dữ liệu tài khoản:', result.reason.message));
+        filterDeck(); updateStats(); renderTimetable(); updateTodayWidget();
+    }
+
+    let studySyncPromise = Promise.resolve();
+    window.addEventListener('ms-library-changed', async () => {
+        if (!auth.isLoggedIn()) return;
+        const version = accountVersion;
+        try {
+            const cards = await api.getCards();
+            if (version !== accountVersion) return;
+            flashcards = normalizeCards(cards);
+            filterDeck(); updateStats();
+        } catch (error) { console.warn('Chưa cập nhật được thư viện thẻ:', error.message); }
+    });
+
+    function recordStudyDay(studyDate) {
+        const version = accountVersion;
+        let day = studyDays.find(day => day.studyDate === studyDate);
+        if (!day) { day = {studyDate, cardsReviewed: 0, minutesStudied: 0}; studyDays.push(day); }
+        day.cardsReviewed++;
+        day.minutesStudied++;
+        personalStorage.setItem('study-days', JSON.stringify(studyDays));
+        const snapshot = {...day};
+        studySyncPromise = studySyncPromise.then(async () => {
+            if (version !== accountVersion) return;
+            await api.studyUpsertDay(snapshot.studyDate, snapshot.cardsReviewed, snapshot.minutesStudied);
+            const streak = await api.studyGetStreak();
+            if (version !== accountVersion) return;
+            personalStorage.setItem('study-streak', String(streak.currentStreak));
+            updateStats();
+        }).catch(error => {
+            if (version !== accountVersion || !api.isLoggedIn()) return;
+            offlineQueue = offlineQueue.filter(op => op.type !== 'study' || op.day.studyDate !== studyDate);
+            offlineQueue.push({type: 'study', day: snapshot});
+            saveOfflineQueue();
+            console.warn('Chưa đồng bộ được thống kê học:', error.message);
+        });
+    }
+
     // Launch App!
     function launchApp() {
         checkAndUpdateStreak(false); // Cập nhật chuỗi khi tải trang
@@ -3456,4 +3549,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     launchApp();
+    auth?.onAuthChange(user => loadAccountData(user));
 });

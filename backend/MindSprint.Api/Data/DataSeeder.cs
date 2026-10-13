@@ -9,13 +9,13 @@ public static class DataSeeder
 {
     private record SeedCard(string ExternalId, string Category, string? SubCategory, string Question, string Answer, string? Example);
 
-    public static async Task SeedAsync(AppDbContext db, IPasswordHasher<User> hasher)
+    public static async Task SeedAsync(AppDbContext db, IPasswordHasher<User> hasher, bool includeDemoUser = true)
     {
         const string demoEmail = "notebookai@demo.local";
         const string demoPassword = "MindSprint123!";
         const string demoDisplayName = "Notebook AI Demo";
 
-        if (!await db.Users.AnyAsync(u => u.Email == demoEmail))
+        if (includeDemoUser && !await db.Users.AnyAsync(u => u.Email == demoEmail))
         {
             var demoUser = new User
             {

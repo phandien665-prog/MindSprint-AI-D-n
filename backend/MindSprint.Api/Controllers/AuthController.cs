@@ -35,6 +35,7 @@ public class AuthController(AppDbContext db, IPasswordHasher<User> hasher, Token
     public async Task<IActionResult> Login(LoginDto dto)
     {
         var email = dto.Email.Trim().ToLowerInvariant();
+        if (email == "demo") email = "notebookai@demo.local";
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user is null || hasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password) == PasswordVerificationResult.Failed)
             return Unauthorized(new { message = "Sai email hoặc mật khẩu." });
@@ -71,5 +72,30 @@ public class AuthController(AppDbContext db, IPasswordHasher<User> hasher, Token
     {
         await tokens.RevokeAllAsync(UserId);
         return Ok(new { message = "Đã đăng xuất khỏi mọi thiết bị." });
+    }
+
+    [HttpPost("demo")]
+    public async Task<IActionResult> DemoLogin()
+    {
+        const string demoEmail = "notebookai@demo.local";
+        const string demoPassword = "MindSprint123!";
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == demoEmail);
+        if (user is null)
+        {
+            user = new User { Email = demoEmail, DisplayName = "Notebook AI Demo" };
+            user.PasswordHash = hasher.HashPassword(user, demoPassword);
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+        }
+        var rt = await tokens.CreateRefreshTokenAsync(user, null);
+        return Ok(new { token = tokens.CreateAccessToken(user), refreshToken = rt.Token, user = new { user.Id, user.Email, user.DisplayName } });
+    }
+
+    [Microsoft.AspNetCore.Authorization.Authorize, HttpGet("me")]
+    public async Task<IActionResult> Me()
+    {
+        var user = await db.Users.FindAsync(UserId);
+        if (user is null) return Unauthorized(new { message = "Người dùng không tồn tại." });
+        return Ok(new { user.Id, user.Email, user.DisplayName });
     }
 }

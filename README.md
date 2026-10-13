@@ -1,9 +1,15 @@
-# MindSprint AI (bản chuyển từ SmartFlash)
+# MindSprintAI
 
-Stack đúng theo dự án: **HTML/CSS/JS (Fetch API)** + **C# ASP.NET Core Web API** + **SQL Server (EF Core Code First)** + **JWT** + **Gemini API**.
+Stack đang dùng: **HTML/CSS/JS (Fetch API)** + **C# ASP.NET Core Web API** + **PostgreSQL (EF Core Code First)** + **JWT** + **Gemini API**.
+
+## Kiến trúc và yêu cầu phi chức năng
+
+[Bộ tài liệu kiến trúc](docs/architecture/README.md) mô tả thành phần, dữ liệu, triển khai,
+4 ADR và 14 yêu cầu phi chức năng có tiêu chí đo được. Xem [kế hoạch kiểm thử Sprint 4](docs/architecture/sprint-4-test-plan.md)
+để tra cứu issues #42–#55 trong milestone Sprint 4. Các ngưỡng là mục tiêu đề xuất; chưa có kết quả nghiệm thu.
 
 ## Cấu trúc
-- `frontend/` – SmartFlash cũ + `api.js` (client gọi API). Vẫn chạy offline bằng localStorage nếu chưa đăng nhập.
+- `frontend/` – giao diện MindSprintAI + `api.js` (client gọi API). Vẫn chạy offline bằng localStorage nếu chưa đăng nhập.
 - `backend/MindSprint.Api/` – Web API:
   - `Models/Entities.cs` – User, Flashcard, CardProgress (SRS), KanbanTask
   - `Data/` – `AppDbContext`, `DataSeeder` (bơm 1.814 từ Oxford từ `vocab_seed.json`)
@@ -13,15 +19,38 @@ Stack đúng theo dự án: **HTML/CSS/JS (Fetch API)** + **C# ASP.NET Core Web 
 ## Chạy backend
 ```bash
 cd backend/MindSprint.Api
-dotnet tool install --global dotnet-ef
-dotnet ef migrations add InitialCreate
 dotnet run          # tự Migrate + Seed, Swagger tại /swagger
 ```
-Sửa `appsettings.json`: chuỗi kết nối SQL Server, `Jwt:Key` (>= 32 ký tự), `Gemini:ApiKey`, `Cors:Origins`.
-Cổng https mặc định xem ở `Properties/launchSettings.json` (sau khi chạy lần đầu) rồi cập nhật `API_BASE` trong `frontend/api.js`.
+Sửa cấu hình cục bộ: chuỗi kết nối PostgreSQL, `Jwt:Key` (>= 32 ký tự), `Gemini:ApiKey`, `Cors:Origins`. Giữ khóa API ngoài commit; có thể dùng biến môi trường `Gemini__ApiKey`.
+Khi chạy local, `frontend/api.js` tự dùng `http://localhost:5000`; khi triển khai Vercel, biến `API_BASE` được nhúng lúc build. Xem [hướng dẫn triển khai](CI-CD-SETUP.md).
 
 ## Chạy frontend
 Mở `frontend/` bằng Live Server (cổng 5500) – đã có sẵn trong CORS.
+
+Hoặc chạy từ thư mục gốc:
+```powershell
+dotnet run --project backend/MindSprint.Api
+# Trong terminal thứ hai:
+python -m http.server 5500 --bind 127.0.0.1
+```
+Mở `http://127.0.0.1:5500/frontend/`. Backend C# chạy cổng 5000/5100 và tự áp dụng migration hiện có; không cần tạo migration khi chỉ chạy dự án.
+
+## Đăng nhập Google
+
+Hộp đăng nhập/đăng ký hỗ trợ Google Identity Services, dùng chung JWT và refresh
+session với đăng nhập email. Đặt `Google__ClientId` và Authorized JavaScript origins
+để bật tính năng; xem [hướng dẫn cấu hình Google](backend/GOOGLE_SIGN_IN.md).
+Email đã có tài khoản cần mật khẩu MindSprintAI hiện tại trước khi liên kết để
+giữ nguyên dữ liệu học tập. Khi chưa cấu hình Google, email và Demo vẫn dùng được.
+
+## Kanban tích hợp
+Tab **Công việc** dùng chung `MindSprintAuth` và `MindSprintApi` với Sổ tay AI, thư viện và lịch học. Có thêm/sửa/xóa, kéo thả hoặc nút chuyển cột, tìm kiếm, lọc ưu tiên và hạn hoàn thành. Công việc được lưu vào PostgreSQL theo tài khoản; khi lỗi kết nối, form giữ nguyên để thử lại.
+
+Thả ở nửa trên/dưới thẻ để chọn vị trí trong cùng cột hoặc giữa các cột; vạch màu đánh dấu vị trí chèn. Các nút **Đưa lên/Đưa xuống** dùng được bằng bàn phím và trên điện thoại. Vị trí được tính theo toàn bộ công việc trong cột, kể cả thẻ đang ẩn bởi bộ lọc; tải lại trang vẫn giữ thứ tự đã lưu. API lỗi thì bảng giữ thứ tự cũ để thử lại.
+
+`frontend/kanban.js` ghép logic bảng mới từ `frontend/js/kanban.js` vào giao diện chính. Trạng thái Todo/InProgress/Completed được ánh xạ sang Todo/Doing/Done (0/1/2) của API C#. Migration `AddTaskPriority` bổ sung mức ưu tiên cho công việc cũ với giá trị mặc định Medium.
+
+Bản FastAPI mới kéo về được giữ ở `backend/app`, giao diện ở `frontend/standalone.html` và `frontend/js`. `python run_server.py` mở bản này ở cổng 8000 với dữ liệu/phiên riêng; web chính sử dụng backend C# ở trên.
 
 ## Endpoint chính
 | Method | URL | Mô tả |
@@ -49,8 +78,15 @@ Tab **Sổ tay AI** trong frontend (`notebook.js`) + `NotebooksController`/`Note
 Sau khi thêm entity mới, tạo migration mới: `dotnet ef migrations add AddNotebooks`.
 Chưa có: PDF dạng ảnh scan (cần OCR), audio bằng giọng AI thật, trả lời dạng streaming, tìm kiếm theo vector (hiện gửi toàn bộ nguồn, tối đa ~300k ký tự, cho Gemini).
 
-## Việc còn lại (chưa làm trong bản này)
-- Đăng nhập hiện chỉ có trong tab Sổ tay AI; chưa có màn hình đăng nhập chung cho cả app.
-- Giao diện bảng Kanban + Drag & Drop (đã có API `/api/tasks`).
-- Nút "Tạo thẻ bằng AI" gọi `MindSprintApi.aiFlashcards`.
-- Đồng bộ thêm/sửa/xóa thẻ tự tạo lên server (đã có `createCard/updateCard/deleteCard`).
+## Kiểm tra
+```powershell
+node --test tests/frontend-session.test.cjs tests/frontend-text.test.cjs
+dotnet run --project backend/KanbanChecks/KanbanChecks.csproj -c Release
+# Kiểm tra trình duyệt với Edge/Playwright và API mô phỏng, không chạm DB thật:
+node --test tests/kanban-browser.test.cjs
+dotnet run --project tests/GeminiReliability/GeminiReliability.csproj
+# Kiểm tra Kanban với backend đang chạy (tạo tài khoản kiểm thử riêng):
+$env:MINDSPRINT_TEST_API = 'http://localhost:5000'
+node --test tests/kanban-integration.test.cjs
+```
+Các bài kiểm thử Python trong `tests/test_tier*.py` dành cho bản FastAPI riêng.

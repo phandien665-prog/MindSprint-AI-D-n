@@ -17,6 +17,7 @@ public class AiController(GeminiService gemini) : ApiBase
     {
         if (string.IsNullOrWhiteSpace(dto.Text)) return BadRequest(new { message = "Nội dung trống." });
         try { return Ok(await gemini.GenerateFlashcardsAsync(Trim(dto.Text), Math.Clamp(dto.Count, 1, 30))); }
+        catch (GeminiUnavailableException ex) { return AiError(ex); }
         catch (Exception ex) { return StatusCode(502, new { message = "Gemini lỗi: " + ex.Message }); }
     }
 
@@ -25,8 +26,11 @@ public class AiController(GeminiService gemini) : ApiBase
     {
         if (string.IsNullOrWhiteSpace(dto.Text)) return BadRequest(new { message = "Nội dung trống." });
         try { return Ok(await gemini.GenerateQuizAsync(Trim(dto.Text), Math.Clamp(dto.Count, 1, 30))); }
+        catch (GeminiUnavailableException ex) { return AiError(ex); }
         catch (Exception ex) { return StatusCode(502, new { message = "Gemini lỗi: " + ex.Message }); }
     }
 
+    private IActionResult AiError(GeminiUnavailableException ex) => StatusCode(ex.StatusCode,
+        new { message = ex.Message, code = ex.Code, retryAfterSeconds = ex.RetryAfterSeconds });
     private static string Trim(string s) => s.Length > MaxChars ? s[..MaxChars] : s;
 }

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Quản Lý Công Việc — Kanban 3 Cột (Todo / Doing / Done)</title>
+  <style>
+    /* ==========================================================================
+       MindSprint AI — Kanban 3-Column Pure HTML/CSS Layout (Issue #6)
+       ========================================================================== */
+
+    :root {
+      --bg-body: #0f172a;
+      --bg-surface: #1e293b;
+      --bg-surface-elevated: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border-color: #334155;
+      --accent-primary: #6366f1;
+      --color-todo: #0ea5e9;
+      --color-doing: #f59e0b;
+      --color-done: #10b981;
+      --color-high: #ef4444;
+      --color-medium: #f59e0b;
+      --color-low: #10b981;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-primary);
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* Header & Page Title */
+    .page-header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    /* 3-Column Grid Container */
+    .kanban-board-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* Column Container */
+    .kanban-column {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Column Header */
+    .column-header {
+      padding: 1rem 1.25rem;
+      background-color: rgba(51, 65, 85, 0.5);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .column-header-title {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .column-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .col-todo .column-dot { background-color: var(--color-todo); box-shadow: 0 0 8px rgba(14, 165, 233, 0.6); }
+    .col-doing .column-dot { background-color: var(--color-doing); box-shadow: 0 0 8px rgba(245, 158, 11, 0.6); }
+    .col-done .column-dot { background-color: var(--color-done); box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
+
+    .column-count-badge {
+      font-size: 0.75rem;
+      background-color: var(--bg-body);
+      color: var(--text-secondary);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      font-weight: 600;
+    }
+
+    .btn-add-task {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .btn-add-task:hover {
+      background-color: var(--bg-surface-elevated);
+      color: var(--text-primary);
+    }
+
+    /* Column Card List */
+    .kanban-column-list {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-height: 250px;
+    }
+
+    /* Task Card */
+    .kanban-card {
+      background-color: var(--bg-body);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .kanban-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent-primary);
+    }
+
+    .card-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Badges */
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .badge-high {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .badge-medium {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #fde047;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-low {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .col-done .card-title {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+    }
+
+    .card-desc {
+      font-size: 0.825rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 0.85rem;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 0.65rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.775rem;
+      color: var(--text-muted);
+    }
+
+    .card-move-actions {
+      display: flex;
+      gap: 0.3rem;
+    }
+
+    .btn-move {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+    }
+    .btn-move:hover {
+      background-color: var(--bg-surface-elevated);
+      color: var(--text-primary);
+    }
+
+    .btn-done-task {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #a7f3d0;
+      font-size: 0.72rem;
+      padding: 0.3rem 0.5rem;
+      min-width: 92px;
+    }
+
+    .task-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+    }
+
+    .task-modal {
+      width: min(100%, 560px);
+      background: #111827;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 16px;
+      padding: 1.25rem;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+    }
+
+    .task-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .task-modal-header h3 {
+      font-size: 1.2rem;
+      color: #f8fafc;
+    }
+
+    .task-modal-close {
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      font-size: 1.75rem;
+      cursor: pointer;
+    }
+
+    .task-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      color: #e2e8f0;
+    }
+
+    .task-form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .task-form-group input,
+    .task-form-group select,
+    .task-form-group textarea {
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: 10px;
+      padding: 0.8rem 0.9rem;
+      color: #f8fafc;
+      resize: vertical;
+    }
+
+    .task-form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .task-form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      padding: 0.7rem 1rem;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: rgba(148, 163, 184, 0.12);
+      color: #e2e8f0;
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 992px) {
+      .kanban-board-grid {
+        grid-template-columns: repeat(3, 280px);
+        overflow-x: auto;
+        padding-bottom: 1rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 1rem;
+      }
+      .kanban-board-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1 class="page-title">Bảng Quản Lý Công Việc — Kanban</h1>
+      <p class="page-subtitle">Dựng HTML/CSS giao diện tĩnh 3 cột: Todo / Doing / Done (Issue #6 — Người phụ trách: Diễn)</p>
+    </header>
+
+    <!-- 3-Column Kanban Board Grid -->
+    <main class="kanban-board-grid">
+      
+      <!-- Cột 1: Todo -->
+      <section class="kanban-column col-todo">
+        <div class="column-header">
+          <div class="column-header-title">
+            <span class="column-dot"></span>
+            <span>Chưa bắt đầu (Todo)</span>
+            <span class="column-count-badge">1</span>
+          </div>
+          <button class="btn-add-task" title="Thêm task">+</button>
+        </div>
+        <div class="kanban-column-list">
+          <article class="kanban-card">
+            <div class="card-top-bar">
+              <span class="badge badge-medium">⚡ Ưu tiên trung bình</span>
+              <button class="btn-delete" title="Xóa">🗑️</button>
+            </div>
+            <h4 class="card-title">Tích hợp AI Flashcard Generator & Analytics</h4>
+            <p class="card-desc">Cho phép người dùng tạo nhanh bộ thẻ từ ghi chú và theo dõi tỷ lệ nhớ bài Ebbinghaus.</p>
+            <div class="card-footer">
+              <span>📅 2026-09-30</span>
+              <div class="card-move-actions">
+                <button class="btn-move" title="Chuyển sang Doing">→</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cột 2: Doing -->
+      <section class="kanban-column col-doing">
+        <div class="column-header">
+          <div class="column-header-title">
+            <span class="column-dot"></span>
+            <span>Đang làm (Doing)</span>
+            <span class="column-count-badge">1</span>
+          </div>
+          <button class="btn-add-task" title="Thêm task">+</button>
+        </div>
+        <div class="kanban-column-list">
+          <article class="kanban-card">
+            <div class="card-top-bar">
+              <span class="badge badge-high">🔥 Ưu tiên cao</span>
+              <button class="btn-delete" title="Xóa">🗑️</button>
+            </div>
+            <h4 class="card-title">Thiết kế giao diện 3D Spaced Repetition Flashcard</h4>
+            <p class="card-desc">Tối ưu hiệu ứng lật thẻ 3D rotateY với CSS hardware acceleration và 4 mức đánh giá SM-2.</p>
+            <div class="card-footer">
+              <span>📅 2026-09-29</span>
+              <div class="card-move-actions">
+                <button class="btn-move" title="Chuyển về Todo">←</button>
+                <button class="btn-move" title="Chuyển sang Done">→</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cột 3: Done -->
+      <section class="kanban-column col-done">
+        <div class="column-header">
+          <div class="column-header-title">
+            <span class="column-dot"></span>
+            <span>Đã xong (Done)</span>
+            <span class="column-count-badge">1</span>
+          </div>
+          <button class="btn-add-task" title="Thêm task">+</button>
+        </div>
+        <div class="kanban-column-list">
+          <article class="kanban-card">
+            <div class="card-top-bar">
+              <span class="badge badge-high">🔥 Ưu tiên cao</span>
+              <button class="btn-delete" title="Xóa">🗑️</button>
+            </div>
+            <h4 class="card-title">Xây dựng Backend RESTful API với FastAPI</h4>
+            <p class="card-desc">Phát triển các module auth, tasks, flashcard review và bulk AI generator theo đúng interface contract.</p>
+            <div class="card-footer">
+              <span>📅 2026-09-28</span>
+              <div class="card-move-actions">
+                <button class="btn-move" title="Chuyển về Doing">←</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <div class="task-modal-backdrop" id="task-modal" aria-hidden="true">
+    <div class="task-modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+      <div class="task-modal-header">
+        <h3 id="task-modal-title">Thêm công việc</h3>
+        <button type="button" class="task-modal-close" data-close-modal="true">×</button>
+      </div>
+      <form id="task-form">
+        <input type="hidden" id="task-id">
+        <div class="task-form-group">
+          <label for="task-title">Tiêu đề</label>
+          <input id="task-title" type="text" placeholder="Nhập tiêu đề công việc" required>
+        </div>
+        <div class="task-form-group">
+          <label for="task-description">Mô tả</label>
+          <textarea id="task-description" rows="4" placeholder="Mô tả ngắn gọn công việc..."></textarea>
+        </div>
+        <div class="task-form-row">
+          <div class="task-form-group">
+            <label for="task-priority">Ưu tiên</label>
+            <select id="task-priority">
+              <option value="high">Cao</option>
+              <option value="medium" selected>Trung bình</option>
+              <option value="low">Thấp</option>
+            </select>
+          </div>
+          <div class="task-form-group">
+            <label for="task-date">Hạn chót</label>
+            <input id="task-date" type="date">
+          </div>
+        </div>
+        <div class="task-form-actions">
+          <button type="button" class="btn-secondary" data-close-modal="true">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const boardData = {
+      Todo: [
+        {
+          id: 'todo-1',
+          title: 'Tích hợp AI Flashcard Generator & Analytics',
+          description: 'Cho phép người dùng tạo nhanh bộ thẻ từ ghi chú và theo dõi tỷ lệ nhớ bài Ebbinghaus.',
+          dueDate: '2026-09-30',
+          priority: 'medium'
+        }
+      ],
+      Doing: [
+        {
+          id: 'doing-1',
+          title: 'Thiết kế giao diện 3D Spaced Repetition Flashcard',
+          description: 'Tối ưu hiệu ứng lật thẻ 3D rotateY với CSS hardware acceleration và 4 mức đánh giá SM-2.',
+          dueDate: '2026-09-29',
+          priority: 'high'
+        }
+      ],
+      Done: [
+        {
+          id: 'done-1',
+          title: 'Xây dựng Backend RESTful API với FastAPI',
+          description: 'Phát triển các module auth, tasks, flashcard review và bulk AI generator theo đúng interface contract.',
+          dueDate: '2026-09-28',
+          priority: 'high'
+        }
+      ]
+    };
+
+    const modal = document.getElementById('task-modal');
+    const taskForm = document.getElementById('task-form');
+    const taskIdInput = document.getElementById('task-id');
+    const taskTitleInput = document.getElementById('task-title');
+    const taskDescriptionInput = document.getElementById('task-description');
+    const taskPriorityInput = document.getElementById('task-priority');
+    const taskDateInput = document.getElementById('task-date');
+    const modalTitle = document.getElementById('task-modal-title');
+
+    function priorityLabel(priority) {
+      if (priority === 'high') return { text: '🔥 Ưu tiên cao', className: 'badge-high' };
+      if (priority === 'low') return { text: '🍃 Ưu tiên thấp', className: 'badge-low' };
+      return { text: '⚡ Ưu tiên trung bình', className: 'badge-medium' };
+    }
+
+    function getColumnList(status) {
+      const target = status === 'Todo' ? '.col-todo .kanban-column-list'
+        : status === 'Doing' ? '.col-doing .kanban-column-list'
+        : '.col-done .kanban-column-list';
+      return document.querySelector(target);
+    }
+
+    function renderBoard() {
+      Object.entries(boardData).forEach(([status, tasks]) => {
+        const list = getColumnList(status);
+        if (!list) return;
+        list.innerHTML = tasks.map(task => {
+          const display = priorityLabel(task.priority);
+          const moveButtons = status === 'Todo'
+            ? '<button class="btn-move" data-action="move-right" data-id="' + task.id + '" title="Chuyển sang Doing">→</button>'
+            : status === 'Doing'
+              ? '<button class="btn-move" data-action="move-left" data-id="' + task.id + '" title="Chuyển về Todo">←</button><button class="btn-move btn-done-task" data-action="done" data-id="' + task.id + '" title="Chuyển sang Done">✅ Hoàn thành</button>'
+              : '<button class="btn-move" data-action="move-left" data-id="' + task.id + '" title="Chuyển về Doing">←</button>';
+
+          return `
+            <article class="kanban-card" data-id="${task.id}">
+              <div class="card-top-bar">
+                <span class="badge ${display.className}">${display.text}</span>
+                <div class="card-move-actions">
+                  <button class="btn-move btn-edit-task" data-action="edit" data-id="${task.id}" title="Chỉnh sửa">✏️</button>
+                  <button class="btn-move btn-delete-task" data-action="delete" data-id="${task.id}" title="Xóa">🗑️</button>
+                </div>
+              </div>
+              <h4 class="card-title">${task.title}</h4>
+              <p class="card-desc">${task.description}</p>
+              <div class="card-footer">
+                <span>📅 ${task.dueDate || 'Không có hạn'}</span>
+                <div class="card-move-actions">
+                  ${moveButtons}
+                </div>
+              </div>
+            </article>
+          `;
+        }).join('');
+      });
+    }
+
+    function openModal(mode, task = null) {
+      const isEdit = mode === 'edit' && task;
+      modalTitle.textContent = isEdit ? 'Chỉnh sửa công việc' : 'Thêm công việc';
+      taskIdInput.value = isEdit ? task.id : '';
+      taskTitleInput.value = isEdit ? task.title : '';
+      taskDescriptionInput.value = isEdit ? task.description : '';
+      taskPriorityInput.value = isEdit ? task.priority : 'medium';
+      taskDateInput.value = isEdit ? task.dueDate : '';
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden', 'false');
+      taskTitleInput.focus();
+    }
+
+    function closeModal() {
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+      taskForm.reset();
+    }
+
+    function saveTask(event) {
+      event.preventDefault();
+      const id = taskIdInput.value;
+      const title = taskTitleInput.value.trim();
+      const description = taskDescriptionInput.value.trim();
+      const priority = taskPriorityInput.value;
+      const dueDate = taskDateInput.value;
+
+      if (!title) {
+        taskTitleInput.focus();
+        return;
+      }
+
+      const newTask = { id: id || ('task-' + Date.now()), title, description, priority, dueDate };
+
+      if (id) {
+        Object.entries(boardData).forEach(([status, tasks]) => {
+          const index = tasks.findIndex(task => task.id === id);
+          if (index !== -1) {
+            boardData[status][index] = { ...boardData[status][index], ...newTask };
+          }
+        });
+      } else {
+        boardData.Todo.push(newTask);
+      }
+
+      renderBoard();
+      closeModal();
+    }
+
+    function moveTask(taskId, direction) {
+      const targetMap = {
+        'Todo': { left: null, right: 'Doing' },
+        'Doing': { left: 'Todo', right: 'Done' },
+        'Done': { left: 'Doing', right: null }
+      };
+
+      let sourceStatus = null;
+      let task = null;
+      Object.entries(boardData).forEach(([status, tasks]) => {
+        const found = tasks.find(item => item.id === taskId);
+        if (found) {
+          sourceStatus = status;
+          task = found;
+        }
+      });
+
+      if (!sourceStatus || !task) return;
+      const nextStatus = direction === 'left' ? targetMap[sourceStatus].left : targetMap[sourceStatus].right;
+      if (!nextStatus) return;
+
+      boardData[sourceStatus] = boardData[sourceStatus].filter(item => item.id !== taskId);
+      boardData[nextStatus].push(task);
+      renderBoard();
+    }
+
+    function markTaskDone(taskId) {
+      let sourceStatus = null;
+      let task = null;
+      Object.entries(boardData).forEach(([status, tasks]) => {
+        const found = tasks.find(item => item.id === taskId);
+        if (found) {
+          sourceStatus = status;
+          task = found;
+        }
+      });
+
+      if (!sourceStatus || !task || sourceStatus === 'Done') return;
+      boardData[sourceStatus] = boardData[sourceStatus].filter(item => item.id !== taskId);
+      boardData.Done.push(task);
+      renderBoard();
+    }
+
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-action]');
+      if (!target) return;
+
+      const { action, id } = target.dataset;
+
+      if (action === 'delete') {
+        Object.entries(boardData).forEach(([status, tasks]) => {
+          boardData[status] = tasks.filter(task => task.id !== id);
+        });
+        renderBoard();
+        return;
+      }
+
+      if (action === 'edit') {
+        const task = Object.values(boardData).flat().find(item => item.id === id);
+        if (task) openModal('edit', task);
+        return;
+      }
+
+      if (action === 'move-left') {
+        moveTask(id, 'left');
+      }
+
+      if (action === 'move-right') {
+        moveTask(id, 'right');
+      }
+
+      if (action === 'done') {
+        markTaskDone(id);
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      const addButton = event.target.closest('.btn-add-task');
+      if (addButton) {
+        openModal('add');
+      }
+
+      if (event.target.matches('[data-close-modal="true"]')) {
+        closeModal();
+      }
+    });
+
+    taskForm.addEventListener('submit', saveTask);
+    renderBoard();
+  </script>
+</body>
+</html>

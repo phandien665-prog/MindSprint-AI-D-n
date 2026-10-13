@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MindSprint.Api.Data;
 using MindSprint.Api.Models;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata; // for PostgreSQL functions
 
 namespace MindSprint.Api.Controllers;
 
@@ -50,8 +51,9 @@ public class FlashcardsController(AppDbContext db) : ApiBase
                 Repetition = x.p != null ? x.p.Repetition : 0,
                 Interval = x.p != null ? x.p.IntervalDays : 1,
                 EFactor = x.p != null ? x.p.EFactor : 2.5,
+                // PostgreSQL: EXTRACT(EPOCH FROM timestamp) * 1000 for milliseconds
                 NextReviewDate = x.p != null && x.p.NextReviewDate != null
-                    ? EF.Functions.DateDiffSecond(new DateTime(1970, 1, 1), x.p.NextReviewDate.Value) * 1000L : 0L,
+                    ? (long)(x.p.NextReviewDate.Value - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds : 0L,
                 Version = x.f.Version,
                 UpdatedAt = x.f.UpdatedAt
             }).ToListAsync();

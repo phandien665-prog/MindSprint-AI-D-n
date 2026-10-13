@@ -83,6 +83,7 @@ public class TokenService(IConfiguration cfg, AppDbContext db)
         var newRt = new RefreshToken
         {
             UserId     = rt.UserId,
+            User       = rt.User,
             Token      = GenerateSecureToken(),
             ExpiresAt  = DateTime.UtcNow.AddDays(RefreshDays),
             DeviceHint = deviceHint ?? rt.DeviceHint

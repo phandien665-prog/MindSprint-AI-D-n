@@ -1,7 +1,4 @@
-using System.Net;
-using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +19,7 @@ public record SaveCardsDto(List<GeneratedCard> Cards);
 
 /// <summary>Sổ tay học tập kiểu NotebookLM: nguồn tài liệu, hỏi đáp có trích dẫn, tạo tài liệu ôn tập, ghi chú.</summary>
 [Authorize, Route("api/notebooks")]
-public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFactory httpFactory) : ApiBase
+public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFactory httpFactory, NotebookUrlImporter urlImporter) : ApiBase
 {
     private const int MaxSources = 20;
     private const int MaxCharsPerSource = 200_000;
@@ -109,25 +106,14 @@ public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFact
     public async Task<IActionResult> AddUrl(int id, UrlSourceDto dto)
     {
         if (await Own(id) is null) return NotFound();
-        if (!Uri.TryCreate(dto.Url, UriKind.Absolute, out var uri) || !await IsPublicHttpAsync(uri))
-            return BadRequest(new { message = "URL không hợp lệ hoặc không được phép." });
         try
         {
             var http = httpFactory.CreateClient("web");
-            using var res = await http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
-            if (!res.IsSuccessStatusCode) return BadRequest(new { message = $"Trang trả về lỗi {(int)res.StatusCode} (không theo redirect)." });
-            var buf = new byte[2_000_000];
-            using var stream = await res.Content.ReadAsStreamAsync();
-            int n = 0, r;
-            while (n < buf.Length && (r = await stream.ReadAsync(buf.AsMemory(n))) > 0) n += r;
-            var html = Encoding.UTF8.GetString(buf, 0, n);
-
-            var title = Regex.Match(html, "<title[^>]*>(.*?)</title>", RegexOptions.Singleline | RegexOptions.IgnoreCase).Groups[1].Value;
-            html = Regex.Replace(html, "<(script|style|noscript)[\\s\\S]*?</\\1>", " ", RegexOptions.IgnoreCase);
-            var text = WebUtility.HtmlDecode(Regex.Replace(Regex.Replace(html, "<[^>]+>", " "), "\\s+", " ")).Trim();
-            if (text.Length < 50) return BadRequest(new { message = "Không lấy được nội dung từ trang này." });
-            return await Store(id, WebUtility.HtmlDecode(title).Trim() is { Length: > 0 } t ? t : uri.Host, "url", uri.ToString(), text);
+            var source = await urlImporter.ImportAsync(http, dto.Url, HttpContext.RequestAborted);
+            return await Store(id, source.Title ?? source.Url.Host, "url", source.Url.ToString(), source.Content);
         }
+        catch (NotebookUrlException ex) { return BadRequest(new { message = ex.Message, code = ex.Code, upstreamStatus = ex.UpstreamStatus }); }
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested) { throw; }
         catch (Exception) { return BadRequest(new { message = "Không tải được URL." }); }
     }
 
@@ -170,7 +156,7 @@ public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFact
         if (src.Count == 0) return BadRequest(new { message = "Hãy thêm ít nhất một nguồn trước." });
         return await Guard(async () =>
         {
-            var (isJson, content) = await ai.GenerateAsync(src, dto.Type, dto.Focus, dto.Count);
+            var (isJson, content) = await ai.GenerateAsync(id, src, dto.Type, dto.Focus, dto.Count);
             return new { type = dto.Type, isJson, content };
         });
     }
@@ -235,30 +221,11 @@ public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFact
     private static async Task<IActionResult> GuardImpl<T>(Func<Task<T>> work)
     {
         try { return new OkObjectResult(await work()); }
+        catch (GeminiUnavailableException ex)
+        { return new ObjectResult(new { message = ex.Message, code = ex.Code, retryAfterSeconds = ex.RetryAfterSeconds }) { StatusCode = ex.StatusCode }; }
         catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException or System.Text.Json.JsonException or ArgumentException or TaskCanceledException)
         { return new ObjectResult(new { message = "AI gặp lỗi: " + ex.Message }) { StatusCode = 502 }; }
     }
     private Task<IActionResult> Guard<T>(Func<Task<T>> work) => GuardImpl(work);
 
-    // Chống SSRF: chỉ http/https tới IP công khai
-    private static async Task<bool> IsPublicHttpAsync(Uri u)
-    {
-        if (u.Scheme is not ("http" or "https")) return false;
-        try
-        {
-            var ips = await Dns.GetHostAddressesAsync(u.Host);
-            return ips.Length > 0 && ips.All(ip => !IsPrivate(ip));
-        }
-        catch { return false; }
-    }
-
-    private static bool IsPrivate(IPAddress ip)
-    {
-        if (IPAddress.IsLoopback(ip)) return true;
-        if (ip.IsIPv4MappedToIPv6) ip = ip.MapToIPv4();
-        if (ip.AddressFamily == AddressFamily.InterNetworkV6)
-            return ip.IsIPv6LinkLocal || ip.IsIPv6SiteLocal || (ip.GetAddressBytes()[0] & 0xFE) == 0xFC;
-        var b = ip.GetAddressBytes();
-        return b[0] is 0 or 10 or 127 || (b[0] == 172 && b[1] is >= 16 and <= 31) || (b[0] == 192 && b[1] == 168) || (b[0] == 169 && b[1] == 254);
-    }
 }

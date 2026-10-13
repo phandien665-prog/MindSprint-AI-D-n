@@ -1,0 +1,22 @@
+{
+  "scanned_at": "2026-10-06",
+  "scope": "frontend notebook sources component",
+  "framework": "vanilla HTML/CSS/JavaScript",
+  "font_stack": {
+    "body": "Inter, Segoe UI, Arial, sans-serif",
+    "heading": "Inter, Segoe UI, Arial, sans-serif",
+    "source": "frontend/tokens.css:16"
+  },
+  "palette": {
+    "source": "frontend/tokens.css:2",
+    "background": "#F7F5FA",
+    "panel": "#FFFFFF",
+    "accent": "#FF7A45",
+    "accent_ink": "#B23E13",
+    "dark_mode": "frontend/tokens.css:90"
+  },
+  "spacing": "Existing --space-* tokens in frontend/tokens.css",
+  "motion": "Existing CSS transitions; 150ms component feedback; reduced-motion support",
+  "preserve": ["palette", "fonts", "spacing", "existing API actions", "Vietnamese content"],
+  "reference": "User-attached Notebook screenshot; source panel and add-source dialog layout only"
+}

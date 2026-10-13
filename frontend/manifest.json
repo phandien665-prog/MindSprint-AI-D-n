@@ -1,6 +1,6 @@
 {
-  "short_name": "SmartFlash",
-  "name": "SmartFlash - Thẻ Học Thông Minh",
+  "short_name": "MindSprintAI",
+  "name": "MindSprintAI - Thẻ Học Thông Minh",
   "description": "Ứng dụng thẻ học thông minh và lịch trình học tập tiếng Anh hiệu quả.",
   "icons": [
     {
@@ -15,8 +15,8 @@
     }
   ],
   "start_url": "./index.html",
-  "background_color": "#0a0b10",
-  "theme_color": "#8a4af3",
+  "background_color": "#F7F5FA",
+  "theme_color": "#F7F5FA",
   "display": "standalone",
   "orientation": "portrait"
 }

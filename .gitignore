@@ -25,3 +25,7 @@ Thumbs.db
 
 # Node / frontend caches (if present later)
 node_modules/
+frontend/dist/
+frontend/.vercel/
+frontend/.env*
+.playwright-mcp/

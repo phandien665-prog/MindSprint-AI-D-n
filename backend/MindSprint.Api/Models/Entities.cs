@@ -23,6 +23,8 @@ public class User
     public string Email { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public string PasswordHash { get; set; } = "";
+    // Stable Google identity; never use the email alone to authenticate/link accounts.
+    public string? GoogleSubject { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
@@ -65,6 +67,7 @@ public class KanbanTask
     public int UserId { get; set; }
     public string Title { get; set; } = "";
     public string? Description { get; set; }
+    public string Priority { get; set; } = "Medium";
     public TaskStatus Status { get; set; } = TaskStatus.Todo;
     public int Position { get; set; }
     public DateTime? DueDate { get; set; }
@@ -100,6 +103,19 @@ public class NotebookNote
     public int NotebookId { get; set; }
     public string Title { get; set; } = "";
     public string Content { get; set; } = "";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>Persistent cache for AI answers and generated study materials, scoped to one notebook.</summary>
+public class NotebookGenerationCache
+{
+    public int Id { get; set; }
+    public int NotebookId { get; set; }
+    public string Type { get; set; } = "";
+    public string RequestHash { get; set; } = "";
+    public string SourcesHash { get; set; } = "";
+    public bool IsJson { get; set; }
+    public string ContentJson { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
