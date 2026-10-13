@@ -27,18 +27,35 @@ public static class DataSeeder
             await db.SaveChangesAsync();
         }
 
-        if (await db.Flashcards.AnyAsync(f => f.OwnerId == null)) return;
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "vocab_seed.json");
         if (!File.Exists(path)) return;
 
         var cards = JsonSerializer.Deserialize<List<SeedCard>>(await File.ReadAllTextAsync(path),
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
 
-        db.Flashcards.AddRange(cards.Select(c => new Flashcard
+        var existingById = await db.Flashcards
+            .Where(f => f.OwnerId == null)
+            .ToDictionaryAsync(f => f.ExternalId, f => f);
+
+        foreach (var c in cards)
         {
-            ExternalId = c.ExternalId, Category = c.Category, SubCategory = c.SubCategory,
-            Question = c.Question, Answer = c.Answer, Example = c.Example
-        }));
+            if (existingById.TryGetValue(c.ExternalId, out var existing))
+            {
+                existing.Category = c.Category;
+                existing.SubCategory = c.SubCategory;
+                existing.Question = c.Question;
+                existing.Answer = c.Answer;
+                existing.Example = c.Example;
+            }
+            else
+            {
+                db.Flashcards.Add(new Flashcard
+                {
+                    ExternalId = c.ExternalId, Category = c.Category, SubCategory = c.SubCategory,
+                    Question = c.Question, Answer = c.Answer, Example = c.Example
+                });
+            }
+        }
         await db.SaveChangesAsync();
     }
 }

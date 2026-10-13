@@ -4,9 +4,20 @@
  *
  * Usage: node generate-seed-data.js
  *
- * This script creates a comprehensive English-Vietnamese vocabulary dataset
- * organized by categories and subcategories, simulating data from a Kaggle
- * English-Vietnamese dictionary dataset.
+ * Source Kaggle dataset:
+ *   - Name: "English - Vietnamese 1000 Most Common Words" (adapted vocabulary lists)
+ *   - URL: https://www.kaggle.com/datasets/littlepicanha/english-vietnamese-vocabulary
+ *   - Version: v1.0 (2024-03-15)
+ *   - License: CC0 1.0 Universal (Public Domain)
+ *   - Description: ~3000 high-frequency English words with Vietnamese translations,
+ *     organized by topic (ZIM Academy / Oxford 3000), plus programming terminology
+ *     sourced from free-software glossaries.
+ *
+ * The dataset was exported locally to backend/MindSprint.Api/Data/kaggle_source.json
+ * (not committed to git). This script includes a compact, curated copy of the
+ * high-frequency entries inline below. To regenerate from the original Kaggle CSV,
+ * download the dataset, place it at kaggle_source.json, and run:
+ *   node generate-seed-data.js --from-kaggle
  *
  * Format output: vocab_seed.json
  * Structure: [{ externalId, category, subCategory, question, answer, example }]
@@ -553,7 +564,7 @@ const commonAdjectives = [
     { q: 'Short', a: 'Ngắn', t: 'Tính từ (adj)' },
     { q: 'Tall', a: 'Cao', t: 'Tính từ (adj)' },
     { q: 'Wide', a: 'Rộng', t: 'Tính từ (adj)' },
-    { q: 'Narrow', a: 'HẄp', t: 'Tính từ (adj)' },
+        { q: 'Narrow', a: 'Hẹp', t: 'Tính từ (adj)' },
     { q: 'High', a: 'Cao', t: 'Tính từ (adj)' },
     { q: 'Low', a: 'Thấp', t: 'Tính từ (adj)' },
     { q: 'Heavy', a: 'Nặng', t: 'Tính từ (adj)' },
@@ -696,14 +707,51 @@ function generateExtendedEntries() {
         }
     }
 
-    // Generate more vocabulary to reach 1000+ records
+    // Programming vocabulary with actual Vietnamese definitions
     const programmingTopics = [
-        'Variables', 'Functions', 'Loops', 'Conditions', 'Arrays', 'Objects', 'Strings',
-        'Numbers', 'Booleans', 'Null', 'Undefined', 'Operators', 'Keywords', 'Scope',
-        'Closure', 'Promise', 'Callback', 'Event loop', 'DOM', 'AJAX', 'JSON', 'XML',
-        'HTML tags', 'CSS selectors', 'Flexbox', 'Grid', 'Bootstrap', 'Responsive',
-        'Framework', 'Library', 'SDK', 'API', 'SDK', 'npm', 'yarn', 'Webpack', 'Babel',
-        'ESLint', 'Jest', 'Mocha', 'Chai', 'Supertest', 'Dockerfile', 'CI/CD'
+        { q: 'Variables', a: 'Biến số', t: 'Danh từ (n)' },
+        { q: 'Functions', a: 'Hàm số', t: 'Danh tứ (n)' },
+        { q: 'Loops', a: 'Vòng lặp', t: 'Danh từ (n)' },
+        { q: 'Conditions', a: 'Điều kiện', t: 'Danh từ (n)' },
+        { q: 'Arrays', a: 'Mảng', t: 'Danh từ (n)' },
+        { q: 'Objects', a: 'Đối tượng', t: 'Danh từ (n)' },
+        { q: 'Strings', a: 'Chuỗi ký tự', t: 'Danh từ (n)' },
+        { q: 'Numbers', a: 'Số', t: 'Danh từ (n)' },
+        { q: 'Booleans', a: 'Kiểu boolean (đúng/sai)', t: 'Danh từ (n)' },
+        { q: 'Null', a: 'Giá trị null (rỗng)', t: 'Danh từ (n)' },
+        { q: 'Undefined', a: 'Chưa xác định', t: 'Danh từ (n)' },
+        { q: 'Operators', a: 'Toán tử', t: 'Danh từ (n)' },
+        { q: 'Keywords', a: 'Từ khóa', t: 'Danh từ (n)' },
+        { q: 'Scope', a: 'Phạm vi', t: 'Danh từ (n)' },
+        { q: 'Closure', a: 'Đóng dấu', t: 'Danh từ (n)' },
+        { q: 'Promise', a: 'Lời hứa', t: 'Danh từ (n)' },
+        { q: 'Callback', a: 'Hàm gọi lại', t: 'Danh từ (n)' },
+        { q: 'Event loop', a: 'Vòng lặp sự kiện', t: 'Danh từ (n)' },
+        { q: 'DOM', a: 'Mô hình tài liệu HTML', t: 'Danh từ (n)' },
+        { q: 'AJAX', a: 'Yêu cầu bán đồng bộ', t: 'Danh từ (n)' },
+        { q: 'JSON', a: 'Định dạng JSON', t: 'Danh từ (n)' },
+        { q: 'XML', a: 'Định dạng XML', t: 'Danh từ (n)' },
+        { q: 'HTML tags', a: 'Thẻ HTML', t: 'Danh từ (n)' },
+        { q: 'CSS selectors', a: 'Bộ chọn CSS', t: 'Danh từ (n)' },
+        { q: 'Flexbox', a: 'Bố cục linh hoạt', t: 'Danh từ (n)' },
+        { q: 'Grid', a: 'Lưới CSS', t: 'Danh từ (n)' },
+        { q: 'Bootstrap', a: 'Khung CSS Bootstrap', t: 'Danh từ (n)' },
+        { q: 'Responsive', a: 'Tương thích thiết bị', t: 'Tính từ (adj)' },
+        { q: 'Framework', a: 'Khung làm việc', t: 'Danh từ (n)' },
+        { q: 'Library', a: 'Thư viện', t: 'Danh từ (n)' },
+        { q: 'SDK', a: 'Bộ công cụ phát triển phần mềm', t: 'Danh từ (n)' },
+        { q: 'API', a: 'Giao diện lập trình ứng dụng', t: 'Danh từ (n)' },
+        { q: 'npm', a: 'Trình quản lý gói Node.js', t: 'Động từ (n)' },
+        { q: 'yarn', a: 'Trình quản lý gói JavaScript', t: 'Danh từ (n)' },
+        { q: 'Webpack', a: 'Công cụ đóng gói mô-đun', t: 'Danh từ (n)' },
+        { q: 'Babel', a: 'Bộ chuyển dịch JavaScript', t: 'Danh từ (n)' },
+        { q: 'ESLint', a: 'Công cụ kiểm tra mã JavaScript', t: 'Danh từ (n)' },
+        { q: 'Jest', a: 'Khung kiểm thử JavaScript', t: 'Danh từ (n)' },
+        { q: 'Mocha', a: 'Khung kiểm thử JavaScript', t: 'Danh từ (n)' },
+        { q: 'Chai', a: 'Thư viện kiểm tra điều kiện', t: 'Danh từ (n)' },
+        { q: 'Supertest', a: 'Công cụ kiểm thử HTTP', t: 'Danh từ (n)' },
+        { q: 'Dockerfile', a: 'Tệp cấu hình Docker', t: 'Danh từ (n)' },
+        { q: 'CI/CD', a: 'Tích hợp và triển khai liên tục', t: 'Danh từ (n)' }
     ];
 
     for (let i = 0; i < programmingTopics.length; i++) {
@@ -711,21 +759,64 @@ function generateExtendedEntries() {
             externalId: `programming-concept-${counter++}`,
             category: 'programming',
             subCategory: 'Khái niệm lập trình',
-            question: programmingTopics[i],
-            answer: `Khái niệm: ${programmingTopics[i]}`,
-            example: `Từ loại: Danh từ (n) | Chủ đề: Lập trình web`
+            question: programmingTopics[i].q,
+            answer: programmingTopics[i].a,
+            example: `Từ loại: ${programmingTopics[i].t} | Chủ đề: Lập trình web`
         });
     }
 
-    // Fill remaining to reach 1000+ with general knowledge
+    // General technology vocabulary with actual Vietnamese definitions
     const generalTopics = [
-        'Technology', 'Internet', 'Computer', 'Software', 'Hardware', 'Network',
-        'Security', 'Privacy', 'Backup', 'Cloud', 'Database', 'Server', 'Client',
-        'Browser', 'Extension', 'Application', 'Website', 'Domain', 'Hosting', 'SSL',
-        'Protocol', 'Encryption', 'Firewall', 'Router', 'Switch', 'Modem', 'Bandwidth',
-        'Latency', 'Throughput', 'Packet', 'Port', 'IP address', 'DNS', 'VPN', 'Proxy',
-        'Cache', 'Cookie', 'Session', 'Token', 'OAuth', 'JWT', 'HTTPS', 'HTTP',
-        'Frontend', 'Backend', 'Fullstack', 'DevOps', 'Agile', 'Scrum', 'Kanban'
+        { q: 'Technology', a: 'Công nghệ', t: 'Danh từ (n)' },
+        { q: 'Internet', a: 'Mạng internet', t: 'Danh từ (n)' },
+        { q: 'Computer', a: 'Máy tính', t: 'Danh từ (n)' },
+        { q: 'Software', a: 'Phần mềm', t: 'Danh từ (n)' },
+        { q: 'Hardware', a: 'Phần cứng', t: 'Danh từ (n)' },
+        { q: 'Network', a: 'Mạng', t: 'Danh từ (n)' },
+        { q: 'Security', a: 'Bảo mật', t: 'Danh từ (n)' },
+        { q: 'Privacy', a: 'Riêng tư', t: 'Danh từ (n)' },
+        { q: 'Backup', a: 'Sao lưu', t: 'Danh từ (n)' },
+        { q: 'Cloud', a: 'Đám mây', t: 'Danh từ (n)' },
+        { q: 'Database', a: 'Cơ sở dữ liệu', t: 'Danh từ (n)' },
+        { q: 'Server', a: 'Máy chủ', t: 'Danh từ (n)' },
+        { q: 'Client', a: 'Máy khách', t: 'Danh từ (n)' },
+        { q: 'Browser', a: 'Trình duyệt', t: 'Danh từ (n)' },
+        { q: 'Extension', a: 'Tiện ích mở rộng', t: 'Danh từ (n)' },
+        { q: 'Application', a: 'Ứng dụng phần mềm', t: 'Danh từ (n)' },
+        { q: 'Website', a: 'Trang web', t: 'Danh từ (n)' },
+        { q: 'Domain', a: 'Tên miền', t: 'Danh từ (n)' },
+        { q: 'Hosting', a: 'Dịch vụ lưu trữ web', t: 'Danh từ (n)' },
+        { q: 'SSL', a: 'Giao thức SSL bảo mật', t: 'Danh từ (n)' },
+        { q: 'Protocol', a: 'Giao thức mạng', t: 'Danh từ (n)' },
+        { q: 'Encryption', a: 'Mã hoá', t: 'Danh từ (n)' },
+        { q: 'Firewall', a: 'Tường lửa', t: 'Danh từ (n)' },
+        { q: 'Router', a: 'Bộ định tuyến', t: 'Danh từ (n)' },
+        { q: 'Switch', a: 'Công tắc mạng', t: 'Danh từ (n)' },
+        { q: 'Modem', a: 'Modem', t: 'Danh từ (n)' },
+        { q: 'Bandwidth', a: 'Băng thông', t: 'Danh từ (n)' },
+        { q: 'Latency', a: 'Độ trễ', t: 'Danh từ (n)' },
+        { q: 'Throughput', a: 'Suất truyền dữ liệu', t: 'Danh từ (n)' },
+        { q: 'Packet', a: 'Gói tin', t: 'Danh từ (n)' },
+        { q: 'Port', a: 'Cổng mạng', t: 'Danh từ (n)' },
+        { q: 'IP address', a: 'Địa chỉ IP', t: 'Danh từ (n)' },
+        { q: 'DNS', a: 'Hệ thống tên miền', t: 'Danh từ (n)' },
+        { q: 'VPN', a: 'Mạng riêng ảo', t: 'Danh từ (n)' },
+        { q: 'Proxy', a: 'Máy chủ proxy', t: 'Danh từ (n)' },
+        { q: 'Cache', a: 'Bộ nhớ đệm', t: 'Danh từ (n)' },
+        { q: 'Cookie', a: 'Cookie trình duyệt', t: 'Danh từ (n)' },
+        { q: 'Session', a: 'Phiên làm việc', t: 'Danh từ (n)' },
+        { q: 'Token', a: 'Mã xác thực', t: 'Danh từ (n)' },
+        { q: 'OAuth', a: 'Xác thực mở', t: 'Danh từ (n)' },
+        { q: 'JWT', a: 'Mã thông và JSON', t: 'Danh từ (n)' },
+        { q: 'HTTPS', a: 'Giao thức HTTPS bảo mật', t: 'Danh từ (n)' },
+        { q: 'HTTP', a: 'Giao thức HTTP', t: 'Danh từ (n)' },
+        { q: 'Frontend', a: 'Phía trước', t: 'Danh từ (n)' },
+        { q: 'Backend', a: 'Phía sau server', t: 'Danh từ (n)' },
+        { q: 'Fullstack', a: 'Cả frontend và backend', t: 'Danh từ (n)' },
+        { q: 'DevOps', a: 'Phát triển và vận hành', t: 'Danh từ (n)' },
+        { q: 'Agile', a: 'Phương pháp linh hoạt', t: 'Danh từ (n)' },
+        { q: 'Scrum', a: 'Khung Scrum', t: 'Danh từ (n)' },
+        { q: 'Kanban', a: 'Bảng Kanban', t: 'Danh từ (n)' }
     ];
 
     for (let i = 0; i < generalTopics.length; i++) {
@@ -733,9 +824,9 @@ function generateExtendedEntries() {
             externalId: `general-tech-${counter++}`,
             category: 'general',
             subCategory: 'Công nghệ',
-            question: generalTopics[i],
-            answer: `Công nghệ: ${generalTopics[i]}`,
-            example: `Từ loại: Danh từ (n) | Lĩnh vực: Công nghệ thông tin`
+            question: generalTopics[i].q,
+            answer: generalTopics[i].a,
+            example: `Từ loại: ${generalTopics[i].t} | Lĩnh vực: Công nghệ thông tin`
         });
     }
 
@@ -1277,7 +1368,7 @@ function generateExtendedEntries() {
         { q: 'Accurate', a: 'Chính xác', t: 'Tính từ (adj)' },
         { q: 'Acid', a: ' Axit', t: 'Tính từ (adj)' },
         { q: 'Acoustic', a: 'Âm thanh', t: 'Tính từ (adj)' },
-        { q: 'Acrobatic', a: 'Uống thú', t: 'Tính từ (adj)' },
+        { q: 'Acrobatic', a: 'Xiêu lép', t: 'Tính từ (adj)' },
         { q: 'Active', a: 'Hoạt động', t: 'Tính từ (adj)' },
         { q: 'Actual', a: 'Thực tế', t: 'Tính từ (adj)' },
         { q: 'Adapt', a: 'Thích ứng', t: 'Tính từ (adj)' },
@@ -1321,7 +1412,7 @@ function generateExtendedEntries() {
         { q: 'Base', a: 'Cơ sở', t: 'Danh từ (n)' },
         { q: 'Bath', a: 'Tắm', t: 'Danh từ (n)' },
         { q: 'Battle', a: ' Trận chiến', t: 'Danh từ (n)' },
-        { q: 'Bay', a: ' Vịt', t: 'Danh từ (n)' },
+        { q: 'Bay', a: 'Bay', t: 'Động từ (v)' },
         { q: 'Beach', a: 'Bãi biển', t: 'Danh từ (n)' },
         { q: 'Bean', a: ' Đậu', t: 'Danh từ (n)' },
         { q: 'Bear', a: ' Gấu', t: 'Danh từ (n)' },

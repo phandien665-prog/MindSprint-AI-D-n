@@ -21,13 +21,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<UserStudyDay> UserStudyDays => Set<UserStudyDay>();
     public DbSet<StudySchedule> StudySchedules => Set<StudySchedule>();
 
-    // #5 – Refresh token
-    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-
-    // #14 – Streak & lịch học
-    public DbSet<UserStudyDay> UserStudyDays => Set<UserStudyDay>();
-    public DbSet<StudySchedule> StudySchedules => Set<StudySchedule>();
-
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<User>().HasIndex(u => u.Email).IsUnique();
