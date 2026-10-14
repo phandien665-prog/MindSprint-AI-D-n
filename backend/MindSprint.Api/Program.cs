@@ -70,6 +70,7 @@ builder.Services.AddHttpClient("web", c => c.Timeout = TimeSpan.FromSeconds(15))
     .ConfigurePrimaryHttpMessageHandler(NotebookUrlReader.CreateHandler);
 builder.Services.AddScoped<NotebookAi>();
 builder.Services.AddScoped<TutorService>();
+builder.Services.AddScoped<TutorOcrService>();
 builder.Services.AddSingleton<INotebookPageRenderer, NotebookPageRenderer>();
 builder.Services.AddScoped<NotebookUrlImporter>();
 

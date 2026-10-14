@@ -90,9 +90,11 @@ public class NotebookSource
     public int Id { get; set; }
     public int NotebookId { get; set; }
     public string Title { get; set; } = "";
-    public string Type { get; set; } = "text"; // text | pdf | url | file
+    public string Type { get; set; } = "text"; // text | pdf | image | url | file
     public string? Origin { get; set; }         // URL hoặc tên file gốc
     public string Content { get; set; } = "";   // văn bản đã trích xuất
+    public byte[]? FileBytes { get; set; }       // ảnh/PDF gốc, không trả trong danh sách nguồn
+    public string? FileMediaType { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 

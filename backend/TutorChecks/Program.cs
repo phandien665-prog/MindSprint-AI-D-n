@@ -17,6 +17,12 @@ using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Fonts.Standard14Fonts;
 using UglyToad.PdfPig.Writer;
 
+if (args.Length == 2 && args[0] == "--live-ocr") { await OcrChecks.Live(args[1]); return; }
+if (args.Length == 2 && args[0] == "--live-file-tutor") { await FileTutorChecks.Live(args[1]); return; }
+if (args.Length == 2 && args[0] == "--live-shared-sources") { await SharedSourceChecks.Live(args[1]); return; }
+if (args.Contains("--ocr")) { await OcrChecks.Run(); return; }
+if (args.Contains("--file-tutor")) { await FileTutorChecks.Run(); return; }
+if (args.Contains("--shared-sources")) { await SharedSourceChecks.Run(); return; }
 var passed = 0;
 void Check(bool condition, string name) { if (!condition) throw new Exception("FAIL " + name); passed++; Console.WriteLine("PASS " + name); }
 static int Status(IActionResult result) => result switch { ObjectResult o => o.StatusCode ?? 200, StatusCodeResult s => s.StatusCode, _ => throw new Exception("Unexpected result") };
@@ -212,7 +218,7 @@ sealed class Provider : HttpMessageHandler
         var prompt = payload.RootElement.GetProperty("contents")[0].GetProperty("parts")[0].GetProperty("text").GetString()!;
         Prompts.Add(prompt);
         var response = new HttpResponseMessage((HttpStatusCode)StatusCode) {
-            Content = new StringContent(JsonSerializer.Serialize(new { candidates = new[] { new { content = new { parts = new[] { new { text = prompt.StartsWith("KIỂM ĐỊNH GỢI Ý") ? VerifierAnswer : Answer } } } } } }), Encoding.UTF8, "application/json")
+            Content = new StringContent(JsonSerializer.Serialize(new { candidates = new[] { new { finishReason = "STOP", content = new { parts = new[] { new { text = prompt.StartsWith("KIỂM ĐỊNH GỢI Ý") ? VerifierAnswer : Answer } } } } } }), Encoding.UTF8, "application/json")
         };
         if (StatusCode == 429) response.Headers.TryAddWithoutValidation("Retry-After", "7");
         return response;

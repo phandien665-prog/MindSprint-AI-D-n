@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mindsprintai-cache-v54';
+const CACHE_NAME = 'mindsprintai-cache-v59';
 const MATH_FONTS = [
   'AMS-Regular', 'Caligraphic-Bold', 'Caligraphic-Regular', 'Fraktur-Bold', 'Fraktur-Regular',
   'Main-Bold', 'Main-BoldItalic', 'Main-Italic', 'Main-Regular', 'Math-BoldItalic', 'Math-Italic',
@@ -9,16 +9,16 @@ const ASSETS = [
   './',
   './index.html',
   './tokens.css?v=39',
-  './style.css?v=53',
+  './style.css?v=59',
   './script.js?v=50',
-  './ui.js?v=52',
+  './ui.js?v=59',
   './vocab_data.js?v=24',
-  './api.js?v=53',
+  './api.js?v=56',
   './kanban.js?v=54',
   './kanban.css?v=54',
   './auth.js?v=43',
   './dialogs.js?v=45',
-  './notebook.js?v=53',
+  './notebook.js?v=59',
   './text-renderer.js?v=31',
   './vendor/katex/katex.min.css',
   './vendor/katex/katex.min.js',
