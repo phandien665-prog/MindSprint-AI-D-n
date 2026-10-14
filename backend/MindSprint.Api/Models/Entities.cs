@@ -169,4 +169,4 @@ public class StudySchedule
         public DateTime AnalyzedAt { get; set; } = DateTime.UtcNow;
         public DateTime? LastUpdatedAt { get; set; }
     }
-}
+
