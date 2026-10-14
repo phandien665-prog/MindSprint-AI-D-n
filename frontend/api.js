@@ -199,6 +199,8 @@
         nbChat: (id, question, history) => request(`/api/notebooks/${id}/chat`, { method: 'POST', body: { question, history } }),
         nbTutor: (id, question, style, history) => request(`/api/notebooks/${id}/tutor`, { method: 'POST', body: { question, style, history } }),
         nbTutorWork: (id, body) => request(`/api/notebooks/${id}/tutor`, { method: 'POST', body }),
+        nbTutorFile: (id, file, body) => { const f = new FormData(); f.append('file', file); f.append('request', JSON.stringify(body)); return upload(`/api/notebooks/${id}/tutor/file`, f); },
+        nbTutorOcr: (id, file) => { const f = new FormData(); f.append('file', file); return upload(`/api/notebooks/${id}/tutor/ocr`, f); },
         nbSuggestions: (id) => request(`/api/notebooks/${id}/suggestions`),
         nbGenerate: (id, type, focus, count) => request(`/api/notebooks/${id}/generate`, { method: 'POST', body: { type, focus, count } }),
         nbSaveCards: (id, cards) => request(`/api/notebooks/${id}/save-cards`, { method: 'POST', body: { cards } }),

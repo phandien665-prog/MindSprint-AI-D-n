@@ -29,3 +29,7 @@ frontend/dist/
 frontend/.vercel/
 frontend/.env*
 .playwright-mcp/
+
+# Local worktrees and design exploration
+.worktrees/
+.taste-skill/

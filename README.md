@@ -15,12 +15,14 @@
 | Tính năng | Mô tả |
 |-----------|-------|
 | 📇 **Flashcards & SRS** | Thư viện 1.814 từ Oxford seed sẵn · CRUD thẻ cá nhân · Thuật toán Spaced Repetition tự tính lịch ôn |
-| 📓 **Sổ tay AI** | Tạo sổ tay học tập · Gemini AI sinh nội dung · Import từ URL · Trích xuất tài liệu thông minh |
-| 🤖 **Gia sư AI** | Hội thoại với AI gia sư hỗ trợ giải đáp, luyện tập |
+| 📓 **Sổ tay AI** | Lưu nguồn văn bản, URL, ảnh/PDF gốc · Hỏi đáp có trích dẫn · Tạo nội dung học tập · Mở rộng khung chat |
+| 🤖 **Gia sư AI** | Giải bài, kiểm tra bài làm và gợi ý theo mức · Dùng chung nguồn ảnh/PDF trong sổ tay |
 | 📋 **Kanban Board** | Quản lý công việc kéo thả 3 cột · Lọc ưu tiên · Tìm kiếm · Hạn hoàn thành |
 | 📊 **Thống kê học tập** | Dashboard theo dõi tiến trình ôn tập và hoạt động |
 | 🔐 **Xác thực** | Email/mật khẩu + Google Sign-In · JWT + Refresh Token · Liên kết tài khoản |
 | 📱 **PWA** | Service Worker + Manifest · Cài như app trên mobile · Chạy offline bằng localStorage |
+
+Xem [hướng dẫn nguồn ảnh/PDF](backend/TutorChecks/OCR.md) để biết giới hạn tệp và cách sử dụng.
 
 ---
 
