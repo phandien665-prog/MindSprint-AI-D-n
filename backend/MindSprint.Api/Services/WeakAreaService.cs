@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MindSprint.Api.Data;
 using MindSprint.Api.Models;
 
 namespace MindSprint.Api.Services;
