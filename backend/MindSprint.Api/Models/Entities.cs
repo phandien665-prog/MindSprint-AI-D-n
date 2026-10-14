@@ -141,13 +141,32 @@ public class UserStudyDay
 
 /// <summary>Lịch học tuần: mỗi hàng là 1 slot (ngày trong tuần + giờ học).</summary>
 public class StudySchedule
-{
-    public int Id { get; set; }
-    public int UserId { get; set; }
-    /// <summary>0 = Chủ nhật … 6 = Thứ 7 (khớp JS Date.getDay()).</summary>
-    public int DayOfWeek { get; set; }
-    public TimeOnly StartTime { get; set; }
-    public int DurationMinutes { get; set; } = 30;
-    public string Label { get; set; } = ""; // "Ôn từ vựng", "Review SRS"…
-    public bool IsActive { get; set; } = true;
+    {
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        /// <summary>0 = Chủ nhật … 6 = Thứ 7 (khớp JS Date.getDay()).</summary>
+        public int DayOfWeek { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public int DurationMinutes { get; set; } = 30;
+        public string Label { get; set; } = ""; // "Ôn từ vựng", "Review SRS"…
+        public bool IsActive { get; set; } = true;
+    }
+
+    /// <summary>Điểm yếu được phân tích từ lịch sử học tập của người dùng.</summary>
+    public class WeakArea
+    {
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public User? User { get; set; }
+        public string Category { get; set; } = ""; // english | programming | general
+        public string? SubCategory { get; set; }
+        public string Topic { get; set; } = ""; // chủ đề/khái niệm cần củng cố
+        public string Reason { get; set; } = ""; // lý do: "5/7 lần sai", "trung bình 40% chính xác"
+        public int WrongCount { get; set; }
+        public int TotalAttempts { get; set; }
+        public double AccuracyRate { get; set; }
+        public string SuggestedAction { get; set; } = ""; // "Ôn lại thẻ X", "Làm bài tập Y"
+        public DateTime AnalyzedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? LastUpdatedAt { get; set; }
+    }
 }

@@ -1,0 +1,95 @@
+sequenceDiagram
+    autonumber
+    actor User as Người học
+    participant UI as Trình duyệt (Notebook.js)
+    participant API as NotebooksController
+    participant DB as PostgreSQL
+    participant AI as GeminiService / Gemini API
+
+    %% Authentication
+    User->>UI: Mở tab "Sổ tay AI"
+    UI->>API: GET /api/notebooks (JWT)
+    API->>DB: SELECT * FROM Notebooks WHERE UserId = @uid
+    DB-->>API: Danh sách sổ tay
+    API-->>UI: JSON notebooks[]
+    UI-->>User: Hiển thị dropdown chọn sổ tay
+
+    %% Create / Select Notebook
+    alt Tạo sổ tay mới
+        User->>UI: Nhấn "Sổ tay mới" + nhập tiêu đề
+        UI->>API: POST /api/notebooks {title} (JWT)
+        API->>DB: INSERT INTO Notebooks (UserId, Title)
+        DB-->>API: NotebookId mới
+        API-->>UI: {id, title}
+        UI-->>User: Chuyển sang sổ tay mới
+    else Chọn sổ tay có sẵn
+        User->>UI: Chọn từ dropdown
+    end
+
+    %% Add Source: Text
+    User->>UI: Nhấn "Thêm nguồn" → Chọn "Dán văn bản"
+    User->>UI: Nhập tiêu đề + nội dung
+    UI->>API: POST /api/notebooks/{id}/sources/text {title, text} (JWT)
+    API->>DB: INSERT INTO NotebookSources (NotebookId, Title, Type, Content)
+    DB-->>API: SourceId mới
+    API-->>UI: {id, title, type}
+    UI-->>User: Cập nhật danh sách nguồn
+
+    %% Add Source: URL
+    User->>UI: Nhấn "Thêm nguồn" → Chọn "Thêm từ URL"
+    User->>UI: Nhập URL (https://...)
+    UI->>API: POST /api/notebooks/{id}/sources/url {url} (JWT)
+    API->>API: Kiểm tra DNS/redirect/SSL/Content-Type
+    API->>Web: HTTP GET url (timeout 15s, max 10MB)
+    Web-->>API: HTML/Markdown/Plain text
+    API->>API: Trích xuất văn bản chính (Readability)
+    API->>DB: INSERT INTO NotebookSources (NotebookId, Title, Type, Content, Origin)
+    DB-->>API: SourceId mới
+    API-->>UI: {id, title, type, origin}
+    UI-->>User: Cập nhật danh sách nguồn
+
+    %% Add Source: File
+    User->>UI: Nhấn "Thêm nguồn" → Chọn file PDF/TXT/MD/CSV
+    UI->>API: POST /api/notebooks/{id}/sources/file (multipart/form-data, JWT)
+    API->>API: Kiểm tra đuôi file, kích thước ≤10MB
+    API->>API: Trích xuất text (PDF: pdf-parse, TXT/MD/CSV: đọc trực tiếp)
+    API->>DB: INSERT INTO NotebookSources (NotebookId, Title, Type, Content)
+    DB-->>API: SourceId mới
+    API-->>UI: {id, title, type}
+    UI-->>User: Cập nhật danh sách nguồn
+
+    %% Chat / Q&A Flow
+    User->>UI: Nhập câu hỏi tại ô chat
+    UI->>API: POST /api/notebooks/{id}/chat {question, history} (JWT)
+    API->>DB: SELECT Content FROM NotebookSources WHERE NotebookId = @id
+    DB-->>API: Nội dung các nguồn
+    API->>API: Xây dựng prompt: system + sources + history + question
+    API->>AI: Gọi Gemini API (stream: true)
+    AI-->>API: Stream tokens
+    API-->>UI: Server-Sent Events (tokens)
+    UI-->>User: Hiển thị trả lời real-time
+    API->>DB: INSERT INTO NotebookNotes (NotebookId, Title, Content) -- tùy chọn lưu
+    API-->>UI: Hoàn tất stream
+
+    %% Studio Generation Flow
+    User->>UI: Nhấn "Tạo tài liệu" → Chọn loại: Tóm tắt / Mindmap / Flashcards / Quiz
+    UI->>API: POST /api/notebooks/{id}/generate {type, focus, count} (JWT)
+    API->>DB: SELECT Content FROM NotebookSources WHERE NotebookId = @id
+    DB-->>API: Nội dung nguồn
+    API->>API: Xây dựng prompt chuyên biệt theo type
+    API->>AI: Gọi Gemini API
+    AI-->>API: JSON/Markdown kết quả
+    API->>DB: INSERT INTO NotebookGenerationCache (NotebookId, Type, RequestHash, Content)
+    API-->>UI: Kết quả đã định dạng
+    UI-->>User: Hiển thị Studio panel (có thể lưu thành Note/Flashcards)
+
+    %% Tutor Flow
+    User->>UI: Chuyển tab "Gia sư" → Nhập đề bài / bài làm
+    UI->>API: POST /api/notebooks/{id}/tutor {question, style, history} (JWT)
+    API->>DB: SELECT Content FROM NotebookSources WHERE NotebookId = @id
+    DB-->>API: Nội dung nguồn (nếu có)
+    API->>API: Xây dựng prompt theo style: hint / check / solution / explain
+    API->>AI: Gọi Gemini API
+    AI-->>API: Phản hồi có cấu trúc
+    API-->>UI: Hiển thị phản hồi Gia sư
+    UI-->>User: Xem hint / kiểm tra / giải pháp

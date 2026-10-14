@@ -21,6 +21,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<UserStudyDay> UserStudyDays => Set<UserStudyDay>();
     public DbSet<StudySchedule> StudySchedules => Set<StudySchedule>();
 
+    // #35 – Điểm yếu cá nhân hóa
+    public DbSet<WeakArea> WeakAreas => Set<WeakArea>();
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<User>().HasIndex(u => u.Email).IsUnique();
@@ -49,5 +52,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         // #14 – Ngày học không trùng trên cùng 1 user; index lịch học
         b.Entity<UserStudyDay>().HasIndex(d => new { d.UserId, d.StudyDate }).IsUnique();
         b.Entity<StudySchedule>().HasIndex(s => new { s.UserId, s.DayOfWeek });
+
+        // #35 – Điểm yếu: unique per user per topic, index cho truy vấn
+        b.Entity<WeakArea>().HasIndex(w => new { w.UserId, w.Category, w.Topic }).IsUnique();
+        b.Entity<WeakArea>().HasIndex(w => new { w.UserId, w.AnalyzedAt });
     }
 }

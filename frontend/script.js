@@ -476,12 +476,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        sidebarCategories.hidden = tabId !== 'flashcards';
+sidebarCategories.hidden = tabId !== 'flashcards';
         document.querySelector('.sidebar [data-tab="flashcards"]').setAttribute('aria-expanded', String(tabId === 'flashcards'));
 
         if (tabId === 'timetable') {
             updateTodayWidget();
             renderTimetable();
+        }
+
+        if (tabId === 'weak-areas') {
+            loadWeakAreas();
         }
 
         if (tabId === 'flashcards') {
@@ -1066,6 +1070,165 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!homeSuggestionsGrid.children.length) {
                 homeSuggestionsGrid.innerHTML = '<p class="home-empty-hint">Thư viện đang trống. Tạo bộ thẻ mới hoặc lưu thẻ từ Sổ tay AI để bắt đầu học.</p>';
             }
+        }
+    }
+
+    // ==========================================================================
+    // WEAK AREAS - Điểm yếu cá nhân hóa (Issue #35)
+    // ==========================================================================
+    async function loadWeakAreas() {
+        const statusEl = document.getElementById('weak-areas-status');
+        const listEl = document.getElementById('weak-areas-list');
+        const actionsEl = document.getElementById('weak-areas-actions');
+
+        if (!statusEl || !listEl || !actionsEl) return;
+
+        statusEl.hidden = false;
+        statusEl.innerHTML = `
+            <div class="weak-areas-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3 id="weak-areas-title">Đang phân tích...</h3>
+                <p id="weak-areas-message">Đang quét lịch sử học tập để tìm điểm yếu.</p>
+            </div>`;
+        listEl.hidden = true;
+        listEl.innerHTML = '';
+        actionsEl.hidden = true;
+
+        try {
+            let result = await api.getWeakAreas();
+
+            if (!result || result.length === 0) {
+                // No cached analysis, trigger new analysis
+                result = await api.analyzeWeakAreas();
+                if (result && result.weakAreas) {
+                    result = result.weakAreas;
+                } else {
+                    result = [];
+                }
+            }
+
+            if (!result || result.length === 0) {
+                statusEl.hidden = false;
+                statusEl.innerHTML = `
+                    <div class="weak-areas-empty">
+                        <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                        <h3>Chưa có điểm yếu rõ rệt</h3>
+                        <p>Bạn đã làm tốt các bài ôn tập! Hãy tiếp tục duy trì thói quen học đều đặn.</p>
+                        <button class="btn btn-secondary" onclick="loadWeakAreas()" style="margin-top: var(--space-step-16);">
+                            <i class="fas fa-sync"></i> Phân tích lại
+                        </button>
+                    </div>`;
+                listEl.hidden = true;
+                actionsEl.hidden = true;
+                return;
+            }
+
+            statusEl.hidden = true;
+            listEl.hidden = false;
+            actionsEl.hidden = false;
+
+            listEl.innerHTML = result.map((area, index) => `
+                <div class="weak-area-card glass-panel" data-category="${area.category}" data-topic="${area.topic}">
+                    <div class="weak-area-header">
+                        <span class="weak-area-category badge-${area.category}">${getCategoryName(area.category)}</span>
+                        <span class="weak-area-accuracy">${Math.round((1 - area.accuracyRate) * 100)}% lỡ</span>
+                    </div>
+                    <h4 class="weak-area-topic">${area.topic}</h4>
+                    <p class="weak-area-reason">${area.reason}</p>
+                    <p class="weak-area-action"><i class="fas fa-lightbulb"></i> ${area.suggestedAction}</p>
+                    <div class="weak-area-meta">
+                        <span>${area.wrongCount}/${area.totalAttempts} lần thử</span>
+                        <span>${Math.round(area.accuracyRate * 100)}% chính xác</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add click handlers for practice buttons
+            const practiceBtn = document.getElementById('btn-practice-weak');
+            const createCardsBtn = document.getElementById('btn-create-weak-cards');
+            const analyzeBtn = document.getElementById('btn-analyze-weak-areas');
+
+            if (practiceBtn) {
+                practiceBtn.onclick = () => startWeakAreaPractice(result);
+            }
+            if (createCardsBtn) {
+                createCardsBtn.onclick = () => createWeakAreaCards(result);
+            }
+            if (analyzeBtn) {
+                analyzeBtn.onclick = async () => {
+                    analyzeBtn.disabled = true;
+                    analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang phân tích...';
+                    try {
+                        await api.analyzeWeakAreas();
+                        await loadWeakAreas();
+                    } catch (e) {
+                        console.error('Analyze failed:', e);
+                    } finally {
+                        analyzeBtn.disabled = false;
+                        analyzeBtn.innerHTML = '<i class="fas fa-brain"></i> Phân tích lại';
+                    }
+                };
+            }
+        } catch (e) {
+            console.error('Load weak areas failed:', e);
+            statusEl.hidden = false;
+            statusEl.innerHTML = `
+                <div class="weak-areas-empty">
+                    <i class="fas fa-exclamation-triangle" style="color: var(--danger-color);"></i>
+                    <h3>Không thể tải dữ liệu</h3>
+                    <p>${e.message || 'Vui lòng thử lại sau.'}</p>
+                    <button class="btn btn-secondary" onclick="loadWeakAreas()" style="margin-top: var(--space-step-16);">
+                        <i class="fas fa-sync"></i> Thử lại
+                    </button>
+                </div>`;
+            listEl.hidden = true;
+            actionsEl.hidden = true;
+        }
+    }
+
+    function startWeakAreaPractice(weakAreas) {
+        // Filter flashcards matching weak areas
+        const topics = weakAreas.map(w => w.topic.toLowerCase());
+        const practiceCards = flashcards.filter(c => 
+            topics.some(t => c.question.toLowerCase().includes(t) || c.answer.toLowerCase().includes(t))
+        );
+
+        if (practiceCards.length === 0) {
+            alert('Không tìm thấy thẻ phù hợp với điểm yếu. Hãy thêm thẻ hoặc học thêm từ Sổ tay AI.');
+            return;
+        }
+
+        // Set category filter to first weak area's category
+        currentCategory = weakAreas[0].category;
+        currentSubCategory = 'all';
+        filteredCards = practiceCards;
+        currentIndex = 0;
+        
+        // Switch to quiz tab
+        const quizTab = document.querySelector('.sidebar [data-tab="quiz"]');
+        if (quizTab) quizTab.click();
+        
+        renderCard();
+        updateStats();
+    }
+
+    function createWeakAreaCards(weakAreas) {
+        // This would integrate with Notebook AI to generate flashcards
+        // For now, show a message guiding user to Notebook AI
+        if (confirm('Tính năng này sẽ mở Sổ tay AI để tạo thẻ ôn tập từ các chủ đề điểm yếu. Bạn muốn tiếp tục?')) {
+            const notebookTab = document.querySelector('.sidebar [data-tab="notebook"]');
+            if (notebookTab) notebookTab.click();
+            
+            // Pre-fill the chat with a request to generate flashcards
+            setTimeout(() => {
+                const chatInput = document.getElementById('nb-q');
+                if (chatInput) {
+                    const topics = weakAreas.map(w => w.topic).join(', ');
+                    chatInput.value = `Tạo ${weakAreas.length} thẻ flashcard ôn tập cho các chủ đề: ${topics}. Mỗi thẻ gồm câu hỏi, đáp án và ví dụ.`;
+                    const sendBtn = document.querySelector('[data-act="send"]');
+                    if (sendBtn) sendBtn.click();
+                }
+            }, 500);
         }
     }
 

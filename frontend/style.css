@@ -3317,6 +3317,143 @@ dialog.app-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, c
     #sidebar-categories { width: calc(100% - var(--space-sm)); margin-left: var(--space-sm); padding-left: var(--space-step-4); }
     #sidebar-categories .category-item { font-size: .78rem; gap: var(--space-step-4); padding: var(--space-step-4); }
 }
+
+/* Weak Areas - Điểm yếu cá nhân hóa (Issue #35)
+   ========================================================================== */
+.weak-areas-status {
+    padding: var(--space-xl);
+    text-align: center;
+    border-radius: var(--border-radius-lg);
+}
+
+.weak-areas-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.weak-areas-empty i {
+    font-size: 3rem;
+    opacity: 0.7;
+}
+
+.weak-areas-empty h3 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.weak-areas-empty p {
+    margin: 0;
+    color: var(--text-secondary);
+    max-width: 400px;
+}
+
+.weak-areas-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-md) 0;
+}
+
+.weak-area-card {
+    padding: var(--space-lg);
+    border-radius: var(--border-radius-lg);
+    border-left: 4px solid var(--primary-color);
+    transition: transform var(--dur-short) var(--ease-out), box-shadow var(--dur-short) var(--ease-out);
+}
+
+.weak-area-card:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow-md);
+}
+
+.weak-area-card[data-category="english"] { border-left-color: var(--secondary-color); }
+.weak-area-card[data-category="programming"] { border-left-color: var(--primary-color); }
+.weak-area-card[data-category="general"] { border-left-color: var(--success-color); }
+
+.weak-area-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.weak-area-category {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: var(--space-step-4) var(--space-step-8);
+    border-radius: var(--border-radius-pill);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-english { background: var(--secondary-soft); color: var(--secondary-ink); }
+.badge-cntt { background: var(--accent-soft); color: var(--accent-ink); }
+.badge-general { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
+
+.weak-area-accuracy {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--danger-color);
+    background: rgba(239, 68, 68, 0.1);
+    padding: var(--space-step-4) var(--space-step-8);
+    border-radius: var(--border-radius-pill);
+}
+
+.weak-area-topic {
+    margin: var(--space-sm) 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.weak-area-reason {
+    margin: var(--space-sm) 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.weak-area-action {
+    margin: var(--space-sm) 0;
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    font-weight: 500;
+}
+
+.weak-area-action i {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.weak-area-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.weak-areas-actions {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+    padding: var(--space-lg) 0;
+    flex-wrap: wrap;
+}
+
+.weak-areas-actions .btn {
+    min-width: 180px;
+}
 @media (prefers-reduced-motion: reduce) { #sidebar-categories .category-item:active { transform: none; } }
 
 /* Give reading and composing more room in both notebook chat modes. */
