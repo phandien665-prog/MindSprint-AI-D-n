@@ -3,7 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using MindSprint.Api.Data;
+using MindSprint.Api.Models;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -433,6 +433,61 @@ namespace MindSprint.Api.Migrations
                     b.ToTable("UserStudyDays");
                 });
 
+            modelBuilder.Entity("MindSprint.Api.Models.WeakArea", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("AnalyzedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("AccuracyRate")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SuggestedAction")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SubCategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TotalAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WrongCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("LastUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "AnalyzedAt");
+
+                    b.HasIndex("UserId", "Category", "Topic")
+                        .IsUnique();
+
+                    b.ToTable("WeakAreas");
+                });
+
             modelBuilder.Entity("MindSprint.Api.Models.CardProgress", b =>
                 {
                     b.HasOne("MindSprint.Api.Models.Flashcard", "Flashcard")
@@ -482,6 +537,17 @@ namespace MindSprint.Api.Migrations
                 });
 
             modelBuilder.Entity("MindSprint.Api.Models.RefreshToken", b =>
+                {
+                    b.HasOne("MindSprint.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MindSprint.Api.Models.WeakArea", b =>
                 {
                     b.HasOne("MindSprint.Api.Models.User", "User")
                         .WithMany()
