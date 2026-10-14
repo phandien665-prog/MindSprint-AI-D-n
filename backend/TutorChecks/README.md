@@ -1,5 +1,7 @@
 # Issue #30 — Gia sư giải bài tập
 
+**Thêm ảnh/PDF/TXT/MD/CSV vào nguồn của sổ tay**, rồi hỏi trực tiếp ở cả Theo nguồn và Gia sư; tệp được lưu để dùng lại, giữ công thức và không chép toàn bộ đề vào chat (#33): xem [OCR.md](OCR.md).
+
 Các hoạt động **Kiểm tra bài làm** (#31) và **Tự luyện** (#32), hợp đồng API và kiểm chứng Sprint 2 được mô tả trong [SPRINT2.md](SPRINT2.md).
 
 Trong **Sổ tay AI**, chọn **Gia sư**, chọn **Từng bước / Ngắn gọn**, nhập đề rồi gửi. Không cần tài liệu nguồn; cần đăng nhập và có sổ tay thuộc tài khoản hiện tại. Có thể hỏi tiếp về một bước, bấm **Bài mới** để xóa ngữ cảnh đang hiển thị, hoặc lưu lời giải bằng **Lưu ghi chú**. Ghi chú đã lưu không bị xóa khi bắt đầu bài mới.

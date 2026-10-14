@@ -3081,7 +3081,7 @@ input[type=range] { accent-color: var(--orange); }
 #tab-content-notebook .nb-source-toggle { display: none; }
 #tab-content-notebook .nb-sources > h3 > span { min-width: 0; }
 #tab-content-notebook .nb-chat { grid-column: 2; grid-row: 1; min-height: 0; padding: var(--space-sm) var(--space-md) 0; background: transparent; border: 0; box-shadow: none; }
-#tab-content-notebook .nb-chat > h3 { font-size: .85rem; color: var(--text-secondary); border: 0; font-weight: 500; text-align: center; margin: 0; padding: 0; }
+#tab-content-notebook .nb-chat-header h3 { font-size: .85rem; color: var(--text-secondary); border: 0; font-weight: 500; margin: 0; padding: 0; }
 .nb-welcome { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-sm); padding: var(--space-lg) 0 var(--space-sm); }
 .nb-welcome .welcome-orb { margin: 0 0 var(--space-md); }
 .nb-welcome h2 { font-family: var(--font-heading); font-size: clamp(1.4rem,2.5vw,2rem); font-weight: 600; line-height: 1.35; letter-spacing: -.035em; }
@@ -3318,3 +3318,66 @@ dialog.app-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, c
     #sidebar-categories .category-item { font-size: .78rem; gap: var(--space-step-4); padding: var(--space-step-4); }
 }
 @media (prefers-reduced-motion: reduce) { #sidebar-categories .category-item:active { transform: none; } }
+
+/* Give reading and composing more room in both notebook chat modes. */
+#tab-content-notebook { max-width: none; gap: var(--space-md); }
+#tab-content-notebook .nb-chat { padding: 0; }
+.nb-chat-header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-sm) var(--space-md); }
+.nb-chat-header .nb-mode-switch { flex-shrink: 0; }
+.nb-chat-header h3 { flex: 1; }
+.nb-chat-header #nb-source-add { margin-left: auto; }
+#tab-content-notebook .nb-messages { max-height: 65dvh; scrollbar-gutter: stable; }
+#tab-content-notebook .nb-msg { font-size: 1rem; line-height: 1.75; }
+#tab-content-notebook .nb-composer { flex-shrink: 0; padding: var(--space-md); }
+#tab-content-notebook .nb-composer #nb-q { min-height: 64px; max-height: 160px; }
+#tab-content-notebook .nb-composer-footer { margin-top: var(--space-sm); }
+.nb-expand-chat { display: inline-flex; align-items: center; gap: var(--space-sm); }
+
+@media (min-width: 1101px) {
+    .main-content:has(#tab-content-notebook.active) { padding-inline: var(--space-lg); padding-bottom: var(--space-md); }
+    .main-content:has(#tab-content-notebook.active) .workspace-header { max-width: none; min-height: 56px; margin-bottom: var(--space-sm); }
+    .main-content:has(#tab-content-notebook.active) .sidebar-toggle-btn { top: 64px; left: var(--space-lg); }
+    #tab-content-notebook { gap: var(--space-sm); }
+    #tab-content-notebook > .main-header { min-height: 40px; }
+    #tab-content-notebook > .main-header h1 { font-size: 1.35rem; }
+    #tab-content-notebook > .main-header p { display: none; }
+    #tab-content-notebook .nb-layout { grid-template-columns: 240px minmax(0, 1fr); gap: var(--space-md); }
+    #tab-content-notebook .nb-layout.is-sources-collapsed { grid-template-columns: 56px minmax(0, 1fr); }
+    #tab-content-notebook .nb-studio { padding-inline: 0; }
+    #tab-content-notebook .nb-chat { gap: var(--space-sm); }
+    #tab-content-notebook .nb-tutor-controls { padding-block: 0; }
+    #tab-content-notebook .nb-composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-step-12); padding: var(--space-sm) var(--space-step-12); border-radius: var(--border-radius-md); }
+    #tab-content-notebook .nb-composer #nb-q { min-height: 44px; padding-block: var(--space-sm); }
+    #tab-content-notebook .nb-composer-footer { margin-top: 0; }
+    #tab-content-notebook #nb-composer-hint { display: none; }
+}
+
+@media (min-width: 1101px) and (min-height: 700px) {
+    #tab-content-notebook .nb-chat { height: calc(100dvh - 128px); }
+    #tab-content-notebook .nb-chat > * { flex-shrink: 0; }
+    #tab-content-notebook .nb-chat > .nb-messages { flex: 1; max-height: none; overflow-y: auto; }
+    #tab-content-notebook .nb-welcome { flex: 1; min-height: 0; justify-content: center; }
+    #tab-content-notebook .nb-tutor-work { flex: 1; min-height: 0; overflow-y: auto; }
+}
+
+/* Expanded chat keeps the same conversation and controls in the full workspace. */
+.app-container:has(#tab-content-notebook.active.is-chat-expanded) { height: 100dvh; }
+.app-container:has(#tab-content-notebook.active.is-chat-expanded) > .sidebar,
+.main-content:has(#tab-content-notebook.active.is-chat-expanded) > .workspace-header,
+.main-content:has(#tab-content-notebook.active.is-chat-expanded) > .sidebar-toggle-btn,
+#tab-content-notebook.is-chat-expanded > .main-header,
+#tab-content-notebook.is-chat-expanded .nb-sources,
+#tab-content-notebook.is-chat-expanded .nb-studio { display: none; }
+.main-content:has(#tab-content-notebook.active.is-chat-expanded) { height: 100%; padding: var(--space-sm); overflow: hidden; }
+#tab-content-notebook.active.is-chat-expanded { height: 100%; min-height: 0; }
+#tab-content-notebook.is-chat-expanded .nb-layout { display: flex; flex: 1; min-height: 0; align-items: stretch; }
+#tab-content-notebook.is-chat-expanded .nb-chat { flex: 1; min-height: 0; height: auto; gap: var(--space-sm); }
+#tab-content-notebook.is-chat-expanded .nb-chat > * { flex-shrink: 0; }
+#tab-content-notebook.is-chat-expanded .nb-chat > .nb-messages { flex: 1; max-height: none; }
+#tab-content-notebook.is-chat-expanded .nb-welcome,
+#tab-content-notebook.is-chat-expanded .nb-tutor-work { flex: 1; min-height: 0; overflow-y: auto; }
+
+@media (max-width: 480px) {
+    .nb-chat-header h3 { flex-basis: 100%; }
+    .nb-chat-header #nb-source-add { margin-left: 0; }
+}

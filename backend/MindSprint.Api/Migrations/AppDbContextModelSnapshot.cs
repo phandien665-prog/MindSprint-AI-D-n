@@ -177,35 +177,6 @@ namespace MindSprint.Api.Migrations
                     b.ToTable("Notebooks");
                 });
 
-            modelBuilder.Entity("MindSprint.Api.Models.NotebookNote", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("NotebookId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NotebookId");
-
-                    b.ToTable("NotebookNotes");
-                });
-
             modelBuilder.Entity("MindSprint.Api.Models.NotebookGenerationCache", b =>
                 {
                     b.Property<int>("Id")
@@ -250,6 +221,35 @@ namespace MindSprint.Api.Migrations
                     b.ToTable("NotebookGenerationCaches");
                 });
 
+            modelBuilder.Entity("MindSprint.Api.Models.NotebookNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("NotebookId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotebookId");
+
+                    b.ToTable("NotebookNotes");
+                });
+
             modelBuilder.Entity("MindSprint.Api.Models.NotebookSource", b =>
                 {
                     b.Property<int>("Id")
@@ -264,6 +264,12 @@ namespace MindSprint.Api.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<byte[]>("FileBytes")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("FileMediaType")
+                        .HasColumnType("text");
 
                     b.Property<int>("NotebookId")
                         .HasColumnType("integer");
@@ -448,19 +454,19 @@ namespace MindSprint.Api.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("MindSprint.Api.Models.NotebookNote", b =>
+            modelBuilder.Entity("MindSprint.Api.Models.NotebookGenerationCache", b =>
                 {
                     b.HasOne("MindSprint.Api.Models.Notebook", null)
-                        .WithMany("Notes")
+                        .WithMany()
                         .HasForeignKey("NotebookId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("MindSprint.Api.Models.NotebookGenerationCache", b =>
+            modelBuilder.Entity("MindSprint.Api.Models.NotebookNote", b =>
                 {
                     b.HasOne("MindSprint.Api.Models.Notebook", null)
-                        .WithMany()
+                        .WithMany("Notes")
                         .HasForeignKey("NotebookId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
