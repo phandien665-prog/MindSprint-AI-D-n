@@ -3431,6 +3431,12 @@ dialog.app-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, c
 .nb-tutor-work { display: grid; gap: var(--space-sm); min-width: 0; }
 .nb-tutor-work label { display: block; font-size: .85rem; font-weight: 600; margin-block: var(--space-sm); }
 .nb-tutor-work textarea { width: 100%; resize: vertical; }
+.nb-code-input { font-family: var(--font-mono); tab-size: 4; white-space: pre; overflow-x: auto; }
+#nb-code { min-height: 12rem; }
+#nb-code-work { display: block; flex: 1; min-height: 0; overflow-y: auto; }
+#nb-code-work select { width: 100%; min-height: 44px; }
+#tab-content-notebook #nb-code-messages { flex: none; min-height: auto; max-height: none; overflow: visible; margin-block: var(--space-md); }
+#nb-code-messages pre { max-width: 100%; white-space: pre; }
 .nb-tutor-work > .btn { justify-self: start; }
 .nb-studio-results:has(.nb-result-panel[hidden]) .nb-notes-panel { grid-column: 1 / -1; }
 @media (max-width: 480px) { .nb-tutor-style > span { flex-basis: 100%; } .nb-tutor-controls { align-items: flex-end; } .nb-mode-btn, .nb-tutor-style button { font-size: .8rem; padding-inline: var(--space-step-12); } }

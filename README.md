@@ -16,7 +16,7 @@
 |-----------|-------|
 | 📇 **Flashcards & SRS** | Thư viện 1.814 từ Oxford seed sẵn · CRUD thẻ cá nhân · Thuật toán Spaced Repetition tự tính lịch ôn |
 | 📓 **Sổ tay AI** | Lưu nguồn văn bản, URL, ảnh/PDF gốc · Hỏi đáp có trích dẫn · Tạo nội dung học tập · Mở rộng khung chat |
-| 🤖 **Gia sư AI** | Giải bài, kiểm tra bài làm và gợi ý theo mức · Dùng chung nguồn ảnh/PDF trong sổ tay |
+| 🤖 **Gia sư AI** | Giải bài, kiểm tra bài làm, gợi ý theo mức và [phân tích code Python/JavaScript](backend/TutorChecks/PROGRAMMING.md) · Dùng chung nguồn ảnh/PDF trong sổ tay |
 | 📋 **Kanban Board** | Quản lý công việc kéo thả 3 cột · Lọc ưu tiên · Tìm kiếm · Hạn hoàn thành |
 | 📊 **Thống kê học tập** | Dashboard theo dõi tiến trình ôn tập và hoạt động |
 | 🔐 **Xác thực** | Email/mật khẩu + Google Sign-In · JWT + Refresh Token · Liên kết tài khoản |

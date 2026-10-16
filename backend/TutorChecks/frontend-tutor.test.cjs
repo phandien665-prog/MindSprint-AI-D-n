@@ -124,3 +124,18 @@ test('checking sends the problem and submission separately through the shared se
     await api.nbTutorWork(10, {question: '2x + 3 = 11', action: 'check', submission: '2x = 9'});
     assert.deepEqual(payload, {question: '2x + 3 = 11', action: 'check', submission: '2x = 9'});
 });
+
+test('programming refresh retains code byte-for-byte, error, language and follow-up context', async () => {
+    const calls = [];
+    const {api, auth} = harness(async (url, options) => {
+        if (url.endsWith('/login')) return reply(200, credentials(1));
+        if (url.endsWith('/refresh')) return reply(200, credentials(2));
+        calls.push(options);
+        return options.headers.Authorization === 'Bearer access-2' ? reply(200, {answer:'Dự kiến',executionStatus:'not_run'}) : reply(401, {});
+    });
+    await auth.login('user1@example.test', 'test');
+    const payload = {action:'code',question:'Giải thích dòng 2',language:'python',code:'\n\tprint("$[1] ``` <script> &")\n  ',error:'SyntaxError',history:[{role:'assistant',text:'Đề xuất sửa'}]};
+    await api.nbTutorWork(10, payload);
+    assert.equal(calls.length,2);
+    for (const call of calls) assert.deepEqual(JSON.parse(call.body),payload);
+});
