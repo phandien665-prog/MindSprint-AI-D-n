@@ -211,6 +211,7 @@
         // Gemini
         aiFlashcards: (text, count = 10) => request('/api/ai/flashcards', { method: 'POST', body: { text, count } }),
         aiQuiz: (text, count = 10) => request('/api/ai/quiz', { method: 'POST', body: { text, count } }),
+        aiExtractFile: (file) => { const f = new FormData(); f.append('file', file); return upload('/api/ai/extract-file', f); },
 
         // Study Stats (Issue #14)
         studyGetDays: (from, to) => {

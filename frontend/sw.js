@@ -10,7 +10,7 @@ const ASSETS = [
   './index.html',
   './tokens.css?v=39',
   './style.css?v=60',
-  './script.js?v=50',
+  './script.js?v=62',
   './ui.js?v=59',
   './vocab_data.js?v=24',
   './api.js?v=56',
