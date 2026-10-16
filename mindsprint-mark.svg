@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="MindSprintAI leaf and book mark">
+  <rect width="128" height="128" rx="28" fill="#f6f7ef"/>
+  <path d="M24 77c0-28 21-49 49-49h25v47c0 26-18 44-44 44H24V77Z" fill="#8bb24a"/>
+  <path d="M30 72c0-25 18-43 42-43h20v42c0 22-16 38-39 38H30V72Z" fill="#d1eb83"/>
+  <path d="M36 67c0-18 13-31 31-31h17v32c0 17-12 29-30 29H36V67Z" fill="#416344"/>
+  <path d="M43 63c0-13 9-22 23-22h10v24c0 12-8 21-21 21H43V63Z" fill="#f7f8f0"/>
+  <path d="M24 77c11 1 20 6 27 15" fill="none" stroke="#24314a" stroke-linecap="round" stroke-width="6"/>
+</svg>
