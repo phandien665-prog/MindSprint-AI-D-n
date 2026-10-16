@@ -33,8 +33,9 @@ Kiểm tra frontend liên quan:
 node --test tests/frontend-safety-browser.test.cjs
 ```
 
-Hai bài Edge headless dùng API giả lập và profile mới, xác nhận tên chủ đề/đáp án
-chứa HTML được hiển thị nguyên văn; khi tải sổ tay mới thất bại, tên đang chọn và
+Ba bài Edge headless dùng API giả lập và profile mới, xác nhận tên chủ đề/đáp án,
+nhãn nút xóa và danh mục tùy chỉnh chứa dấu nháy/HTML được hiển thị nguyên văn;
+khi tải sổ tay mới thất bại, tên đang chọn và
 notebook ID của câu hỏi tiếp theo vẫn khớp nhau. Thử lại chuyển thành công đổi cả
 hai. Cần build API ở Release để có Playwright đi kèm hoặc cài package Playwright;
 biến `TUTOR_BROWSER` có thể chỉ executable Chromium khác.

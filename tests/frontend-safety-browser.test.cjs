@@ -24,8 +24,8 @@ async function fixture(run) {
         browser = await chromium.launch({executablePath:process.env.TUTOR_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless:true});
         const context = await browser.newContext({serviceWorkers:'block',viewport:{width:1440,height:1000}});
         const page = await context.newPage(), base = `http://127.0.0.1:${server.address().port}`, calls = [], errors = [];
-        const payload = '<img src="/missing-audit-image" onerror="document.documentElement.dataset.auditXss=\'yes\'">';
-        const control = {failNotebook:false, delay:false, release:null};
+        const payload = '"><img src="/missing-audit-image" onerror="document.documentElement.dataset.auditXss=\'yes\'">';
+        const control = {failNotebook:false, delay:false, release:null, category:'english'};
         page.on('pageerror', e => errors.push(e.message));
         await context.route('**/*', async route => {
             const req = route.request(), url = new URL(req.url());
@@ -41,7 +41,7 @@ async function fixture(run) {
                     if (control.failNotebook) { status = 503; body = {message:'Synthetic notebook load failure'}; }
                 }
                 else if (p.endsWith('/tutor')) body = {answer:'Synthetic answer',needsClarification:false};
-                else if (p === '/api/flashcards') body = Array.from({length:8},(_,i) => ({id:'audit-'+i,category:'english',subCategory:payload,question:payload+' Q'+i,answer:payload+' A'+i,status:'new',version:1}));
+                else if (p === '/api/flashcards') body = Array.from({length:8},(_,i) => ({id:'audit-'+i,category:control.category,subCategory:payload,question:payload+' Q'+i,answer:payload+' A'+i,status:'new',version:1}));
                 else if (p.endsWith('/streak')) body = {currentStreak:0,longestStreak:0};
                 return route.fulfill({status,contentType:'application/json',headers:{'Access-Control-Allow-Origin':base,'Access-Control-Allow-Headers':'authorization,content-type','Access-Control-Allow-Methods':'GET,POST,DELETE,OPTIONS'},body:JSON.stringify(body)});
             }
@@ -74,6 +74,20 @@ test('library names and quiz answers render literal HTML instead of executable n
     }
     assert.equal(await page.locator('#wrong-answers-tbody tr').count(),8);
     assert.equal(await page.locator('#wrong-answers-tbody img, #quiz-options-grid img').count(),0);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.auditXss),undefined);
+}));
+
+test('custom categories containing quotes and HTML remain literal and can be opened', {timeout:60000}, () => fixture(async ({page,payload,control}) => {
+    control.category = payload;
+    await page.evaluate(async () => {
+        await MindSprintAuth.logout();
+        await MindSprintAuth.login('audit@example.test','synthetic-only');
+    });
+    assert.equal(await page.locator('img[onerror]').count(),0);
+    await page.locator('.sidebar [data-tab=flashcards]').click();
+    assert.equal(await page.locator('.library-custom-section .deck-title').first().textContent(),payload);
+    assert.equal(await page.locator('.library-custom-section .library-section-header span').first().textContent().then(s => s.trim()),payload);
+    assert.equal(await page.locator('.deck-delete-btn').first().getAttribute('aria-label'),'Xóa bộ thẻ '+payload);
     assert.equal(await page.evaluate(() => document.documentElement.dataset.auditXss),undefined);
 }));
 

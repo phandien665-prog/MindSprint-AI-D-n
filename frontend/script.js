@@ -1335,7 +1335,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 : `<span>${totalCount} thẻ học</span>`;
 
             cardDiv.innerHTML = `
-                <button class="deck-delete-btn" title="Xóa bộ thẻ này" aria-label="Xóa bộ thẻ ${subName}"><i class="fas fa-trash-alt"></i></button>
+                <button class="deck-delete-btn" title="Xóa bộ thẻ này" aria-label="Xóa bộ thẻ ${esc(subName)}"><i class="fas fa-trash-alt"></i></button>
                 <span class="deck-feature-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span>
                 <span class="deck-badge ${badgeClass}">${badgeText}</span>
                 <h4 class="deck-title">${esc(subName)}</h4>
@@ -1377,7 +1377,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 itDecksGrid.appendChild(cardDiv);
             } else {
                 const catKey = firstCard.category || 'general';
-                let customSec = viewContainer.querySelector(`.library-custom-section[data-category="${catKey}"]`);
+                let customSec = viewContainer.querySelector(`.library-custom-section[data-category="${CSS.escape(catKey)}"]`);
                 if (!customSec) {
                     customSec = document.createElement('div');
                     customSec.className = 'library-section library-custom-section';
@@ -1386,7 +1386,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                     customSec.innerHTML = `
                         <h3 class="library-section-header" style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-step-16); display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: var(--space-step-8); border-radius: var(--border-radius-md); transition: background 0.2s ease;">
                             <span style="display: flex; align-items: center; gap: var(--space-step-8);">
-                                <i class="fas fa-layer-group" style="color: var(--primary-color); font-size: 1.3rem;"></i> ${catName}
+                                <i class="fas fa-layer-group" style="color: var(--primary-color); font-size: 1.3rem;"></i> ${esc(catName)}
                             </span>
                             <i class="fas fa-chevron-down section-toggle-icon" style="transition: transform 0.3s ease; font-size: 1rem; color: var(--text-muted);"></i>
                         </h3>
