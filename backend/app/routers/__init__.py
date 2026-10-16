@@ -1,3 +1,0 @@
-"""
-MindSprint AI Routers Package
-"""
