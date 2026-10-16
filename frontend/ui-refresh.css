@@ -129,6 +129,9 @@ body {
     box-shadow: 5px 0 26px rgba(26, 26, 46, .025);
 }
 
+/* Keep the navigation rail on its designated soft-paper color. */
+.sidebar.glass-panel { background: var(--sidebar-bg); }
+
 .logo {
     gap: 11px;
     margin-bottom: 24px;
