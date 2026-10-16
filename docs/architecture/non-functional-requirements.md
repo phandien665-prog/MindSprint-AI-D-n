@@ -1,6 +1,6 @@
 # Yêu cầu phi chức năng — MindSprintAI
 
-Ngày lập: **12/10/2026** (Asia/Saigon). Nguồn kiến trúc: nhánh `main`, commit `9ba7acd2de05bf017ad5c2711644c9ee98bd6542`.
+Ngày lập: **12/10/2026**; rà schema: **16/10/2026** (Asia/Saigon). Nguồn kiến trúc nền: nhánh `main`, commit `9ba7acd2de05bf017ad5c2711644c9ee98bd6542`; phạm vi dữ liệu hiện hành gồm các migration PostgreSQL tiếp theo cho cache notebook, file nguồn và điểm yếu cá nhân. Các ngưỡng NFR vẫn là mục tiêu đề xuất, chưa nghiệm thu.
 
 ## Quy ước và phạm vi
 
@@ -84,7 +84,7 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 ## NFR-03: Xác thực, phân quyền và cô lập tài khoản
 
-**Ưu tiên:** P0. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** JWT, TokenService, GoogleSignInService, controllers, phiên frontend.
+**Ưu tiên:** P0. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** JWT, TokenService, GoogleSignInService, controllers gồm `/api/weak-areas`, phiên frontend.
 
 **Hiện trạng:** JWT kiểm tra issuer/audience/signature/lifetime; refresh rotation/revoke; lọc UserId/OwnerId. Token đang lưu localStorage.
 
@@ -97,7 +97,7 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 **Cách kiểm thử:**
 
-1. Tạo A/B riêng; chạy ma trận endpoint CRUD, review, study, notebook, tutor và nested resources.
+1. Tạo A/B riêng; chạy ma trận endpoint CRUD, review, study, notebook, tutor, `/api/weak-areas` (GET/analyze) và nested resources.
 2. Kiểm tra rotation/revoke tuần tự và 2 request refresh đồng thời; nếu cùng token cấp hai phiên mới thì ghi lỗi, không coi single-flight trong một tab là bảo đảm server.
 3. Chạy các ca Google giả lập và chuyển tài khoản khi API đang chờ.
 
@@ -193,19 +193,20 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 **Ưu tiên:** P0. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** EF Core, PostgreSQL, Flashcards/Tasks/Study controllers.
 
-**Hiện trạng:** Có unique indexes và Version của thẻ; kiểm tra Version là optional, chưa cấu hình EF concurrency token. Kanban sắp vị trí trong SaveChanges nhưng chưa bảo đảm giữa request đồng thời.
+**Hiện trạng:** Có unique indexes cho progress/ngày học/cache notebook/điểm yếu và Version của thẻ; kiểm tra Version là optional, chưa cấu hình EF concurrency token. Kanban sắp vị trí trong SaveChanges nhưng chưa bảo đảm giữa request đồng thời.
 
 **Tiêu chí đạt:**
 
 - Hai client sửa thẻ cùng Version: chỉ một cập nhật thắng; bản còn lại nhận 409 và không ghi đè âm thầm. Test cả request cùng thời điểm và request thiếu Version.
 - Hai thao tác move/create/delete Kanban đồng thời không mất task hoặc để Position trùng/hổng sau khi hoàn tất; mỗi cột có thứ tự 0..n-1.
 - Review/ngày học lặp hoặc đồng thời không tạo hàng trùng theo unique key, không mất dữ liệu đã xác nhận; lỗi ghi một phần được rollback.
+- Phân tích đồng thời không tạo trùng `WeakAreas` theo UserId/Category/Topic; cache tạo nội dung không trùng theo NotebookId/Type/RequestHash/SourcesHash và không được dùng chéo notebook.
 - Ngày học/streak giữ đúng ngày Asia/Saigon qua biên 23:59/00:00 và restart; UTC timestamp không được dùng thay ngày học địa phương.
 
 **Cách kiểm thử:**
 
 1. Dùng barrier gửi request đồng thời tới PostgreSQL thật, tối thiểu 20 vòng mỗi ca; không thay bằng SQLite/in-memory.
-2. Đọc DB/GET sau mỗi vòng, kiểm tra version/count/order/foreign key và dấu mốc thời gian.
+2. Đọc DB/GET sau mỗi vòng, kiểm tra version/count/order/foreign key, unique key cache/điểm yếu và dấu mốc thời gian.
 
 **Bằng chứng:** Timeline request/response, truy vấn invariants đã che dữ liệu, kết quả race test.
 

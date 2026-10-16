@@ -2,6 +2,8 @@
 
 **Ngày lập:** 12/10/2026. **Cập nhật phân công:** 14/10/2026. **Phạm vi kỹ thuật ban đầu:** main/9ba7acd và bản staging C#/PostgreSQL; khi chạy phải ghi SHA main mới nhất và kiểm tra các khác biệt.
 
+**Rà phạm vi schema:** 16/10/2026, theo các migration PostgreSQL tiếp theo cho cache notebook, file nguồn và điểm yếu cá nhân. Khi chạy test vẫn phải ghi SHA main mới nhất và kiểm tra các khác biệt.
+
 Theo [phân công giữa kỳ được điều chỉnh](../../tasks/plan.md), **toàn bộ nhiệm vụ Test ở [Sprint 4](https://github.com/tungtungsahul/MindSprint-AI-D-n/milestone/4)**, gồm #17 (test case), #19 (manual testing, đã đóng) và 14 NFR #42–#55. Các nhiệm vụ tính năng, giao diện và tài liệu của thành viên ở Sprint 3, hạn nội bộ 20:00 ngày 22/10/2026 trước kiểm tra thứ Sáu 23/10. Sprint 4 chưa ấn định deadline. Giữ toàn bộ ngưỡng và tiêu chí nghiệm thu gốc; việc đổi lịch không có nghĩa đã chạy hoặc đạt.
 
 ## Mục tiêu và danh sách công việc

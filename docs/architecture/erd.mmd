@@ -1,8 +1,10 @@
 erDiagram
     Notebooks ||--o{ NotebookNotes : "NotebookId - FK CASCADE"
     Notebooks ||--o{ NotebookSources : "NotebookId - FK CASCADE"
+    Notebooks ||--o{ NotebookGenerationCaches : "NotebookId - FK CASCADE"
     Users |o--o{ Flashcards : "OwnerId - FK CASCADE"
     Users ||--o{ RefreshTokens : "UserId - FK CASCADE"
+    Users ||--o{ WeakAreas : "UserId - FK CASCADE"
     Flashcards ||--o{ CardProgresses : "FlashcardId - FK CASCADE"
     Users ||..o{ CardProgresses : "UserId - logical ref"
     Users ||..o{ Tasks : "UserId - logical ref"
@@ -25,6 +27,16 @@ erDiagram
         timestamptz ExpiresAt
         bool IsRevoked
         text DeviceHint "NULL"
+        timestamptz CreatedAt
+    }
+    NotebookGenerationCaches {
+        int Id PK
+        int NotebookId FK "Composite unique"
+        varchar32 Type "Composite unique"
+        varchar64 RequestHash "Composite unique"
+        varchar64 SourcesHash "Composite unique"
+        bool IsJson
+        text ContentJson
         timestamptz CreatedAt
     }
     Flashcards {
@@ -83,6 +95,20 @@ erDiagram
         text Label
         bool IsActive
     }
+    WeakAreas {
+        int Id PK
+        int UserId FK "Composite unique"
+        text Category "Composite unique"
+        text SubCategory "NULL"
+        text Topic "Composite unique"
+        text Reason
+        int WrongCount
+        int TotalAttempts
+        float8 AccuracyRate
+        text SuggestedAction
+        timestamptz AnalyzedAt "UserId index"
+        timestamptz LastUpdatedAt "NULL"
+    }
     NotebookSources {
         int Id PK
         int NotebookId FK
@@ -90,6 +116,8 @@ erDiagram
         text Type
         text Origin "NULL"
         text Content
+        bytea FileBytes "NULL"
+        text FileMediaType "NULL"
         timestamptz CreatedAt
     }
     NotebookNotes {

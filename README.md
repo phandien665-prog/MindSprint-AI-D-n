@@ -201,7 +201,7 @@ MindSprint-AI-D-n/
     ├── architecture/                  # Tài liệu kiến trúc
     │   ├── software-architecture.md   # Kiến trúc phần mềm
     │   ├── non-functional-requirements.md  # 14 NFR
-    │   ├── erd.md                     # ERD (10 bảng, 69 cột)
+    │   ├── erd.md                     # ERD (12 bảng, 91 cột)
     │   └── sprint-4-test-plan.md      # Kế hoạch kiểm thử
     └── decisions/                     # Architecture Decision Records
         ├── 0001-layered-monolith.md
@@ -257,7 +257,7 @@ Xem hướng dẫn chi tiết tại [CI-CD-SETUP.md](CI-CD-SETUP.md).
 | Tài liệu | Nội dung |
 |-----------|----------|
 | [Kiến trúc phần mềm](docs/architecture/software-architecture.md) | Bối cảnh, thành phần, dữ liệu, luồng xử lý, triển khai |
-| [ERD](docs/architecture/erd.md) | 10 bảng, 69 cột, khóa ngoại và quan hệ nghiệp vụ |
+| [ERD](docs/architecture/erd.md) | 12 bảng, 91 cột, khóa ngoại và quan hệ nghiệp vụ; sơ đồ Mermaid cập nhật theo migrations PostgreSQL hiện tại |
 | [Yêu cầu phi chức năng](docs/architecture/non-functional-requirements.md) | 14 NFR có tiêu chí đo được |
 | [Kế hoạch kiểm thử Sprint 4](docs/architecture/sprint-4-test-plan.md) | Issues #42–#55, thứ tự và điều kiện nghiệm thu |
 | [ADR-001](docs/decisions/0001-layered-monolith.md) | Backend theo tầng trong một ứng dụng |
