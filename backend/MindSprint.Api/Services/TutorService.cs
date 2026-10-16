@@ -102,7 +102,14 @@ public class TutorService(GeminiService gemini)
         explanation giải thích từng thay đổi và lý do; tests gồm đầu vào, đầu ra DỰ KIẾN và mục đích kiểm tra.
         Đề xuất ca thông thường, biên, rỗng hoặc sai kiểu khi phù hợp; không ghi kết quả đã chạy.
         Khi hỏi tiếp, dùng code, yêu cầu, error và history để giải thích đúng điểm được hỏi.
-        Nếu thiếu đề, đầu vào, kết quả mong muốn hoặc hàm/phụ thuộc cần thiết để kết luận, hỏi bổ sung cụ thể,
+        ƯU TIÊN LÀM RÕ TRƯỚC KHI SỬA: đoạn code có thể chỉ là một phần chương trình, không phải toàn bộ file.
+        Nếu gọi hàm/phụ thuộc chưa có định nghĩa trong ngữ cảnh, chưa biết chức năng/đầu ra mong muốn,
+        bắt buộc needsClarification=true, fixedCode=null, tests=[]; hỏi định nghĩa/import và yêu cầu còn thiếu.
+        Ví dụ transform(data) gọi helper(data) chưa được cung cấp: chỉ nói có thể NameError/ReferenceError
+        nếu helper chưa được định nghĩa/import, KHÔNG khẳng định chắc chắn lỗi khi chưa biết phần code khác.
+        Không tự thêm helper mẫu, return data, pass, giá trị mặc định hay stub để làm code có vẻ chạy được.
+        Quy tắc này ưu tiên hơn yêu cầu trả bản sửa và ca kiểm thử; không tự bịa chức năng của hàm còn thiếu.
+        Nếu thiếu đề, đầu vào hoặc kết quả mong muốn cần thiết để kết luận, cũng hỏi bổ sung cụ thể với
         needsClarification=true; chỉ nêu điều xác định được, fixedCode=null và tests=[] nếu chưa đủ dữ kiện.
         Không tự giả định phiên bản, thư viện, yêu cầu hoặc đầu ra chưa có. Nếu code khác language, yêu cầu chỉnh lại.
         answer là giải thích ngắn hoặc câu hỏi làm rõ, không lặp lại toàn bộ các trường có cấu trúc.
@@ -156,7 +163,8 @@ public class TutorService(GeminiService gemini)
                 || review.Tests is null || review.Tests.Count > 10
                 || new[] { review.Diagnosis, review.Location, review.FixedCode, review.Explanation }.Any(s => s?.Length > MaxQuestionChars)
                 || review.Tests.Any(t => t is null || new[] { t.Input, t.ExpectedOutput, t.Purpose }.Any(s => string.IsNullOrWhiteSpace(s) || s.Length > 2000))
-                || (!reply.NeedsClarification && (string.IsNullOrWhiteSpace(review.FixedCode) || review.Tests.Count == 0)))
+                || (!reply.NeedsClarification && (string.IsNullOrWhiteSpace(review.FixedCode) || review.Tests.Count == 0))
+                || (reply.NeedsClarification && (review.FixedCode is not null || review.Tests.Count != 0)))
                 throw new GeminiUnavailableException("ai_invalid_response", "Gia sư chưa trả phân tích code đầy đủ. Hãy thử lại.", 502);
             // Execution is never delegated to the model; this endpoint only calls Gemini.
             reply = reply with { ExecutionStatus = "not_run" };

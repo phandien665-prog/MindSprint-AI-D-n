@@ -62,8 +62,9 @@ Phản hồi bổ sung hai trường, giữ tương thích các hoạt động c
 }
 ```
 
-Khi thiếu dữ kiện, `needsClarification=true`, `fixedCode` có thể null và `tests`
-có thể rỗng. Khi đủ dữ kiện, bắt buộc có bản sửa (hoặc code giữ nguyên nếu đúng)
+Khi thiếu dữ kiện, `needsClarification=true`, `fixedCode` phải null và `tests`
+phải rỗng. Backend từ chối phản hồi mâu thuẫn để không trình bày bản sửa/đầu ra
+chưa có căn cứ. Khi đủ dữ kiện, bắt buộc có bản sửa (hoặc code giữ nguyên nếu đúng)
 và ít nhất một ca kiểm thử. Tối đa 10 ca, mỗi trường ca tối đa 2.000 ký tự;
 các trường phân tích khác tối đa 10.000. Phản hồi thiếu/sai cấu trúc trả 502
 `ai_invalid_response` để thử lại. JSON schema gửi cho Gemini quy định các trường này.
@@ -88,26 +89,33 @@ Browser checks dùng Edge headless và Playwright đi kèm API, profile/storage 
 API giả lập; không đọc hay ghi database thật. `TUTOR_BROWSER` chọn executable khác;
 `TUTOR_SCREENSHOT_DIR` lưu ảnh giao diện nếu cần.
 
-- **Pass:** 18 kiểm tra backend #34 với Gemini giả lập/SQLite trong bộ nhớ;
+- **Pass:** 19 kiểm tra backend #34 với Gemini giả lập/SQLite trong bộ nhớ;
   59 kiểm tra Gia sư hiện có. Kiểm tra byte code, quyền sở hữu, validation,
   schema, phản hồi sai/thiếu, yêu cầu bổ sung, trạng thái chưa chạy và quota/outage.
 - **Pass:** 36 kiểm tra frontend, 2 bài tích hợp trình duyệt; code/ký tự đặc biệt, ghi chú mở lại
   nguyên văn, hỏi tiếp, bàn phím, quota/outage/retry, sửa nháp khi chờ, đổi sổ tay/
   tài khoản; responsive 320/375/768/1024/1440. Hồi quy Gia sư/Theo nguồn hiện có.
-- **Pass (ví dụ do người triển khai kiểm tra):** chạy cục bộ các bản sửa mẫu
-  cho hàm cộng, chuyển chuỗi tuổi thành số và tổng số chẵn ở cả Python/JavaScript.
-  `add(2,3)=5`, tuổi `21 → 22`, `[1,2,4] → 6`, `[] → 0`, `[-2,-1,0,4] → 2`.
-  Đây là đối chiếu ví dụ tham khảo, **không phải đầu ra từ Gemini thực đã được nghiệm thu**.
-- **Blocked — Gemini thực:** đã gửi 8 mẫu bên dưới với cấu hình hiện có, tất cả
-  bị từ chối với `ai_request_rejected`. Yêu cầu tối thiểu đối chiếu trả HTTP 400
-  `INVALID_ARGUMENT`: **API key not valid**. Chưa xác nhận chất lượng chẩn đoán/bản sửa
-  của mô hình thực; cần cấu hình Gemini hợp lệ rồi chạy lại và kiểm tra đề xuất.
-  Không đánh dấu issue hoàn tất nghiệm thu hoặc đóng issue chỉ dựa vào mock.
+- **Pass — Gemini thực:** sau khi người dùng cấu hình khóa hợp lệ trong file riêng
+  được Git bỏ qua, 8 mẫu bên dưới và 1 câu hỏi tiếp đều trả phản hồi hợp lệ với
+  `executionStatus=not_run`. Đọc đối chiếu chẩn đoán/vị trí/lý do và kiểm thử dự kiến.
+  Hai mẫu thiếu định nghĩa `helper` hỏi bổ sung, không tự tạo hàm thay thế.
+- **Pass — chạy đối chiếu trong môi trường phát triển:** đã đọc cả 6 bản sửa do
+  Gemini thực đề xuất, đối chiếu nguyên văn với các snippet đã duyệt trước khi chạy;
+  10 lượt chạy Python/Node kiểm tra kết quả thông thường, rỗng, số âm và sai kiểu.
+  Không chạy code chưa duyệt, không có trình thực thi code trong ứng dụng.
+  Kết quả cụ thể nằm trong bảng dưới. Đây là kiểm chứng các mẫu đã nêu, không bảo đảm
+  mọi đề xuất AI trong tương lai đều đúng.
 - **Pass:** build Release API, 0 warnings / 0 errors; frontend build thành công.
 
 Main nền `e501102` còn thiếu `20261014120000_AddWeakArea.cs`, làm build lỗi CS0115
 ở file Designer. Nhánh này khôi phục nguyên migration từ nhánh sửa hiện có trong
 commit riêng để build lại được; không tạo migration mới cho tính năng Lập trình.
+
+Lần thử đầu với khóa hợp lệ đã phát hiện AI tự thêm `helper` mẫu cho code thiếu
+thông tin. Đã sửa prompt ưu tiên hỏi ngữ cảnh còn thiếu, cấm tự thêm stub/`return data`,
+thêm chặn phản hồi mâu thuẫn và kiểm tra hồi quy backend/trình duyệt. Chạy riêng hai
+mẫu thiếu dữ kiện rồi chạy lại toàn bộ ma trận đã đạt. Lệnh live hiện trả exit code
+khác 0 nếu mẫu thiếu dữ kiện không hỏi bổ sung hoặc tự đưa code/đầu ra dự kiến.
 
 ## Ma trận Gemini thực và đối chiếu thủ công
 
@@ -130,6 +138,23 @@ môi trường phát triển của người kiểm thử, ghi kết quả thực
 | JavaScript kiểu | `'21' + 1` in `211` | Giải thích nối chuỗi, đổi sang số để ra `22`, kiểm tra `NaN` |
 | JavaScript logic | Tổng chẵn lọc `% 2 !== 0` | Điều kiện chẵn, ca rỗng và số âm |
 | JavaScript thiếu dữ kiện | `return helper(data)` | Hỏi định nghĩa/phụ thuộc, không tự đoán yêu cầu |
+
+Kết quả chạy đối chiếu ngày 16/10/2026 (code được Gemini đề xuất, đã đọc trước khi chạy):
+
+| Bản sửa | Kết quả thực tế trong môi trường phát triển |
+| --- | --- |
+| Python `add` thêm `:` | `add(2,3) → 5`, `add(-1,1) → 0`, `add(0,0) → 0` |
+| Python `print(int(age) + 1)` | Nhập `21 → 22`, `0 → 1`; `abc` gây `ValueError` |
+| Python `total_even` đổi sang `% 2 == 0` | `[1,2,4] → 6`, `[1,3,5] → 0`, `[] → 0`, `[-2,-1,0,4] → 2` |
+| JavaScript `add` thêm `}` | `add(2,3) → 5`, `add(-1,1) → 0`, `add(0,0) → 0` |
+| JavaScript `Number(age) + 1` | Chuỗi `21 → 22`, `0 → 1`, `abc → NaN` |
+| JavaScript `totalEven` đổi sang `% 2 === 0` | `[1,2,4] → 6`, `[1,3,5] → 0`, `[] → 0`, `[-2,-1,0,4] → 2` |
+| Python/JavaScript thiếu `helper` | `needsClarification=true`, `fixedCode=null`, `tests=[]`; không có bản sửa để chạy |
+
+Mẫu chuyển tuổi chỉ sửa phép chuyển kiểu; không tự thêm quy tắc tuổi hợp lệ hoặc xử lý
+mọi đầu vào sai. `ValueError`/`NaN` ở ca chữ được ghi đúng, không coi là kết quả số hợp lệ.
+Phản hồi live và log đối chiếu lưu cục bộ ở `artifacts/issue-34/live-programming.json`
+và `artifacts/issue-34/live-runtime-verification.json` (Git bỏ qua), không có khóa API.
 
 Sau mẫu Python cú pháp có thêm câu hỏi “Vì sao dòng 1 cần dấu hai chấm?” để kiểm tra
 ngữ cảnh. Kiểm tra mọi phản hồi đều không nói “đã chạy/đã pass”; màn hình/ghi chú ghi

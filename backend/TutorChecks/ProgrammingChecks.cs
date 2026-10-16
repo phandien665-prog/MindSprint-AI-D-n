@@ -15,7 +15,7 @@ using MindSprint.Api.Services;
 
 internal static class ProgrammingChecks
 {
-    public static async Task Live()
+    public static async Task Live(string? selectedCase = null)
     {
         var apiDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../MindSprint.Api"));
         var cfg = new ConfigurationBuilder().AddJsonFile(Path.Combine(apiDir, "appsettings.json"))
@@ -36,12 +36,16 @@ internal static class ProgrammingChecks
             ("javascript-logic", "javascript", "Tính tổng số chẵn trong danh sách số nguyên. [1, 2, 4] phải trả 6.", "function totalEven(numbers) {\n  return numbers.filter(n => n % 2 !== 0).reduce((sum, n) => sum + n, 0);\n}", "Đang trả 1 thay vì 6"),
             ("javascript-missing", "javascript", "Vì sao code này sai?", "function transform(data) {\n  return helper(data);\n}", "")
         };
-        foreach (var sample in samples) {
+        foreach (var sample in samples.Where(s => selectedCase is null || s.Name.Contains(selectedCase, StringComparison.OrdinalIgnoreCase))) {
             try {
                 var request = new TutorRequest(sample.Question, Action: "code", Language: sample.Language, Code: sample.Code, Error: sample.Error);
                 var reply = await tutor.SolveAsync(request);
-                results.Add(new { sample.Name, Request = request, Reply = reply });
-                Console.WriteLine($"LIVE {sample.Name}: needsClarification={reply.NeedsClarification}, executionStatus={reply.ExecutionStatus}");
+                var accepted = reply.ExecutionStatus == "not_run" && (sample.Name.EndsWith("-missing")
+                    ? reply.NeedsClarification && reply.Programming?.FixedCode is null && reply.Programming?.Tests.Count == 0
+                    : !reply.NeedsClarification);
+                results.Add(new { sample.Name, Request = request, Reply = reply, Accepted = accepted });
+                Console.WriteLine($"LIVE {(accepted ? "PASS" : "FAIL")} {sample.Name}: needsClarification={reply.NeedsClarification}, executionStatus={reply.ExecutionStatus}");
+                if (!accepted && Environment.ExitCode == 0) Environment.ExitCode = 1;
                 if (sample.Name == "python-syntax") {
                     var followup = request with { Question = "Vì sao dòng 1 cần dấu hai chấm?", History = [new("user", sample.Question), new("assistant", JsonSerializer.Serialize(reply))] };
                     var next = await tutor.SolveAsync(followup);
@@ -105,12 +109,15 @@ internal static class ProgrammingChecks
             calls = provider.Calls;
             Check((await Send(bad)).Status == 400 && provider.Calls == calls, "invalid code request rejected before provider");
         }
+        var completeReview = provider.Review;
         foreach (var malformed in new[] { "{}", "{\"diagnosis\":\"Lỗi\",\"explanation\":\"Lý do\",\"fixedCode\":\"print(1)\",\"tests\":[]}" }) {
             provider.Review = JsonDocument.Parse(malformed).RootElement.Clone();
             Check((await Send(input)).Status == 502, "incomplete provider analysis is retryable");
         }
-        provider.Review = JsonSerializer.SerializeToElement(new { diagnosis = "Thiếu yêu cầu", location = (string?)null, fixedCode = (string?)null, explanation = "Hãy cung cấp đầu vào và kết quả mong muốn.", tests = Array.Empty<object>() });
         provider.Clarify = true;
+        provider.Review = completeReview;
+        Check((await Send(input)).Status == 502, "clarification cannot publish an invented fix or predicted outputs");
+        provider.Review = JsonSerializer.SerializeToElement(new { diagnosis = "Thiếu yêu cầu", location = (string?)null, fixedCode = (string?)null, explanation = "Hãy cung cấp đầu vào và kết quả mong muốn.", tests = Array.Empty<object>() });
         Check((await Send(input)).Body.GetProperty("needsClarification").GetBoolean(), "missing information can request clarification without inventing a fix");
         provider.Status = 429;
         result = await Send(input);

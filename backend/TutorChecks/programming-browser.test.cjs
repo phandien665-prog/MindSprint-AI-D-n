@@ -25,7 +25,7 @@ test('programming tutor preserves code, isolates follow-ups, escapes output, sav
         const page = await context.newPage(), errors = [], calls = [], notes = [];
         const base = `http://127.0.0.1:${server.address().port}`;
         const original = '\n\tprint("<img src=x onerror=alert(1)> $[1] ``` &")\n  ';
-        let status = 200, release, delayed = false;
+        let status = 200, release, delayed = false, clarify = false;
         page.on('pageerror', e => errors.push(e.message));
         await context.route('**/*', async route => {
             const req = route.request(), url = new URL(req.url());
@@ -46,6 +46,8 @@ test('programming tutor preserves code, isolates follow-ups, escapes output, sav
                         programming:{diagnosis:'Kiểm tra cú pháp <img src=x onerror=alert(1)>',location:'Dòng 2',fixedCode:original,
                             explanation:'Giữ chuỗi và thụt dòng.',tests:[{input:'<script>x</script>',expectedOutput:'$[1] ``` &',purpose:'Kiểm tra ký tự'}]}
                     };
+                    if (status === 200 && clarify) body = {answer:'Hãy cung cấp định nghĩa helper và kết quả mong muốn.',needsClarification:true,executionStatus:'not_run',
+                        programming:{diagnosis:'Chưa có định nghĩa helper trong ngữ cảnh.',location:'Dòng 2',fixedCode:null,explanation:'Cần thêm thông tin trước khi sửa.',tests:[]}};
                 }
                 return route.fulfill({status:responseStatus,contentType:'application/json',headers:{'Access-Control-Allow-Origin':base,'Access-Control-Allow-Headers':'authorization,content-type','Access-Control-Allow-Methods':'GET,POST,DELETE,OPTIONS'},body:JSON.stringify(body)});
             }
@@ -129,6 +131,12 @@ test('programming tutor preserves code, isolates follow-ups, escapes output, sav
         await page.locator('[data-act=tutor-new]').click(); await page.locator('#app-dialog-submit').click();
         assert.equal(await code.inputValue(), '');
         assert.equal(notes.length,1);
+        clarify = true;
+        await code.fill('function transform(data) {\n  return helper(data);\n}'); await send.click(); await finish();
+        assert.match(await messages.innerText(), /Cần bổ sung thông tin/);
+        assert.match(await messages.innerText(), /Hãy cung cấp định nghĩa helper/);
+        assert.doesNotMatch(await messages.innerText(), /Bản sửa đề xuất|Kiểm thử dự kiến/);
+        clarify = false;
         delayed = true; release = null; await code.fill('print("OLD_ACCOUNT")'); await send.click();
         while (!release) await new Promise(resolve => setTimeout(resolve,10));
         await page.evaluate(() => MindSprintAuth.logout()); release(); delayed = false;
