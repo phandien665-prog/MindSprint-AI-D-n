@@ -2274,13 +2274,16 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             
             html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('app-theme', newTheme);
+            localStorage.setItem('app-theme-v2', newTheme);
             
             const icon = themeToggle.querySelector('i');
             icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         });
 
-        const savedTheme = localStorage.getItem('app-theme');
+        // Start the refreshed palette in light mode; preserve a saved light choice,
+        // but don't let the old dark default override the new palette.
+        const savedTheme = localStorage.getItem('app-theme-v2') ||
+            (localStorage.getItem('app-theme') === 'light' ? 'light' : null);
         if (savedTheme) {
             document.documentElement.setAttribute('data-theme', savedTheme);
             const icon = themeToggle.querySelector('i');
