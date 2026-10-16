@@ -249,7 +249,7 @@ html[data-theme="dark"] .welcome-banner {
     position: relative;
     z-index: 1;
     align-items: flex-start;
-    max-width: 630px;
+    max-width: 520px;
     gap: 10px;
     text-align: left;
 }
@@ -266,7 +266,7 @@ html[data-theme="dark"] .welcome-banner {
     font-weight: 700;
 }
 .welcome-banner h2 {
-    max-width: 19ch;
+    max-width: 16ch;
     margin: 5px 0 0;
     color: var(--text-primary);
     font-family: var(--font-heading);
@@ -450,7 +450,7 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
 
 @media (max-width: 1100px) {
     .home-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .welcome-banner::after { right: 3%; width: 210px; opacity: .72; }
+    .welcome-banner::after { right: -110px; width: 210px; opacity: .42; }
 }
 
 @media (max-width: 768px) {
