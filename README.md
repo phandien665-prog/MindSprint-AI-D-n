@@ -99,6 +99,14 @@ Sửa `backend/MindSprint.Api/appsettings.json` hoặc dùng biến môi trườ
 cd backend/MindSprint.Api
 dotnet run          # Tự Migrate + Seed, Swagger tại /swagger
 ```
+Sửa cấu hình cục bộ: chuỗi kết nối PostgreSQL, `Jwt:Key` (>= 32 ký tự), `Gemini:ApiKey`, `Cors:Origins`. Giữ khóa API ngoài commit; có thể dùng biến môi trường `Gemini__ApiKey`.
+
+Để bật tạo flashcard AI khi chạy local, dùng .NET User Secrets (không đặt key trong frontend hoặc commit vào Git):
+```powershell
+dotnet user-secrets set "Gemini:ApiKey" "<YOUR_GEMINI_API_KEY>" --project backend/MindSprint.Api
+```
+Sau khi cấu hình, khởi động lại backend để nạp key. Thay `<YOUR_GEMINI_API_KEY>` bằng key tạo tại Google AI Studio; tránh lưu key thật trong lịch sử terminal. `.env` không được ASP.NET Core nạp mặc định.
+Khi chạy local, `frontend/api.js` tự dùng `http://localhost:5000`; khi triển khai Vercel, biến `API_BASE` được nhúng lúc build. Xem [hướng dẫn triển khai](CI-CD-SETUP.md).
 
 Backend chạy tại `http://localhost:5000` (HTTP) và `https://localhost:5100` (HTTPS).
 
