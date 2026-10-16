@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>66e61c18-ab47-4e94-ac87-1a9e6de7b9df</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Auth" Version="1.77.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+    <PackageReference Include="PdfPig" Version="0.1.9" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.13.0" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.63.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Data/vocab_seed.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Historical SQL Server migrations are already covered by InitialCreate_PostgreSQL. -->
+    <Compile Remove="Migrations/20261001142308_AddRefreshTokens*.cs;Migrations/20261001145101_AddFlashcardVersioning*.cs;Migrations/20261001151606_AddStudyStats*.cs" />
+  </ItemGroup>
+</Project>
