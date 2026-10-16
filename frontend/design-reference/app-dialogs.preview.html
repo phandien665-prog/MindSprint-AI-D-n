@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hộp thoại — tám trạng thái</title>
+<link rel="stylesheet" href="../tokens.css?v=39"><link rel="stylesheet" href="../style.css?v=50">
+<style>
+html,body {height:auto;overflow-x:clip;} body {display:block;padding:var(--space-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-body);} main {max-width:1000px;margin:auto;} h1 {font-size:1.5rem;margin-block:var(--space-lg);} .preview-states {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-md);} .preview-state {min-width:0;} .preview-state>p {margin-block:var(--space-md);color:var(--text-secondary);} dialog.app-dialog {position:static;inset:auto;width:100%;max-height:none;margin:0;box-shadow:var(--card-shadow);} .btn.is-hover {background:var(--primary-hover);box-shadow:var(--button-shadow-hover);} .btn.is-active {transform:scale(.97);box-shadow:var(--button-shadow-active);} .app-dialog input.is-focus {border-color:var(--primary-color);box-shadow:0 0 0 4px rgba(255,122,69,.12);} @media(max-width:768px) {.preview-states{grid-template-columns:minmax(0,1fr);}}
+</style>
+</head>
+<body>
+<main>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<h1>Hộp thoại trong web</h1><p>Bản xem thử các trạng thái, không gọi API.</p>
+<div class="preview-states">
+<section class="preview-state">
+<p>1. Mặc định</p>
+<dialog open class="app-dialog" data-tone="info" aria-labelledby="preview-title-0">
+<div class="app-dialog-header"><h2 id="preview-title-0">Tạo sổ tay mới</h2><button type="button" aria-label="Đóng">×</button></div>
+<label for="preview-input-0">Tên sổ tay</label><input id="preview-input-0" value="Tên sổ tay">
+
+<div class="app-dialog-actions"><button class="btn btn-secondary" type="button">Hủy</button><button class="btn btn-primary " type="button">Tạo sổ tay</button></div>
+</dialog>
+</section>
+<section class="preview-state">
+<p>2. Hover</p>
+<dialog open class="app-dialog" data-tone="info" aria-labelledby="preview-title-1">
+<div class="app-dialog-header"><h2 id="preview-title-1">Tạo sổ tay mới</h2><button type="button" aria-label="Đóng">×</button></div>
+<label for="preview-input-1">Tên sổ tay</label><input id="preview-input-1" value="Đại số tuyến tính">
+
+<div class="app-dialog-actions"><button class="btn btn-secondary" type="button">Hủy</button><button class="btn btn-primary is-hover" type="button">Tạo sổ tay</button></div>
+</dialog>
+</section>
+<section class="preview-state">
+<p>3. Focus bàn phím</p>
+<dialog open class="app-dialog" data-tone="info" aria-labelledby="preview-title-2">
+<div class="app-dialog-header"><h2 id="preview-title-2">Tạo sổ tay mới</h2><button type="button" aria-label="Đóng">×</button></div>
+<label for="preview-input-2">Tên sổ tay</label><input id="preview-input-2" value="Đại số tuyến tính" class="is-focus">
+
+<div class="app-dialog-actions"><button class="btn btn-secondary" type="button">Hủy</button><button class="btn btn-primary " type="button">Tạo sổ tay</button></div>
+</dialog>
+</section>
+<section class="preview-state">
+<p>4. Đang nhấn</p>
+<dialog open class="app-dialog" data-tone="info" aria-labelledby="preview-title-3">
+<div class="app-dialog-header"><h2 id="preview-title-3">Tạo sổ tay mới</h2><button type="button" aria-label="Đóng">×</button></div>
+<label for="preview-input-3">Tên sổ tay</label><input id="preview-input-3" value="Đại số tuyến tính">
+
+<div class="app-dialog-actions"><button class="btn btn-secondary" type="button">Hủy</button><button class="btn btn-primary is-active" type="button">Tạo sổ tay</button></div>
+</dialog>
+</section>
+<section class="preview-state">
+<p>5. Vô hiệu hóa</p>
+<dialog open class="app-dialog" data-tone="info" aria-labelledby="preview-title-4">
+<div class="app-dialog-header"><h2 id="preview-title-4">Tạo sổ tay mới</h2><button type="button" aria-label="Đóng" disabled>×</button></div>
+<label for="preview-input-4">Tên sổ tay</label><input id="preview-input-4" value="Đại số tuyến tính" disabled>
+
+<div class="app-dialog-actions"><button class="btn btn-secondary" type="button" disabled>Hủy</button><button class="btn btn-primary " type="button" disabled>Tạo sổ tay</button></div>
+</dialog>
+</section>
+<section class="preview-state">
+<p>6. Đang xử lý</p>
+<dialog open class="app-dialog" data-tone="info" aria-labelledby="preview-title-5">
+<div class="app-dialog-header"><h2 id="preview-title-5">Tạo sổ tay mới</h2><button type="button" aria-label="Đóng" disabled>×</button></div>
+<label for="preview-input-5">Tên sổ tay</label><input id="preview-input-5" value="Đại số tuyến tính" disabled>
+
+<div class="app-dialog-actions"><button class="btn btn-secondary" type="button" disabled>Hủy</button><button class="btn btn-primary " type="button" disabled>Đang tạo…</button></div>
+</dialog>
+</section>
+<section class="preview-state">
+<p>7. Lỗi</p>
+<dialog open class="app-dialog" data-tone="info" aria-labelledby="preview-title-6">
+<div class="app-dialog-header"><h2 id="preview-title-6">Tạo sổ tay mới</h2><button type="button" aria-label="Đóng">×</button></div>
+<label for="preview-input-6">Tên sổ tay</label><input id="preview-input-6" value="   " aria-invalid="true">
+<p class="app-dialog-error" role="alert">Vui lòng nhập tên sổ tay.</p>
+<div class="app-dialog-actions"><button class="btn btn-secondary" type="button">Hủy</button><button class="btn btn-primary " type="button">Tạo sổ tay</button></div>
+</dialog>
+</section>
+<section class="preview-state">
+<p>8. Thành công</p>
+<dialog open class="app-dialog" data-tone="success" aria-labelledby="preview-title-7">
+<div class="app-dialog-header"><h2 id="preview-title-7">Đã tạo sổ tay</h2><button type="button" aria-label="Đóng">×</button></div>
+<p class="app-dialog-message">Sổ tay đã sẵn sàng để thêm tài liệu.</p>
+
+<div class="app-dialog-actions"><button class="btn btn-secondary" type="button">Hủy</button><button class="btn btn-primary " type="button">Đã hiểu</button></div>
+</dialog>
+</section>
+</div>
+</main>
+</body>
+</html>

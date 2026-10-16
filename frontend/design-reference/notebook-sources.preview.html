@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Khung nguồn — xem thử trạng thái</title>
+    <link rel="stylesheet" href="../tokens.css?v=39"><link rel="stylesheet" href="../style.css?v=44">
+    <style>
+        html, body { overflow-x: clip; height: auto; }
+        body { margin: 0; padding: var(--space-md); background: var(--bg-primary); font-family: var(--font-body); color: var(--text-primary); }
+        main { max-width: 1000px; margin: auto; }
+        h1 { font-size: 1.5rem; margin-block: var(--space-lg); font-style: normal; }
+        .preview-states { display: grid; gap: var(--space-md); min-width: 0; }
+        .preview-state { padding: var(--space-md); background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: var(--border-radius-md); }
+        .preview-state > p { font-size: .8rem; margin-bottom: var(--space-sm); color: var(--text-secondary); }
+        .preview-note { margin-bottom: var(--space-lg); color: var(--text-secondary); line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <!-- Hallmark · component preview · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+    <main id="tab-content-notebook">
+        <h1>Khung Sổ tay & Nguồn</h1>
+        <p class="preview-note">Bản xem thử riêng cho component và tám trạng thái. Các nhãn trạng thái dùng để kiểm tra thiết kế; không gọi API.</p>
+        <div class="nb-layout">
+            <section class="nb-col nb-sources glass-panel">
+                <h3><span>Sổ tay & Nguồn</span><button class="nb-source-toggle nb-icon-btn" type="button" data-preview-toggle aria-label="Thu gọn khung nguồn" aria-expanded="true" aria-controls="preview-source-content">‹</button></h3>
+                <div class="nb-source-rail"><button class="nb-icon-btn" type="button" data-preview-toggle aria-label="Mở khung nguồn" aria-expanded="false" aria-controls="preview-source-content">›</button><span class="nb-rail-label">Nguồn</span><span class="nb-rail-count">0</span></div>
+                <div class="nb-source-content" id="preview-source-content">
+                    <label class="nb-notebook-label" for="preview-notebook">Sổ tay đang mở</label>
+                    <div class="nb-row"><select id="preview-notebook"><option>Sổ tay xem thử</option></select></div>
+                    <button class="nb-add-source-btn" type="button">+ Thêm nguồn</button>
+                    <div class="nb-source-list-heading"><span>Nguồn tài liệu</span><span>0</span></div>
+                    <div class="nb-source-empty"><strong>Chưa có tài liệu</strong><p>Thêm tệp, trang web hoặc văn bản để bắt đầu khám phá kiến thức.</p></div>
+                </div>
+            </section>
+            <section class="preview-states" aria-label="Tám trạng thái">
+                <div class="preview-state"><p>1. Mặc định</p><button class="nb-add-source-btn" type="button">+ Thêm nguồn</button></div>
+                <div class="preview-state"><p>2. Hover</p><button class="nb-add-source-btn is-hover" type="button">+ Thêm nguồn</button></div>
+                <div class="preview-state"><p>3. Focus</p><button class="nb-add-source-btn is-focus" type="button">+ Thêm nguồn</button></div>
+                <div class="preview-state"><p>4. Bấm</p><button class="nb-add-source-btn is-active" type="button">+ Thêm nguồn</button></div>
+                <div class="preview-state"><p>5. Vô hiệu hóa</p><button class="nb-add-source-btn" type="button" disabled>+ Thêm nguồn</button></div>
+                <div class="preview-state"><p>6. Đang xử lý</p><div class="nb-source-dialog-actions"><button class="btn btn-primary" type="button" disabled>Tải lên</button></div></div>
+                <div class="preview-state"><p>7. Lỗi</p><p class="nb-file-selection is-error">Chọn tệp PDF, TXT, MD hoặc CSV không quá 10 MB.</p></div>
+                <div class="preview-state"><p>8. Thành công</p><p class="nb-file-selection" data-state="success">Đã thêm tệp vào sổ tay.</p></div>
+            </section>
+        </div>
+    </main>
+    <script>
+        document.querySelectorAll('[data-preview-toggle]').forEach(button => button.addEventListener('click', () => {
+            const collapsed = document.querySelector('.nb-layout').classList.toggle('is-sources-collapsed');
+            document.querySelector('.nb-sources').classList.toggle('is-expanded', !collapsed);
+            document.querySelectorAll('[data-preview-toggle]').forEach(toggle => toggle.setAttribute('aria-expanded', String(!collapsed)));
+            document.querySelector(collapsed ? '.nb-source-rail button' : '.nb-sources h3 button').focus();
+        }));
+        document.querySelector('.nb-sources').classList.add('is-expanded');
+    </script>
+</body>
+</html>

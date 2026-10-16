@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindSprint AI — Kanban Productivity & Spaced Repetition Mastery</title>
+  <meta name="description" content="Nền tảng quản lý công việc Kanban kết hợp ôn tập Flashcard ngắt quãng SM-2 và trí tuệ nhân tạo AI.">
+
+  <!-- Favicon SVG Data URI -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+
+  <!-- Primary Stylesheet with Seamless FastAPI /static or Direct Relative Fallback -->
+  <link rel="stylesheet" href="/static/css/style.css" id="app-stylesheet" onerror="this.onerror=null;this.href='css/style.css';">
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. Application Header & Navigation Bar
+       ======================================================================== -->
+  <header class="app-header">
+    <div class="header-container">
+
+      <!-- Brand Logo Section -->
+      <div class="brand-section" id="brand-logo" title="MindSprint AI — Trang chủ">
+        <div class="brand-logo-icon">⚡</div>
+        <div class="brand-title">
+          MindSprint <span style="font-weight: 300;">AI</span>
+          <span class="brand-badge">v1.0</span>
+        </div>
+      </div>
+
+      <!-- Main Navigation Tabs -->
+      <nav class="nav-tabs" aria-label="Điều hướng chính">
+        <button class="nav-tab-btn active" id="nav-tab-kanban" data-tab="kanban">
+          <svg viewBox="0 0 24 24"><path d="M4 4h4v16H4V4zm6 0h4v10h-4V4zm6 0h4v14h-4V4z"/></svg>
+          Kanban Board
+        </button>
+        <button class="nav-tab-btn" id="nav-tab-flashcards" data-tab="flashcards">
+          <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+          Ôn tập Flashcards
+        </button>
+        <button class="nav-tab-btn" id="nav-tab-stats" data-tab="stats">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+          Tiến độ học tập
+        </button>
+      </nav>
+
+      <!-- Action Controls & User Session Area -->
+      <div class="header-actions">
+
+        <!-- Quick Header Action Buttons -->
+        <button class="btn btn-primary btn-sm" id="header-btn-add-task" title="Tạo task mới">
+          + Task mới
+        </button>
+        <button class="btn btn-ai-gradient btn-sm" id="header-btn-ai" title="Tạo flashcard bằng AI">
+          ✨ AI Studio
+        </button>
+        <button class="btn btn-secondary btn-sm" id="header-btn-bulk" title="Nhập hàng loạt flashcards">
+          📥 Nhập Bulk
+        </button>
+
+        <!-- Theme Switcher Toggle (Dark/Light) -->
+        <button class="theme-toggle-btn" id="theme-toggle-btn" title="Chuyển chế độ giao diện" aria-label="Chuyển đổi giao diện Sáng / Tối">
+          🌙
+        </button>
+
+        <!-- Authentication / User Profile Container -->
+        <div class="auth-widget" id="auth-widget">
+          <!-- Unauthenticated State Button -->
+          <button class="btn btn-secondary btn-sm" id="btn-nav-login">
+            Đăng nhập / Đăng ký
+          </button>
+
+          <!-- Authenticated User Profile Badge (hidden by default) -->
+          <div class="user-profile-badge" id="user-profile-badge" style="display: none;">
+            <div class="user-avatar-circle" id="user-avatar-circle">U</div>
+            <span class="user-display-name" id="user-display-name">Username</span>
+            <button class="btn-logout" id="btn-logout" title="Đăng xuất" aria-label="Đăng xuất">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3H10c-1.1 0-2 .9-2 2v4h2V5h10v14H10v-4H8v4c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       2. Main Content Views (SPA Tab Switching)
+       ======================================================================== -->
+  <main class="app-main">
+
+    <!-- ----------------------------------------------------------------------
+         VIEW 1: KANBAN BOARD
+         ---------------------------------------------------------------------- -->
+    <section class="view-section active" id="kanban-view" aria-label="Bảng Kanban công việc">
+
+      <!-- Kanban Toolbar & Filters -->
+      <div class="kanban-toolbar">
+        <div class="toolbar-title-group">
+          <h2>Bảng Quản Lý Công Việc (Kanban)</h2>
+          <p>Kéo thả trực quan giữa các cột để đồng bộ hóa trạng thái tiến độ tức thì.</p>
+        </div>
+        <div class="toolbar-controls">
+          <div class="search-input-wrapper">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input type="text" class="search-input" id="kanban-search" placeholder="Tìm kiếm công việc...">
+          </div>
+          <select class="select-filter" id="kanban-priority-filter" aria-label="Lọc theo mức ưu tiên">
+            <option value="all">Mức ưu tiên: Tất cả</option>
+            <option value="High">Ưu tiên cao 🔥</option>
+            <option value="Medium">Ưu tiên trung bình ⚡</option>
+            <option value="Low">Ưu tiên thấp 🍃</option>
+          </select>
+          <button class="btn btn-primary" id="btn-new-task">
+            + Thêm Task
+          </button>
+        </div>
+      </div>
+
+      <!-- 3-Column Kanban Board Grid -->
+      <div class="kanban-board-grid">
+
+        <!-- Column 1: Todo -->
+        <div class="kanban-column col-todo">
+          <div class="column-header">
+            <div class="column-header-title">
+              <span class="column-dot"></span>
+              <span>Chưa bắt đầu (Todo)</span>
+              <span class="column-count-badge" id="todo-count">1</span>
+            </div>
+            <button class="btn-icon btn-add-col-task" data-status="Todo" title="Thêm task vào cột này">+</button>
+          </div>
+          <div class="kanban-column-list" id="col-todo-list" data-status="Todo">
+            <div class="kanban-card" data-id="static-1">
+              <div class="card-top-bar">
+                <span class="badge badge-medium">⚡ Ưu tiên trung bình</span>
+                <div class="card-header-actions">
+                  <button class="btn-icon btn-card-delete" title="Xóa task">🗑️</button>
+                </div>
+              </div>
+              <h4 class="card-title">Tích hợp AI Flashcard Generator & Analytics</h4>
+              <p class="card-desc">Cho phép người dùng tạo nhanh bộ thẻ từ ghi chú và theo dõi tỷ lệ nhớ bài Ebbinghaus.</p>
+              <div class="card-footer">
+                <span class="card-date" title="Hạn hoàn thành">📅 2026-09-30</span>
+                <div class="card-move-actions">
+                  <button class="btn-move btn-move-right" title="Chuyển sang Đang làm (Doing)">→</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Doing -->
+        <div class="kanban-column col-inprogress">
+          <div class="column-header">
+            <div class="column-header-title">
+              <span class="column-dot"></span>
+              <span>Đang làm (Doing)</span>
+              <span class="column-count-badge" id="inprogress-count">1</span>
+            </div>
+            <button class="btn-icon btn-add-col-task" data-status="InProgress" title="Thêm task vào cột này">+</button>
+          </div>
+          <div class="kanban-column-list" id="col-inprogress-list" data-status="InProgress">
+            <div class="kanban-card" data-id="static-2">
+              <div class="card-top-bar">
+                <span class="badge badge-high">🔥 Ưu tiên cao</span>
+                <div class="card-header-actions">
+                  <button class="btn-icon btn-card-delete" title="Xóa task">🗑️</button>
+                </div>
+              </div>
+              <h4 class="card-title">Thiết kế giao diện 3D Spaced Repetition Flashcard</h4>
+              <p class="card-desc">Tối ưu hiệu ứng lật thẻ 3D rotateY với CSS hardware acceleration và 4 mức đánh giá SM-2.</p>
+              <div class="card-footer">
+                <span class="card-date" title="Hạn hoàn thành">📅 2026-09-29</span>
+                <div class="card-move-actions">
+                  <button class="btn-move btn-move-left" title="Chuyển về Chưa làm (Todo)">←</button>
+                  <button class="btn-move btn-move-right" title="Chuyển sang Đã xong (Done)">→</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 3: Done -->
+        <div class="kanban-column col-completed">
+          <div class="column-header">
+            <div class="column-header-title">
+              <span class="column-dot"></span>
+              <span>Đã xong (Done)</span>
+              <span class="column-count-badge" id="completed-count">1</span>
+            </div>
+            <button class="btn-icon btn-add-col-task" data-status="Completed" title="Thêm task vào cột này">+</button>
+          </div>
+          <div class="kanban-column-list" id="col-completed-list" data-status="Completed">
+            <div class="kanban-card" data-id="static-3">
+              <div class="card-top-bar">
+                <span class="badge badge-high">🔥 Ưu tiên cao</span>
+                <div class="card-header-actions">
+                  <button class="btn-icon btn-card-delete" title="Xóa task">🗑️</button>
+                </div>
+              </div>
+              <h4 class="card-title">Xây dựng Backend RESTful API với FastAPI</h4>
+              <p class="card-desc">Phát triển các module auth, tasks, flashcard review và bulk AI generator theo đúng interface contract.</p>
+              <div class="card-footer">
+                <span class="card-date" title="Hạn hoàn thành">📅 2026-09-28</span>
+                <div class="card-move-actions">
+                  <button class="btn-move btn-move-left" title="Chuyển lại Đang làm (Doing)">←</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ----------------------------------------------------------------------
+         VIEW 2: FLASHCARDS & SPACED REPETITION (3D FLIP & SM-2)
+         ---------------------------------------------------------------------- -->
+    <section class="view-section" id="flashcards-view" aria-label="Giao diện ôn tập Flashcards">
+
+      <!-- Flashcards Toolbar -->
+      <div class="flashcards-toolbar">
+        <div class="mode-toggle-group">
+          <button class="mode-toggle-btn active" id="btn-mode-study">Chế độ học (3D Study)</button>
+          <button class="mode-toggle-btn" id="btn-mode-deck">Quản lý bộ thẻ (Deck)</button>
+        </div>
+
+        <div class="toolbar-controls">
+          <button class="btn btn-secondary btn-sm" id="btn-open-add-card">
+            + Thêm thẻ mới
+          </button>
+          <button class="btn btn-ai-gradient btn-sm" id="btn-open-ai">
+            ✨ Tạo thẻ bằng AI
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btn-open-bulk">
+            📥 Nhập Bulk JSON/Text
+          </button>
+        </div>
+      </div>
+
+      <!-- Mode 1: 3D Study Session Container -->
+      <div id="study-mode-container">
+
+        <!-- Active Session Area -->
+        <div id="study-session-area">
+          <div class="study-header">
+            <div>
+              <span class="badge badge-category" id="card-category-badge">Chủ đề: Chung</span>
+            </div>
+            <div style="text-align: right;">
+              <span class="study-progress-info" id="study-progress-text">Thẻ 1 / 1</span>
+            </div>
+          </div>
+
+          <div class="study-progress-bar-bg">
+            <div class="study-progress-bar-fill" id="study-progress-fill"></div>
+          </div>
+
+          <!-- 3D Hardware Accelerated Flashcard Stage -->
+          <div class="flashcard-stage" id="flashcard-stage" title="Bấm vào thẻ hoặc nhấn Space để lật">
+            <div class="flashcard-inner">
+
+              <!-- Front Face: Question -->
+              <div class="flashcard-front">
+                <div class="card-content-top">
+                  <span>MẶT TRƯỚC (CÂU HỎI / KHÁI NIỆM)</span>
+                  <span>🔄 Bấm để lật</span>
+                </div>
+
+                <div class="card-face-body">
+                  <div class="card-face-question" id="card-front-content">
+                    Đang tải câu hỏi flashcard...
+                  </div>
+                  <div class="card-hint-box" id="card-hint-content" style="display: none;"></div>
+                </div>
+
+                <div class="card-click-prompt">
+                  <button class="btn btn-secondary btn-sm" id="btn-flip-card">
+                    💡 Lật xem đáp án [Space]
+                  </button>
+                </div>
+              </div>
+
+              <!-- Back Face: Answer & SM-2 Ratings -->
+              <div class="flashcard-back">
+                <div class="card-content-top">
+                  <span>MẶT SAU (ĐÁP ÁN & GIẢI THÍCH)</span>
+                  <span>✅ Đánh giá mức độ nhớ bên dưới</span>
+                </div>
+
+                <div class="card-face-body">
+                  <div class="card-face-answer" id="card-back-content">
+                    Đang tải nội dung đáp án...
+                  </div>
+                </div>
+
+                <div class="card-click-prompt">
+                  <span>Lựa chọn điểm ghi nhớ để áp dụng thuật toán SM-2:</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Spaced Repetition (SM-2) Rating Action Buttons -->
+          <div class="review-actions-bar">
+            <button class="btn-review btn-review-again" data-rating="1" title="Quên hoàn toàn, cần học lại">
+              <span class="rating-label">🔴 Học lại (Again)</span>
+              <span class="rating-desc">Quên khái niệm (1 ngày)</span>
+              <span class="rating-key">Phím 1</span>
+            </button>
+            <button class="btn-review btn-review-hard" data-rating="2" title="Nhớ được nhưng rất khó khăn">
+              <span class="rating-label">🟡 Khó (Hard)</span>
+              <span class="rating-desc">Nhớ mất thời gian</span>
+              <span class="rating-key">Phím 2</span>
+            </button>
+            <button class="btn-review btn-review-good" data-rating="3" title="Nhớ chuẩn xác với nỗ lực vừa phải">
+              <span class="rating-label">🔵 Tốt (Good)</span>
+              <span class="rating-desc">Ghi nhớ đạt chuẩn</span>
+              <span class="rating-key">Phím 3</span>
+            </button>
+            <button class="btn-review btn-review-easy" data-rating="4" title="Nhớ lập tức, rất dễ dàng">
+              <span class="rating-label">🟢 Dễ (Easy)</span>
+              <span class="rating-desc">Thành thạo kiến thức</span>
+              <span class="rating-key">Phím 4</span>
+            </button>
+          </div>
+
+          <!-- Study Hotkeys Footer Guide -->
+          <div class="study-hotkeys-footer">
+            Phím tắt: <kbd>Space</kbd> Lật thẻ &nbsp;|&nbsp; <kbd>1</kbd> Học lại &nbsp;|&nbsp; <kbd>2</kbd> Khó &nbsp;|&nbsp; <kbd>3</kbd> Tốt &nbsp;|&nbsp; <kbd>4</kbd> Dễ
+          </div>
+        </div>
+
+        <!-- Session Finished Celebration Card (Hidden until all cards reviewed) -->
+        <div class="session-complete-card" id="session-finished-area" style="display: none;">
+          <div class="trophy-icon">🏆</div>
+          <h3>Xuất sắc! Bạn đã hoàn thành phiên ôn tập</h3>
+          <p>Các khoảng cách ôn tập tiếp theo đã được tự động tính toán theo thuật toán Spaced Repetition SM-2.</p>
+          <div style="display: flex; justify-content: center; gap: 1rem;">
+            <button class="btn btn-primary" id="btn-restart-session">Ôn tập lại từ đầu</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('btn-mode-deck').click()">Xem danh sách bộ thẻ</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Mode 2: Deck Management Table Container (Hidden by default) -->
+      <div id="deck-mode-container" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <input type="text" class="search-input" id="deck-search" placeholder="Tìm kiếm thẻ flashcard..." style="width: 320px;">
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('btn-open-add-card').click()">
+            + Thêm thẻ mới
+          </button>
+        </div>
+
+        <div class="deck-table-container">
+          <table class="deck-table">
+            <thead>
+              <tr>
+                <th>Mặt trước (Câu hỏi)</th>
+                <th>Mặt sau (Đáp án)</th>
+                <th>Chủ đề</th>
+                <th style="text-align: right;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="deck-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ----------------------------------------------------------------------
+         VIEW 3: LEARNING PROGRESS STATISTICS DASHBOARD
+         ---------------------------------------------------------------------- -->
+    <section class="view-section" id="stats-view" aria-label="Báo cáo tiến độ học tập">
+      <div class="stats-header">
+        <h2>Báo Cáo Tiến Độ & Thống Kê Ghi Nhớ</h2>
+        <p>Phân tích dữ liệu học tập dựa trên mô hình đường cong lãng quên Ebbinghaus và thuật toán SM-2.</p>
+      </div>
+
+      <!-- KPI Summary Cards Grid -->
+      <div class="stats-kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-indigo">📚</div>
+          <div>
+            <div class="kpi-info-label">Tổng số Flashcards</div>
+            <div class="kpi-info-value" id="stat-total-cards">0</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-amber">⏳</div>
+          <div>
+            <div class="kpi-info-label">Cần ôn hôm nay</div>
+            <div class="kpi-info-value" id="stat-cards-due">0</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-amber" style="background: rgba(245, 158, 11, 0.15); color: var(--color-warning);">⚡</div>
+          <div>
+            <div class="kpi-info-label">Đang rèn luyện</div>
+            <div class="kpi-info-value" id="stat-cards-learning">0</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-emerald">🏆</div>
+          <div>
+            <div class="kpi-info-label">Đã thành thạo</div>
+            <div class="kpi-info-value" id="stat-cards-mastered">0</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-rose">🔥</div>
+          <div>
+            <div class="kpi-info-label">Chuỗi ngày học</div>
+            <div class="kpi-info-value" id="stat-streak-days">1 ngày 🔥</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-box kpi-icon-indigo" style="background: rgba(14, 165, 233, 0.15); color: var(--color-info);">🎯</div>
+          <div>
+            <div class="kpi-info-label">Tổng lượt ôn tập</div>
+            <div class="kpi-info-value" id="stat-total-reviews">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Mastery & Retention Row -->
+      <div class="stats-visual-row">
+
+        <!-- Circular Progress Ring: Retention Rate -->
+        <div class="stats-card-panel">
+          <div class="panel-title">
+            <span>Tỷ lệ nhớ bài ước tính</span>
+            <span class="badge badge-category">Retention</span>
+          </div>
+
+          <div class="retention-ring-container">
+            <div class="circular-gauge">
+              <svg viewBox="0 0 160 160">
+                <defs>
+                  <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#6366f1" />
+                    <stop offset="100%" stop-color="#10b981" />
+                  </linearGradient>
+                </defs>
+                <circle class="gauge-bg" cx="80" cy="80" r="70"></circle>
+                <circle class="gauge-val" id="gauge-circle-val" cx="80" cy="80" r="70"></circle>
+              </svg>
+              <div class="gauge-text-center">
+                <span class="gauge-percentage" id="gauge-retention-text">88%</span>
+                <span class="gauge-subtext">Độ chuẩn xác</span>
+              </div>
+            </div>
+          </div>
+
+          <p style="text-align: center; font-size: 0.825rem; color: var(--text-secondary); margin-top: 1rem;">
+            Dựa trên tổng hợp số lượt đánh giá ôn tập đạt Tốt (Good) và Dễ (Easy).
+          </p>
+        </div>
+
+        <!-- Spaced Repetition Mastery Distribution Stacked Bar -->
+        <div class="stats-card-panel">
+          <div class="panel-title">
+            <span>Phân bố mức độ thành thạo SM-2</span>
+            <span class="badge badge-category">Mastery Levels</span>
+          </div>
+
+          <p style="font-size: 0.85rem; color: var(--text-secondary);">
+            Tiến độ rèn luyện kiến thức phân bổ theo các giai đoạn củng cố trí nhớ dài hạn.
+          </p>
+
+          <div class="mastery-progress-bar">
+            <div class="bar-segment bar-again" id="bar-again" style="width: 15%;" title="Cần học lại (Again)"></div>
+            <div class="bar-segment bar-hard" id="bar-hard" style="width: 25%;" title="Đang rèn luyện (Hard)"></div>
+            <div class="bar-segment bar-good" id="bar-good" style="width: 35%;" title="Ghi nhớ tốt (Good)"></div>
+            <div class="bar-segment bar-easy" id="bar-easy" style="width: 25%;" title="Thành thạo (Easy)"></div>
+          </div>
+
+          <div class="mastery-legend">
+            <div class="legend-item">
+              <span class="legend-color-dot" style="background: var(--color-danger);"></span>
+              <span>Cần học lại (Again)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-dot" style="background: var(--color-warning);"></span>
+              <span>Đang rèn luyện (Hard)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-dot" style="background: var(--accent-primary);"></span>
+              <span>Ghi nhớ ổn định (Good)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-dot" style="background: var(--color-success);"></span>
+              <span>Thành thạo dài hạn (Easy)</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-surface-elevated); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-secondary);">
+            💡 <strong>Mẹo học tập:</strong> Ôn tập đều đặn mỗi ngày vào khung giờ cố định giúp kích hoạt hiệu ứng củng cố synap thần kinh (Long-Term Potentiation), giúp bạn ghi nhớ hơn 90% kiến thức mà chỉ mất 20% thời gian ôn lại.
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       3. Global Modals & Dialog Windows
+       ======================================================================== -->
+
+  <!-- Modal 1: Authentication (Login / Register) -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="auth-modal-title">Đăng nhập tài khoản</h3>
+        <button class="modal-close-btn" id="auth-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="modal-tabs">
+          <button class="modal-tab-btn active" id="auth-tab-login">Đăng nhập</button>
+          <button class="modal-tab-btn" id="auth-tab-register">Đăng ký mới</button>
+        </div>
+
+        <div class="form-error-banner" id="auth-error-banner"></div>
+
+        <form id="auth-form">
+          <div class="form-group">
+            <label class="form-label" for="auth-username">Tên người dùng (Username)</label>
+            <input type="text" class="form-input" id="auth-username" required placeholder="Nhập username...">
+          </div>
+
+          <div class="form-group" id="auth-email-group" style="display: none;">
+            <label class="form-label" for="auth-email">Địa chỉ Email</label>
+            <input type="email" class="form-input" id="auth-email" placeholder="example@mindsprint.ai">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="auth-password">Mật khẩu (Password)</label>
+            <input type="password" class="form-input" id="auth-password" required placeholder="Tối thiểu 6 ký tự...">
+          </div>
+
+          <div class="form-group" id="auth-confirm-password-group" style="display: none;">
+            <label class="form-label" for="auth-confirm-password">Xác nhận mật khẩu</label>
+            <input type="password" class="form-input" id="auth-confirm-password" placeholder="Nhập lại mật khẩu...">
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <button type="submit" class="btn btn-primary" id="auth-submit-btn" style="width: 100%;">
+              Đăng nhập
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-demo-login" style="width: 100%;">
+              ⚡ Dùng thử ngay với tài khoản Demo
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Create / Edit Kanban Task -->
+  <div class="modal-overlay" id="task-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="task-modal-title">+ Tạo Công Việc Mới (Task)</h3>
+        <button class="modal-close-btn" id="task-modal-close">&times;</button>
+      </div>
+      <form id="task-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="task-title">Tiêu đề công việc <span style="color: var(--color-danger);">*</span></label>
+            <input type="text" class="form-input" id="task-title" required placeholder="Ví dụ: Lập trình router tasks.py">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="task-desc">Mô tả chi tiết</label>
+            <textarea class="form-textarea" id="task-desc" placeholder="Ghi chú nội dung, mục tiêu hoặc hướng dẫn thực hiện..."></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="task-priority">Mức ưu tiên</label>
+              <select class="form-select" id="task-priority">
+                <option value="High">Cao 🔥</option>
+                <option value="Medium" selected>Trung bình ⚡</option>
+                <option value="Low">Thấp 🍃</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="task-status">Trạng thái ban đầu</label>
+              <select class="form-select" id="task-status">
+                <option value="Todo" selected>Chưa bắt đầu (Todo)</option>
+                <option value="InProgress">Đang làm (InProgress)</option>
+                <option value="Completed">Đã xong (Completed)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="task-due-date">Hạn hoàn thành (Due date)</label>
+            <input type="date" class="form-input" id="task-due-date">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="task-modal-cancel">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="task-modal-submit">Lưu công việc</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Bulk Import Flashcards -->
+  <div class="modal-overlay" id="bulk-modal">
+    <div class="modal-dialog modal-dialog-large">
+      <div class="modal-header">
+        <h3>📥 Nhập Hàng Loạt Flashcards (Bulk Import)</h3>
+        <button class="modal-close-btn" id="bulk-modal-close">&times;</button>
+      </div>
+      <form id="bulk-form">
+        <div class="modal-body">
+          <div class="modal-tabs">
+            <button type="button" class="modal-tab-btn active" id="bulk-tab-json">Định dạng JSON</button>
+            <button type="button" class="modal-tab-btn" id="bulk-tab-text">Văn bản phân tách (Text)</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="bulk-input-text">Dán nội dung flashcards vào đây</label>
+            <textarea class="form-textarea" id="bulk-input-text" style="min-height: 160px; font-family: monospace;" placeholder="[\n  {\n    &quot;front&quot;: &quot;FastAPI là gì?&quot;,\n    &quot;back&quot;: &quot;Python Web Framework hiện đại, tốc độ cao...&quot;,\n    &quot;category&quot;: &quot;Python&quot;\n  }\n]"></textarea>
+            <div class="form-help">Hỗ trợ dán JSON mảng đối tượng hoặc từng dòng "Câu hỏi : Câu trả lời".</div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-bulk-preview">
+              🔍 Kiểm tra & Xem trước
+            </button>
+            <span id="bulk-preview-count" style="font-size: 0.85rem; color: var(--accent-primary); font-weight: 600;"></span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="bulk-modal-cancel">Hủy</button>
+          <button type="submit" class="btn btn-primary">Nhập vào bộ thẻ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: AI Flashcard Generator (Extra Feature) -->
+  <div class="modal-overlay" id="ai-modal">
+    <div class="modal-dialog modal-dialog-large">
+      <div class="modal-header">
+        <h3>✨ Trợ Lý AI Tạo Flashcards Thông Minh</h3>
+        <button class="modal-close-btn" id="ai-modal-close">&times;</button>
+      </div>
+      <form id="ai-form">
+        <div class="modal-body">
+
+          <div class="form-group">
+            <label class="form-label" for="ai-topic">Chủ đề cần học tập</label>
+            <input type="text" class="form-input" id="ai-topic" placeholder="Ví dụ: FastAPI Async Architecture, Thuật toán sắp xếp, Cơ chế JWT...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ai-notes">Văn bản ghi chú / Tóm tắt bài học (Tùy chọn)</label>
+            <textarea class="form-textarea" id="ai-notes" style="min-height: 110px;" placeholder="Dán nội dung tài liệu, bài giảng hoặc ghi chú markdown của bạn vào đây để AI trích xuất câu hỏi và đáp án tối ưu..."></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="ai-count">Số lượng thẻ muốn tạo</label>
+              <select class="form-select" id="ai-count">
+                <option value="3">3 Flashcards (Nhanh)</option>
+                <option value="5" selected>5 Flashcards (Khuyến nghị)</option>
+                <option value="10">10 Flashcards (Chuyên sâu)</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: flex-end; margin-bottom: 1.25rem;">
+              <button type="submit" class="btn btn-ai-gradient" id="ai-generate-submit-btn" style="width: 100%;">
+                ✨ Tạo Flashcard bằng AI
+              </button>
+            </div>
+          </div>
+
+          <!-- Shimmer Loading Spinner for AI -->
+          <div class="ai-shimmer-box" id="ai-shimmer-box" style="display: none;">
+            🤖 AI đang phân tích tài liệu và cấu trúc hóa câu hỏi ôn tập...
+          </div>
+
+          <!-- Generated Cards Preview Container -->
+          <div id="ai-preview-container" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+              <label class="form-label" style="margin-bottom: 0;">Kết quả AI tạo ra (Chọn các thẻ muốn thêm):</label>
+            </div>
+            <div class="ai-cards-preview-list" id="ai-cards-preview-list">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="ai-modal-cancel">Đóng</button>
+          <button type="button" class="btn btn-primary" id="btn-add-ai-cards" style="display: none;">
+            + Thêm thẻ đã chọn vào bộ nhớ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Add Single Flashcard -->
+  <div class="modal-overlay" id="card-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>+ Thêm Thẻ Flashcard Mới</h3>
+        <button class="modal-close-btn" id="card-modal-close">&times;</button>
+      </div>
+      <form id="card-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="card-input-front">Mặt trước (Câu hỏi / Thuật ngữ) <span style="color: var(--color-danger);">*</span></label>
+            <input type="text" class="form-input" id="card-input-front" required placeholder="Nhập câu hỏi hoặc khái niệm...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="card-input-back">Mặt sau (Đáp án / Định nghĩa) <span style="color: var(--color-danger);">*</span></label>
+            <textarea class="form-textarea" id="card-input-back" required placeholder="Nhập câu trả lời hoặc lời giải thích chi tiết..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="card-input-hint">Gợi ý gợi nhớ (Hint — tùy chọn)</label>
+            <input type="text" class="form-input" id="card-input-hint" placeholder="Gợi ý ngắn gọn giúp hồi tưởng...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="card-input-category">Chủ đề phân loại</label>
+            <input type="text" class="form-input" id="card-input-category" placeholder="Ví dụ: FastAPI, Database, Frontend...">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="card-modal-cancel">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu thẻ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Global Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Resilient ES6 App Bootstrapper -->
+  <script type="module">
+    (async () => {
+      try {
+        await import('/static/js/app.js');
+      } catch (e) {
+        await import('./js/app.js');
+      }
+    })();
+  </script>
+
+</body>
+</html>

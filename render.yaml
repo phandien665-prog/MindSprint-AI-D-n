@@ -1,0 +1,32 @@
+databases:
+  - name: mindsprint-db
+    databaseName: mindsprint
+    user: mindsprint
+    plan: free
+    region: singapore
+
+services:
+  - type: web
+    name: mindsprint-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/MindSprint.Api/Dockerfile
+    dockerContext: ./backend/MindSprint.Api
+    autoDeployTrigger: off
+    healthCheckPath: /healthz
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: mindsprint-db
+          property: connectionString
+      - key: Jwt__Key
+        generateValue: true
+      - key: Cors__AllowedOrigins
+        sync: false
+      - key: Gemini__ApiKey
+        sync: false
+      - key: Google__ClientId
+        sync: false
