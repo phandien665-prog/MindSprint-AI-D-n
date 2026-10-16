@@ -1,4 +1,4 @@
-/* MindSprintAI visual refresh: warm paper, lime and coral accents. */
+/* MindSprintAI visual refresh: white, soft lime and pale peach. */
 :root {
     --color-paper: #f7f6ef;
     --color-paper-soft: #fcfbf8;
@@ -12,7 +12,7 @@
     --color-shadow: rgba(34, 42, 54, .045);
     --color-lime: #c7e977;
     --color-lime-soft: #eef6d9;
-    --color-coral: #ef795d;
+    --color-coral: #f1cdbb;
     --color-coral-soft: #fff0e9;
     --color-sage: #7e9a67;
     --color-blue: #668ba1;
@@ -32,7 +32,7 @@
     --primary-color: var(--color-lime);
     --primary-hover: #bce365;
     --orange: var(--color-coral);
-    --orange-deep: #e5674d;
+    --orange-deep: #e7bfa9;
     --accent-ink: #55763c;
     --secondary-color: var(--color-sage);
     --on-accent: #24321d;
@@ -71,7 +71,7 @@
 html[data-theme="dark"] {
     color-scheme: dark;
     --page-wash-green: rgba(181, 217, 101, .055);
-    --page-wash-coral: rgba(239, 121, 93, .055);
+    --page-wash-coral: rgba(241, 205, 187, .055);
     --surface-white: #25212f;
     --surface-tint: #191721;
     --bg-primary: #191721;
@@ -85,8 +85,8 @@ html[data-theme="dark"] {
     --text-muted: #aaa1b3;
     --primary-color: #b5d965;
     --primary-hover: #c6e77d;
-    --orange: #ef795d;
-    --orange-deep: #ff947b;
+    --orange: #f1cdbb;
+    --orange-deep: #e7bfa9;
     --accent-ink: #c5df9b;
     --secondary-color: #a5c485;
     --on-accent: #1f291b;
@@ -278,7 +278,7 @@ html[data-theme="dark"] .welcome-banner {
     width: clamp(130px, 16vw, 210px);
     aspect-ratio: 1;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(239, 121, 93, .28), rgba(239, 121, 93, 0) 72%);
+    background: radial-gradient(circle, rgba(255, 240, 233, .95), rgba(255, 240, 233, 0) 72%);
     content: '';
 }
 .welcome-banner::after {
@@ -362,9 +362,9 @@ html[data-theme="dark"] .welcome-banner-buttons .btn-secondary {
 .home-goal-item { display: flex; align-items: center; gap: 11px; color: var(--text-secondary); font-size: .84rem; cursor: pointer; }
 .home-goal-item input { width: 19px; height: 19px; flex: 0 0 19px; margin: 0; accent-color: var(--color-lime); }
 .home-goal-item input:checked + span { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--color-sage); }
-.btn-accent, .button-accent { display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid var(--color-coral) !important; border-radius: 13px; background: var(--color-coral) !important; color: #fff !important; font-weight: 700; }
-.btn-accent:hover, .button-accent:hover { border-color: var(--orange-deep) !important; background: var(--orange-deep) !important; color: #fff !important; }
-.home-goals-start-btn { width: 100%; min-height: 48px; box-shadow: 0 7px 18px rgba(239, 121, 93, .2); }
+.btn-accent, .button-accent { display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid var(--color-coral) !important; border-radius: 13px; background: var(--color-coral-soft) !important; color: var(--text-primary) !important; font-weight: 700; }
+.btn-accent:hover, .button-accent:hover { border-color: var(--orange-deep) !important; background: #f8e5da !important; color: var(--text-primary) !important; }
+.home-goals-start-btn { width: 100%; min-height: 48px; box-shadow: 0 7px 18px rgba(241, 205, 187, .24); }
 .home-goals-start-btn .fa-arrow-right { margin-left: auto; }
 
 .home-stats-grid {
