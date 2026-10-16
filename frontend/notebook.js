@@ -792,7 +792,14 @@
     pane.addEventListener('change', (e) => {
         if (e.target.id === 'nb-code-language') updateCodeDraft(e.target);
         if (e.target.id === 'nb-file') validateFile();
-        if (e.target.id === 'nb-select' && e.target.value && ensureLoggedIn()) run(null, async () => { stopAudio(); await loadNotebook(e.target.value); renderMain(); });
+        if (e.target.id === 'nb-select' && e.target.value && ensureLoggedIn()) {
+            const select = e.target, id = select.value;
+            select.value = String(state.nb?.id ?? '');
+            run(select, async () => {
+                stopAudio();
+                if (await loadNotebook(id)) renderMain();
+            });
+        }
     });
     pane.addEventListener('input', (e) => {
         if (e.target.id === 'nb-url') validateUrl();
