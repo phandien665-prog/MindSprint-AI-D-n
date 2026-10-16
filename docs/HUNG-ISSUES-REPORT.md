@@ -1,6 +1,8 @@
 # Báo cáo phần việc Đình Hùng — 16/10/2026
 
-Người thực hiện: James / Đình Hùng. Múi giờ Asia/Bangkok. Nhánh local `hung/issues-16-37`, nền `cc5c2a78249160dcd9c22bec7a987c6c62fb51e0`. **Chưa commit/push/tạo PR/đóng issue.** Báo cáo này ghi kết quả local, không phải nghiệm thu production.
+Người thực hiện: James / Đình Hùng. Múi giờ Asia/Bangkok. Nhánh `hung/issues-16-37`, nền `cc5c2a78249160dcd9c22bec7a987c6c62fb51e0`. **Đã commit/push và tạo [PR nháp #70](https://github.com/tungtungsahul/MindSprint-AI-D-n/pull/70) sau khi người dùng duyệt publication.** Commit triển khai: `fdc5343`. Chưa đóng issue hoặc merge main; kết quả kiểm tra trong báo cáo không phải nghiệm thu production.
+
+Báo cáo đã đăng dưới James-Lloyd20: [#16](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/16#issuecomment-6219194588), [#37](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/37#issuecomment-6219195086), [#45](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/45#issuecomment-6219195683), [#51](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/51#issuecomment-6219196170), [#54](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/54#issuecomment-6219196707). Các issue kiểm thử vẫn ghi rõ một phần/Blocked.
 
 ## Phạm vi đã xác nhận và tiên quyết
 
@@ -92,6 +94,6 @@ Chưa có failure NFR live được xác nhận để đăng bug. Không tự gi
 ## Việc cần tiếp tục
 
 1. Review #16/#37 và nghiệm thu micro/loa thật, cả browser desktop/mobile và fallback không hỗ trợ. SpeechRecognition hỗ trợ hạn chế; browser có thể gửi âm thanh đến dịch vụ mạng. UI có thông báo điều này. Xem [MDN Recognition](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition), [Synthesis](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis).
-2. Khi có ủy quyền publication cụ thể, tách tính năng Sprint 3 và script chiến dịch Sprint 4, commit dưới James và gửi PR; hiện chưa làm.
+2. Publication đã được duyệt và thực hiện qua PR nháp #70 dưới James. Nhánh hiện chỉ có code/kiểm tra hồi quy tính năng Sprint 3 và báo cáo tiến độ NFR; script chiến dịch Sprint 4 bổ sung sau này vẫn cần PR riêng. Chờ nhóm review, thử micro thật và quyết định merge; không tự đóng issue.
 3. #45/#51 cần runtime .NET 8, staging/PostgreSQL test riêng, server nguồn test và công cụ/người kiểm tra accessibility. Giữ ngưỡng đã duyệt.
 4. #54 cần kết quả #46 trước; sau đó mới chạy canary/log/metrics/đo chẩn đoán. Không tự nhận làm thay người phụ trách #46.
