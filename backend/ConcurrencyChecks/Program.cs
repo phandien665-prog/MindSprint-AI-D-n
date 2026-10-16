@@ -64,6 +64,15 @@ if (!args.Contains("--cards")) {
     await Task.WhenAll(rotation, (Task)revocation);
     Check(await revocation, "revoking concurrently with rotation remains an idempotent success");
     Check(await seedRevoke.RefreshTokens.AsNoTracking().Where(r => r.Token == "synthetic-logout").AllAsync(r => r.IsRevoked), "concurrent logout leaves the old token revoked");
+
+    var loginGate = new SaveGate();
+    await using var loginOne = new AppDbContext(Options(loginGate));
+    await using var loginTwo = new AppDbContext(Options(loginGate));
+    var sessions = await Task.WhenAll(
+        new TokenService(cfg, loginOne).CreateRefreshTokenAsync(new User { Id = 1 }, "login A"),
+        new TokenService(cfg, loginTwo).CreateRefreshTokenAsync(new User { Id = 1 }, "login B"));
+    Check(sessions.Select(r => r.Token).Distinct().Count() == 2, "concurrent logins can clean old tokens without failing each other");
+    Check(await seedRevoke.RefreshTokens.AsNoTracking().CountAsync(r => !r.IsRevoked && sessions.Select(s => s.Token).Contains(r.Token)) == 2, "both concurrent login sessions remain active after cleanup");
 }
 
 if (!args.Contains("--tokens")) {

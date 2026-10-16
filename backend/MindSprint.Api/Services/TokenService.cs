@@ -44,10 +44,9 @@ public class TokenService(IConfiguration cfg, AppDbContext db)
     {
         // Xoá các token hết hạn (dọn dẹp nhẹ)
         var expiredCutoff = DateTime.UtcNow;
-        var expired = await db.RefreshTokens
+        await db.RefreshTokens
             .Where(r => r.UserId == u.Id && (r.IsRevoked || r.ExpiresAt < expiredCutoff))
-            .ToListAsync();
-        db.RefreshTokens.RemoveRange(expired);
+            .ExecuteDeleteAsync();
 
         var rt = new RefreshToken
         {
