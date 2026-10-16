@@ -108,6 +108,6 @@
         observer.observe(document.body, { childList: true, characterData: true, subtree: true });
     }
 
-    window.MindSprintText = { markdown, renderMath };
+    window.MindSprintText = { markdown, renderMath, escapeHTML };
     document.addEventListener('DOMContentLoaded', watchContent);
 })();
