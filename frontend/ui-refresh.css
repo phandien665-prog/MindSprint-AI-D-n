@@ -3,6 +3,8 @@
     --color-paper: #f7f6ef;
     --color-paper-soft: #fcfbf8;
     --color-surface: #fffefa;
+    --page-wash-green: rgba(238, 246, 217, .82);
+    --page-wash-coral: rgba(255, 240, 233, .82);
     --color-ink: #202b3e;
     --color-ink-secondary: #536071;
     --color-muted: #8b9298;
@@ -17,7 +19,7 @@
     --color-lavender: #e9e9f5;
     color-scheme: light;
     --surface-white: var(--color-surface);
-    --surface-tint: var(--color-paper);
+    --surface-tint: var(--color-surface);
     --bg-primary: var(--surface-tint);
     --bg-secondary: #f0f0e9;
     --bg-panel: var(--surface-white);
@@ -68,6 +70,8 @@
 
 html[data-theme="dark"] {
     color-scheme: dark;
+    --page-wash-green: rgba(181, 217, 101, .055);
+    --page-wash-coral: rgba(239, 121, 93, .055);
     --surface-white: #25212f;
     --surface-tint: #191721;
     --bg-primary: #191721;
@@ -119,7 +123,10 @@ body {
 
 .app-container {
     min-height: 100dvh;
-    background: var(--bg-primary);
+    background:
+        radial-gradient(ellipse at 12% 14%, var(--page-wash-green), transparent 44%),
+        radial-gradient(ellipse at 88% 76%, var(--page-wash-coral), transparent 45%),
+        var(--bg-primary);
 }
 
 .sidebar {
@@ -190,7 +197,10 @@ body {
 
 .main-content {
     padding: 0 clamp(24px, 4vw, 58px) 42px;
-    background: var(--bg-primary);
+    background:
+        radial-gradient(ellipse at 12% 14%, var(--page-wash-green), transparent 44%),
+        radial-gradient(ellipse at 88% 76%, var(--page-wash-coral), transparent 45%),
+        var(--bg-primary);
 }
 
 .workspace-header {
