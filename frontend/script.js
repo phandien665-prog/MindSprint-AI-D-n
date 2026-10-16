@@ -2282,15 +2282,17 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         });
 
-        // Start the refreshed palette in light mode; preserve a saved light choice,
-        // but don't let the old dark default override the new palette.
-        const savedTheme = localStorage.getItem('app-theme-v2') ||
-            (localStorage.getItem('app-theme') === 'light' ? 'light' : null);
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            const icon = themeToggle.querySelector('i');
-            icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        // Migrate the earlier dark preference once so everyone sees the refreshed
+        // light palette after this release. New choices can still be saved normally.
+        const lightPaletteMigrationKey = 'app-theme-light-palette-v3';
+        if (localStorage.getItem(lightPaletteMigrationKey) !== 'done') {
+            localStorage.setItem('app-theme-v2', 'light');
+            localStorage.setItem(lightPaletteMigrationKey, 'done');
         }
+        const savedTheme = localStorage.getItem('app-theme-v2') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const themeIcon = themeToggle?.querySelector('i');
+        if (themeIcon) themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
 
         // Sidebar Toggle action listener for Focused Study Mode
         const sidebarToggleBtn = document.getElementById('sidebar-toggle');
