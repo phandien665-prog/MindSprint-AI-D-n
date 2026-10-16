@@ -108,6 +108,7 @@
 
     // ---------- render: giao diện chính ----------
     function renderMain() {
+        pane.dispatchEvent(new Event('ms-notebook-reset'));
         pane.innerHTML = `
         <header class="main-header">
             <div class="header-info"><h1>Sổ tay AI</h1><p>Hỏi đáp theo tài liệu hoặc cùng gia sư giải bài tập, củng cố kiến thức.</p></div>
@@ -211,7 +212,13 @@
                 <div class="nb-composer">
                     <textarea class="nb-input" id="nb-q" aria-label="Câu hỏi về tài liệu" rows="1" placeholder="Bạn muốn hỏi gì về tài liệu của mình?" maxlength="1000"></textarea>
                     <div class="nb-composer-footer">
+                        <button class="nb-chip" type="button" id="nb-mic-toggle" aria-pressed="false" aria-controls="nb-q" aria-describedby="nb-voice-status">Nhập bằng giọng nói</button>
                         <button class="nb-icon-btn" type="button" data-ui-act="focus-upload" aria-label="Mở phần tải tài liệu" title="Thêm tài liệu" data-source-only><i class="fas fa-plus" aria-hidden="true"></i></button>
+                        <details class="nb-voice-options" id="nb-voice-options"><summary>Tùy chọn giọng nói</summary><div class="nb-voice-panel">
+                            <p id="nb-voice-status" class="nb-muted" role="status" aria-live="polite"></p>
+                            <p id="nb-voice-preview" class="nb-muted" hidden></p>
+                            <div class="nb-voice-reading"><label><input type="checkbox" id="nb-read-answer"> Đọc câu trả lời</label><button class="nb-chip" type="button" id="nb-read-stop" disabled>Dừng đọc</button></div>
+                        </div></details>
                         <span id="nb-composer-hint">Hỏi đáp dựa trên nguồn của bạn</span>
                         <button class="btn btn-primary" data-act="send" aria-label="Gửi câu hỏi">Gửi câu hỏi <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
                     </div>
@@ -288,6 +295,7 @@
 
     function setChatMode(mode) {
         if (chatPending || !['source', 'tutor'].includes(mode)) return;
+        pane.dispatchEvent(new Event('ms-notebook-suspend'));
         if (state.chatMode !== mode) state.drafts[state.chatMode] = $('#nb-q').value;
         state.chatMode = mode;
         const tutor = mode === 'tutor';
@@ -313,6 +321,7 @@
     }
 
     function syncTutorTask() {
+        pane.dispatchEvent(new Event('ms-notebook-suspend'));
         const code = state.chatMode === 'tutor' && state.tutorTask === 'code';
         const work = state.chatMode === 'tutor' && ['check', 'practice'].includes(state.tutorTask);
         pane.querySelectorAll('[data-tutor-task]').forEach(button => {
@@ -465,6 +474,7 @@
         if (!ensureLoggedIn() || !state.nb) return;
         q = (q || '').trim(); if (!q) return;
         if (mode === 'source' && !state.sources.length) return window.MindSprintDialogs.alert('Hãy thêm ít nhất một nguồn trước.');
+        pane.dispatchEvent(new Event('ms-notebook-suspend'));
         const version = workspaceVersion, notebookId = state.nb.id;
         chatPending = true;
         $('#nb-q').value = '';
@@ -487,6 +497,7 @@
             wait.innerHTML = md(r.answer) +
                 `<button class="nb-icon-btn" data-act="save-answer" style="margin-top:var(--space-sm)"><i class="fas fa-bookmark"></i> Lưu ghi chú</button>`;
             wait.dataset.raw = r.answer; wait.dataset.q = q;
+            pane.dispatchEvent(new CustomEvent('ms-notebook-answer', {detail: {text: wait.textContent.replace('Lưu ghi chú', '').trim()}}));
         } catch (e) {
             if (version !== workspaceVersion || state.nb?.id !== notebookId) return;
             wait.innerHTML = `<div class="nb-ai-error" role="status">${aiError(e)}
