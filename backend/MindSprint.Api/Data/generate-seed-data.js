@@ -2,7 +2,9 @@
  * Script: generate-seed-data.js
  * Purpose: Generate 1000+ vocabulary entries in vocab_seed.json format for MindSprint AI
  *
- * Usage: node generate-seed-data.js
+ * Usage:
+ *   node generate-seed-data.js                    # Generate from built-in curated data
+ *   node generate-seed-data.js --from-kaggle      # Generate from Kaggle source file
  *
  * Source Kaggle dataset:
  *   - Name: "English - Vietnamese 1000 Most Common Words" (adapted vocabulary lists)
@@ -14,10 +16,11 @@
  *     sourced from free-software glossaries.
  *
  * The dataset was exported locally to backend/MindSprint.Api/Data/kaggle_source.json
- * (not committed to git). This script includes a compact, curated copy of the
- * high-frequency entries inline below. To regenerate from the original Kaggle CSV,
- * download the dataset, place it at kaggle_source.json, and run:
- *   node generate-seed-data.js --from-kaggle
+ * (not committed to git). To regenerate from the original Kaggle CSV:
+ *   1. Download the dataset from Kaggle
+ *   2. Convert CSV to JSON format (see kaggle_source.json.example)
+ *   3. Place it at backend/MindSprint.Api/Data/kaggle_source.json
+ *   4. Run: node generate-seed-data.js --from-kaggle
  *
  * Format output: vocab_seed.json
  * Structure: [{ externalId, category, subCategory, question, answer, example }]
@@ -25,15 +28,64 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const DATA_DIR = path.join(__dirname);
 const OUTPUT_FILE = path.join(DATA_DIR, 'vocab_seed.json');
+const KAGGLE_SOURCE_FILE = path.join(DATA_DIR, 'kaggle_source.json');
 const TARGET_COUNT = 1200;
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const FROM_KAGGLE = args.includes('--from-kaggle');
 
 // Word type helpers
 const types = ['Danh từ (n)', 'Động từ (v)', 'Tính từ (adj)', 'Trợ từ (adv)', 'Liên từ (conj)', 'Giới từ (prep)', 'Thán từ (interj)'];
 
 function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// Generate stable ExternalId from category + question (content-based, not order-based)
+function generateExternalId(category, question) {
+    const hash = crypto.createHash('md5').update(`${category}:${question}`).digest('hex');
+    return `v2-${hash.substring(0, 12)}`;
+}
+
+// Load Kaggle source data if --from-kaggle flag is used
+function loadKaggleSource() {
+    if (!fs.existsSync(KAGGLE_SOURCE_FILE)) {
+        console.error(`ERROR: Kaggle source file not found at ${KAGGLE_SOURCE_FILE}`);
+        console.error('Please download the dataset from https://www.kaggle.com/datasets/littlepicanha/english-vietnamese-vocabulary');
+        console.error('Convert to JSON format and place at kaggle_source.json');
+        process.exit(1);
+    }
+    const raw = fs.readFileSync(KAGGLE_SOURCE_FILE, 'utf-8');
+    return JSON.parse(raw);
+}
+
+// Convert Kaggle CSV/JSON format to our vocab format
+function convertKaggleToVocab(kaggleData) {
+    const vocab = [];
+    for (const item of kaggleData) {
+        // Expected Kaggle format: { english, vietnamese, topic, type, example? }
+        const question = item.english || item.word || item.term;
+        const answer = item.vietnamese || item.meaning || item.translation;
+        const category = item.category || (item.topic?.includes('program') ? 'programming' : 'english');
+        const subCategory = item.topic || item.subCategory || 'General';
+        const example = item.example || `Từ loại: ${item.type || 'Danh từ (n)'}`;
+
+        if (question && answer) {
+            vocab.push({
+                externalId: generateExternalId(category, question),
+                category,
+                subCategory,
+                question,
+                answer,
+                example
+            });
+        }
+    }
+    return vocab;
+}
 
 // English phonetics helpers (simplified)
 const phonetics = {
@@ -665,7 +717,6 @@ const commonAdverbs = [
 // Generate extended vocabulary entries to reach 1000+ records
 function generateExtendedEntries() {
     const extended = [];
-    let counter = 1;
 
     const categories = Object.keys(vocabularyData);
 
@@ -675,7 +726,7 @@ function generateExtendedEntries() {
             for (const item of subcats[subcat]) {
                 const ex = item.example.startsWith('Từ loại:') ? item.example : `Từ loại: ${item.example}`;
                 extended.push({
-                    externalId: `${cat}-${subcat.replace(/\s+/g, '-')}-${counter++}`,
+                    externalId: generateExternalId(cat, item.q),
                     category: cat,
                     subCategory: subcat,
                     question: item.q,
@@ -697,7 +748,7 @@ function generateExtendedEntries() {
     for (const pool of commonPools) {
         for (const item of pool.words) {
             extended.push({
-                externalId: `common-${pool.subcat.replace(/\s+/g, '-')}-${counter++}`,
+                externalId: generateExternalId('english', item.q),
                 category: 'english',
                 subCategory: pool.subcat,
                 question: item.q,
@@ -756,7 +807,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < programmingTopics.length; i++) {
         extended.push({
-            externalId: `programming-concept-${counter++}`,
+            externalId: generateExternalId('programming', programmingTopics[i].q),
             category: 'programming',
             subCategory: 'Khái niệm lập trình',
             question: programmingTopics[i].q,
@@ -821,7 +872,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < generalTopics.length; i++) {
         extended.push({
-            externalId: `general-tech-${counter++}`,
+            externalId: generateExternalId('general', generalTopics[i].q),
             category: 'general',
             subCategory: 'Công nghệ',
             question: generalTopics[i].q,
@@ -867,7 +918,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < foodVocab.length; i++) {
         extended.push({
-            externalId: `food-${counter++}`,
+            externalId: generateExternalId('english', foodVocab[i].q),
             category: 'english',
             subCategory: 'Thực phẩm & đồ uống',
             question: foodVocab[i].q,
@@ -897,7 +948,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < clothingVocab.length; i++) {
         extended.push({
-            externalId: `clothing-${counter++}`,
+            externalId: generateExternalId('english', clothingVocab[i].q),
             category: 'english',
             subCategory: 'Trang phục',
             question: clothingVocab[i].q,
@@ -927,7 +978,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < healthVocab.length; i++) {
         extended.push({
-            externalId: `health-${counter++}`,
+            externalId: generateExternalId('general', healthVocab[i].q),
             category: 'general',
             subCategory: 'Y tế & sức khỏe',
             question: healthVocab[i].q,
@@ -957,7 +1008,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < travelVocab.length; i++) {
         extended.push({
-            externalId: `travel-${counter++}`,
+            externalId: generateExternalId('general', travelVocab[i].q),
             category: 'general',
             subCategory: 'Du lịch',
             question: travelVocab[i].q,
@@ -992,7 +1043,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < weatherVocab.length; i++) {
         extended.push({
-            externalId: `weather-${counter++}`,
+            externalId: generateExternalId('english', weatherVocab[i].q),
             category: 'english',
             subCategory: 'Thời tiết & khí hậu',
             question: weatherVocab[i].q,
@@ -1027,7 +1078,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < sportsVocab.length; i++) {
         extended.push({
-            externalId: `sports-${counter++}`,
+            externalId: generateExternalId('english', sportsVocab[i].q),
             category: 'english',
             subCategory: 'Thể thao & vận động',
             question: sportsVocab[i].q,
@@ -1062,7 +1113,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < techVocab.length; i++) {
         extended.push({
-            externalId: `tech-${counter++}`,
+            externalId: generateExternalId('general', techVocab[i].q),
             category: 'general',
             subCategory: 'Công nghệ',
             question: techVocab[i].q,
@@ -1097,7 +1148,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < businessVocab.length; i++) {
         extended.push({
-            externalId: `business-${counter++}`,
+            externalId: generateExternalId('general', businessVocab[i].q),
             category: 'general',
             subCategory: 'Kinh tế & kinh doanh',
             question: businessVocab[i].q,
@@ -1132,9 +1183,9 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < emotionsVocab.length; i++) {
         extended.push({
-            externalId: `emotion-${counter++}`,
+            externalId: generateExternalId('english', emotionsVocab[i].q),
             category: 'english',
-            subCategory: ' Cảm xúc',
+            subCategory: 'Cảm xúc',
             question: emotionsVocab[i].q,
             answer: emotionsVocab[i].a,
             example: `Từ loại: ${emotionsVocab[i].t}`
@@ -1167,7 +1218,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < bodyVocab.length; i++) {
         extended.push({
-            externalId: `body-${counter++}`,
+            externalId: generateExternalId('english', bodyVocab[i].q),
             category: 'english',
             subCategory: 'Cơ thể',
             question: bodyVocab[i].q,
@@ -1212,7 +1263,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < moreProgrammingVocab.length; i++) {
         extended.push({
-            externalId: `prog-more-${counter++}`,
+            externalId: generateExternalId('programming', moreProgrammingVocab[i].q),
             category: 'programming',
             subCategory: 'Công cụ & môi trường',
             question: moreProgrammingVocab[i].q,
@@ -1278,7 +1329,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < moreVerbs.length; i++) {
         extended.push({
-            externalId: `verb-more-${counter++}`,
+            externalId: generateExternalId('english', moreVerbs[i].q),
             category: 'english',
             subCategory: 'Động từ phổ biến',
             question: moreVerbs[i].q,
@@ -1346,7 +1397,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < moreNouns.length; i++) {
         extended.push({
-            externalId: `noun-more-${counter++}`,
+            externalId: generateExternalId('general', moreNouns[i].q),
             category: 'general',
             subCategory: 'Từ vựng chung',
             question: moreNouns[i].q,
@@ -1368,7 +1419,7 @@ function generateExtendedEntries() {
         { q: 'Accurate', a: 'Chính xác', t: 'Tính từ (adj)' },
         { q: 'Acid', a: ' Axit', t: 'Tính từ (adj)' },
         { q: 'Acoustic', a: 'Âm thanh', t: 'Tính từ (adj)' },
-        { q: 'Acrobatic', a: 'Xiêu lép', t: 'Tính từ (adj)' },
+        { q: 'Acrobatic', a: 'Nhào lộn, phiêu lưu', t: 'Tính từ (adj)' },
         { q: 'Active', a: 'Hoạt động', t: 'Tính từ (adj)' },
         { q: 'Actual', a: 'Thực tế', t: 'Tính từ (adj)' },
         { q: 'Adapt', a: 'Thích ứng', t: 'Tính từ (adj)' },
@@ -1391,7 +1442,7 @@ function generateExtendedEntries() {
 
     for (let i = 0; i < moreAdjectives.length; i++) {
         extended.push({
-            externalId: `adj-more-${counter++}`,
+            externalId: generateExternalId('english', moreAdjectives[i].q),
             category: 'english',
             subCategory: 'Tính từ phổ biến',
             question: moreAdjectives[i].q,
@@ -1412,7 +1463,7 @@ function generateExtendedEntries() {
         { q: 'Base', a: 'Cơ sở', t: 'Danh từ (n)' },
         { q: 'Bath', a: 'Tắm', t: 'Danh từ (n)' },
         { q: 'Battle', a: ' Trận chiến', t: 'Danh từ (n)' },
-        { q: 'Bay', a: 'Bay', t: 'Động từ (v)' },
+        { q: 'Bay', a: 'Sủa (con chó)', t: 'Động từ (v)' },
         { q: 'Beach', a: 'Bãi biển', t: 'Danh từ (n)' },
         { q: 'Bean', a: ' Đậu', t: 'Danh từ (n)' },
         { q: 'Bear', a: ' Gấu', t: 'Danh từ (n)' },
@@ -1467,7 +1518,7 @@ function generateExtendedEntries() {
     for (let i = 0; i < finalBatch.length; i++) {
         const idx = i % 3;
         extended.push({
-            externalId: `final-${counter++}`,
+            externalId: generateExternalId(finalCategories[idx], finalBatch[i].q),
             category: finalCategories[idx],
             subCategory: finalSubcats[idx],
             question: finalBatch[i].q,
@@ -1481,43 +1532,80 @@ function generateExtendedEntries() {
 
 // Main
 function main() {
-    console.log('Generating vocab_seed.json with 1000+ records...');
+    if (FROM_KAGGLE) {
+        console.log('Loading Kaggle source data...');
+        const kaggleData = loadKaggleSource();
+        console.log(`Loaded ${kaggleData.length} entries from Kaggle source.`);
+        
+        const data = convertKaggleToVocab(kaggleData);
+        console.log(`Converted ${data.length} vocabulary entries.`);
+        
+        // Validate format
+        const valid = data.every(item =>
+            item.externalId &&
+            item.category &&
+            item.question &&
+            item.answer &&
+            item.example
+        );
 
-    const data = generateExtendedEntries();
-    console.log(`Generated ${data.length} vocabulary entries.`);
+        if (!valid) {
+            console.error('ERROR: Some entries are missing required fields!');
+            process.exit(1);
+        }
 
-    // Validate format
-    const valid = data.every(item =>
-        item.externalId &&
-        item.category &&
-        item.question &&
-        item.answer &&
-        item.example
-    );
-
-    if (!valid) {
-        console.error('ERROR: Some entries are missing required fields!');
-        process.exit(1);
-    }
-
-    const output = JSON.stringify(data, null, 0);
-    fs.writeFileSync(OUTPUT_FILE, output);
-    console.log(`Successfully wrote ${data.length} entries to ${OUTPUT_FILE}`);
-
-    // Print summary by category
-    const summary = {};
-    data.forEach(item => {
-        summary[item.category] = (summary[item.category] || 0) + 1;
-    });
-    console.log('Category summary:');
-    for (const [cat, count] of Object.entries(summary)) {
-        console.log(`  ${cat}: ${count} entries`);
-    }
-
-    if (data.length >= 1000) {
-        console.log('\n✅ SUCCESS: Meets 1000+ records requirement!');
+        const output = JSON.stringify(data, null, 0);
+        fs.writeFileSync(OUTPUT_FILE, output);
+        console.log(`Successfully wrote ${data.length} entries to ${OUTPUT_FILE}`);
+        
+        // Print summary by category
+        const summary = {};
+        data.forEach(item => {
+            summary[item.category] = (summary[item.category] || 0) + 1;
+        });
+        console.log('Category summary:');
+        for (const [cat, count] of Object.entries(summary)) {
+            console.log(`  ${cat}: ${count} entries`);
+        }
     } else {
-        console.log(`\n⚠️  WARNING: Only ${data.length} entries (need 1000+).`);
+        console.log('Generating vocab_seed.json with 1000+ records from built-in curated data...');
+
+        const data = generateExtendedEntries();
+        console.log(`Generated ${data.length} vocabulary entries.`);
+
+        // Validate format
+        const valid = data.every(item =>
+            item.externalId &&
+            item.category &&
+            item.question &&
+            item.answer &&
+            item.example
+        );
+
+        if (!valid) {
+            console.error('ERROR: Some entries are missing required fields!');
+            process.exit(1);
+        }
+
+        const output = JSON.stringify(data, null, 0);
+        fs.writeFileSync(OUTPUT_FILE, output);
+        console.log(`Successfully wrote ${data.length} entries to ${OUTPUT_FILE}`);
+
+        // Print summary by category
+        const summary = {};
+        data.forEach(item => {
+            summary[item.category] = (summary[item.category] || 0) + 1;
+        });
+        console.log('Category summary:');
+        for (const [cat, count] of Object.entries(summary)) {
+            console.log(`  ${cat}: ${count} entries`);
+        }
+
+        if (data.length >= 1000) {
+            console.log('\n✅ SUCCESS: Meets 1000+ records requirement!');
+        } else {
+            console.log(`\n⚠️  WARNING: Only ${data.length} entries (need 1000+).`);
+        }
     }
 }
 

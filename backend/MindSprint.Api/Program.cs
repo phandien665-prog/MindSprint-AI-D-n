@@ -73,6 +73,7 @@ builder.Services.AddScoped<TutorService>();
 builder.Services.AddScoped<TutorOcrService>();
 builder.Services.AddSingleton<INotebookPageRenderer, NotebookPageRenderer>();
 builder.Services.AddScoped<NotebookUrlImporter>();
+builder.Services.AddScoped<WeakAreaService>();
 
 // Render sets PORT dynamically. Bind to all interfaces so the platform's proxy can reach Kestrel.
 if (int.TryParse(Environment.GetEnvironmentVariable("PORT"), out var port) && port is > 0 and <= 65535)

@@ -55,6 +55,7 @@
                 </ul></div>
                 <div class="nav-group"><h3>Tổ chức</h3><ul class="nav-tabs">
                     <li><button type="button" class="nav-tab" data-tab="overview"><i class="fas fa-chart-pie" aria-hidden="true"></i>Tổng quan</button></li>
+                    <li><button type="button" class="nav-tab" data-tab="weak-areas"><i class="fas fa-brain" aria-hidden="true"></i>Điểm yếu</button></li>
                     <li><button type="button" class="nav-tab" data-tab="timetable"><i class="fas fa-calendar-alt" aria-hidden="true"></i>Lịch học</button></li>
                     <li><button type="button" class="nav-tab" data-tab="kanban"><i class="fas fa-columns" aria-hidden="true"></i>Công việc</button></li>
                 </ul></div>
@@ -640,6 +641,40 @@
 
             <!-- TAB: NOTEBOOK AI (kiểu NotebookLM) - nội dung dựng bằng notebook.js -->
             <div id="tab-content-notebook" class="tab-pane"></div>
+
+            <!-- TAB: WEAK AREAS (Điểm yếu cá nhân hóa) -->
+            <div id="tab-content-weak-areas" class="tab-pane">
+                <header class="main-header">
+                    <div class="header-info">
+                        <h1>Điểm yếu & Ôn tập cá nhân hóa</h1>
+                        <p>Phân tích lịch sử học tập để gợi ý chủ đề cần củng cố. Kết quả cập nhật theo tiến độ của bạn.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" id="btn-analyze-weak-areas">
+                            <i class="fas fa-brain"></i> Phân tích lại
+                        </button>
+                    </div>
+                </header>
+
+                <div id="weak-areas-status" class="weak-areas-status glass-panel" hidden>
+                    <div class="weak-areas-empty">
+                        <i class="fas fa-info-circle"></i>
+                        <h3 id="weak-areas-title">Đang phân tích...</h3>
+                        <p id="weak-areas-message">Vui lòng đợi trong giây lát.</p>
+                    </div>
+                </div>
+
+                <div id="weak-areas-list" class="weak-areas-list" hidden></div>
+
+                <div id="weak-areas-actions" class="weak-areas-actions" hidden>
+                    <button class="btn btn-secondary" id="btn-create-weak-cards">
+                        <i class="fas fa-plus"></i> Tạo thẻ ôn tập từ điểm yếu
+                    </button>
+                    <button class="btn btn-primary" id="btn-practice-weak">
+                        <i class="fas fa-edit"></i> Luyện tập ngay
+                    </button>
+                </div>
+            </div>
 
             <!-- TAB 3: TIMETABLE PLANNER -->
             <div id="tab-content-timetable" class="tab-pane">

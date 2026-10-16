@@ -225,6 +225,10 @@
         studyCreateSchedule: (dayOfWeek, startTime, durationMinutes, label) => request('/api/study/schedule', { method: 'POST', body: { dayOfWeek, startTime, durationMinutes, label } }),
         studyUpdateSchedule: (id, dayOfWeek, startTime, durationMinutes, label) => request('/api/study/schedule/' + id, { method: 'PUT', body: { dayOfWeek, startTime, durationMinutes, label } }),
         studyToggleSchedule: (id) => request('/api/study/schedule/' + id + '/toggle', { method: 'PATCH' }),
-        studyDeleteSchedule: (id) => request('/api/study/schedule/' + id, { method: 'DELETE' })
+        studyDeleteSchedule: (id) => request('/api/study/schedule/' + id, { method: 'DELETE' }),
+
+        // Weak Areas (Issue #35)
+        getWeakAreas: () => request('/api/weak-areas'),
+        analyzeWeakAreas: () => request('/api/weak-areas/analyze', { method: 'POST' })
     };
 })();

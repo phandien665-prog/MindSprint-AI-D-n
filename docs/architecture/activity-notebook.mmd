@@ -1,0 +1,75 @@
+flowchart TD
+    %% Activity Diagram: Notebook AI - Add Source & Chat Flow
+    Start([Bắt đầu]) --> Login{Kiểm tra\ndăng nhập}
+    Login -- Chưa đăng nhập --> ShowLogin[Hiển thị\nhộp thoại đăng nhập]
+    ShowLogin --> Login
+    Login -- Đã đăng nhập --> SelectNotebook[Chọn/Tạo sổ tay]
+
+    SelectNotebook --> AddSource{Thêm nguồn\nlập tài liệu}
+    AddSource -- Văn bản --> AddText[Nhập tiêu đề\n& nội dung]
+    AddSource -- URL --> AddURL[Nhập URL\nhợp lệ]
+    AddSource -- File --> AddFile[Chọn file\nPDF/TXT/MD/CSV]
+    AddSource -- Bỏ qua --> ChatInput
+
+    AddText --> ValidateText{Kiểm tra\nđộ dài}
+    ValidateText -- Hợp lệ --> SaveText[Lưu nguồn\nvào DB]
+    ValidateText -- Không hợp lệ --> AddText
+
+    AddURL --> ValidateURL{Kiểm tra\nURL/DNS}
+    ValidateURL -- Hợp lệ --> FetchURL[Tải nội dung\nURL]
+    ValidateURL -- Không hợp lệ --> AddURL
+    FetchURL --> ParseContent[Trích xuất\nvăn bản chính]
+    ParseContent --> SaveURL[Lưu nguồn\nURL vào DB]
+
+    AddFile --> ValidateFile{Kiểm tra\nduôi/mới}
+    ValidateFile -- Hợp lệ --> UploadFile[Tải file\nlên server]
+    ValidateFile -- Không hợp lệ --> AddFile
+    UploadFile --> ExtractFile[Trích xuất\nnội dung file]
+    ExtractFile --> SaveFile[Lưu nguồn\nfile vào DB]
+
+    SaveText --> RenderSources[Cập nhật\ndanh sách nguồn]
+    SaveURL --> RenderSources
+    SaveFile --> RenderSources
+    RenderSources --> ChatInput[Người dùng\nnhập câu hỏi]
+
+    ChatInput --> SendChat[Gửi câu hỏi\n+ lịch sử chat\n+ nội dung nguồn]
+    SendChat --> BuildPrompt[Xây dựng prompt\ncho Gemini]
+    BuildPrompt --> CallGemini[Gọi Gemini API]
+    CallGemini --> StreamResponse[Nhận phản hồi\nstreaming]
+    StreamResponse --> RenderAnswer[Hiển thị\ntrả lời AI]
+    RenderAnswer --> SaveHistory[Lưu vào\nhistoire chat]
+
+    SaveHistory --> ContinueChat{Tiếp tục\nhỏi đáp?}
+    ContinueChat -- Có --> ChatInput
+    ContinueChat -- Không --> End([Kết thúc])
+
+    %% Subgraphs for clarity
+    subgraph Auth [Xác thực]
+        Login
+        ShowLogin
+    end
+
+    subgraph SourceMgmt [Quản lý nguồn]
+        AddSource
+        AddText
+        AddURL
+        AddFile
+        ValidateText
+        ValidateURL
+        ValidateFile
+        SaveText
+        SaveURL
+        SaveFile
+        RenderSources
+    end
+
+    subgraph AIChat [Hỏi đáp AI]
+        ChatInput
+        SendChat
+        BuildPrompt
+        CallGemini
+        StreamResponse
+        RenderAnswer
+        SaveHistory
+        ContinueChat
+    end

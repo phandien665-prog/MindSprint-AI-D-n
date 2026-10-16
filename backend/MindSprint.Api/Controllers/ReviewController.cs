@@ -17,7 +17,8 @@ public class ReviewController(AppDbContext db, SpacedRepetitionService srs) : Ap
     public async Task<IActionResult> Submit(ReviewDto dto)
     {
         var uid = UserId;
-        var card = await db.Flashcards.FirstOrDefaultAsync(f => f.ExternalId == dto.CardId && (f.OwnerId == null || f.OwnerId == uid));
+        // Exclude retired system cards (OwnerId == -1)
+        var card = await db.Flashcards.FirstOrDefaultAsync(f => f.ExternalId == dto.CardId && (f.OwnerId == null || f.OwnerId == uid) && f.OwnerId != -1);
         if (card is null) return NotFound(new { message = "Không tìm thấy thẻ." });
 
         var p = await db.CardProgresses.FirstOrDefaultAsync(x => x.UserId == uid && x.FlashcardId == card.Id);
@@ -38,7 +39,8 @@ public class ReviewController(AppDbContext db, SpacedRepetitionService srs) : Ap
             .Select(p => p.Flashcard!.ExternalId).ToListAsync();
 
         var seen = db.CardProgresses.Where(p => p.UserId == uid).Select(p => p.FlashcardId);
-        var fresh = await db.Flashcards.Where(f => (f.OwnerId == null || f.OwnerId == uid) && !seen.Contains(f.Id))
+        // Exclude retired system cards (OwnerId == -1)
+        var fresh = await db.Flashcards.Where(f => (f.OwnerId == null || f.OwnerId == uid) && f.OwnerId != -1 && !seen.Contains(f.Id))
             .OrderBy(f => f.Id).Take(newLimit).Select(f => f.ExternalId).ToListAsync();
 
         return Ok(new { due, fresh });
