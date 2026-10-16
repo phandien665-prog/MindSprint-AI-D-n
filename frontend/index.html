@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="tokens.css?v=39">
     <link rel="stylesheet" href="style.css?v=63">
     <link rel="stylesheet" href="kanban.css?v=54">
-    <link rel="stylesheet" href="ui-refresh.css?v=5">
+    <link rel="stylesheet" href="ui-refresh.css?v=6">
 </head>
 <body>
     <div class="app-container">
@@ -141,68 +141,70 @@
                 </div>
             </div>
             <div id="tab-content-home" class="tab-pane active">
-                <header class="main-header">
+                <header class="main-header home-greeting">
                     <div class="header-info">
-                        <h1>Trang chủ</h1>
-                        <p>Chào mừng bạn trở lại với MindSprintAI. Hãy cùng củng cố kiến thức mỗi ngày!</p>
+                        <h1><span id="home-greeting-time">Chào buổi tối</span>, <span id="home-greeting-name">Khách</span></h1>
+                        <p>Mỗi ngày một chút tiến bộ — hôm nay mình học gì nhỉ?</p>
                     </div>
+                    <div class="home-date"><i class="far fa-sun" aria-hidden="true"></i><span id="home-date-label"></span></div>
                 </header>
 
-                <!-- Home welcome; the single gradient orb belongs to AI Notebook -->
                 <div class="welcome-banner">
                     <div class="welcome-banner-content">
                         <span class="welcome-badge">Mỗi ngày, một chút tiến bộ</span>
-                        <h2>Hôm nay bạn muốn củng cố kiến thức gì?</h2>
-                        <p>Ôn lại một bộ thẻ, kiểm tra điều đã nhớ, rồi ghi chú những điều muốn tìm hiểu thêm.</p>
+                        <h2>Hôm nay học gì?</h2>
+                        <p>Ôn lại một bộ thẻ, kiểm tra điều đã nhớ, rồi ghi chú điều muốn tìm hiểu.</p>
                         <div class="welcome-banner-buttons">
                             <button class="btn btn-primary" id="home-start-quiz-btn">
-                                <i class="fas fa-play"></i> Bắt đầu luyện tập
+                                <i class="fas fa-play"></i> Bắt đầu học 15 phút
                             </button>
                             <button class="btn btn-secondary" id="home-create-deck-btn">
-                                <i class="fas fa-plus"></i> Tạo bộ thẻ mới
+                                <i class="fas fa-plus"></i> Tạo bộ thẻ
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Stats horizontal grid -->
-                <div class="home-stats-grid">
-                    <div class="home-stat-box glass-panel" id="streak-stat-box">
-                        <div class="home-stat-icon" style="background: var(--primary-glow); color: var(--accent-ink);">
-                            <i class="fas fa-fire"></i>
+                <div class="home-daily-dashboard">
+                    <section class="home-progress-card glass-panel" aria-labelledby="home-progress-title">
+                        <header class="home-panel-heading">
+                            <h2 id="home-progress-title">Tiến độ hôm nay</h2>
+                            <span>Mục tiêu: 15 phút</span>
+                        </header>
+                        <div class="home-progress-content">
+                            <div class="home-progress-ring" id="home-daily-progress-ring" role="progressbar" aria-label="Mục tiêu hôm nay" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                <div class="home-progress-ring-label"><strong id="home-daily-progress-value">0%</strong><span>Hoàn thành</span></div>
+                            </div>
+                            <div class="home-progress-metrics">
+                                <div class="home-progress-metric" id="streak-stat-box">
+                                    <span class="home-progress-metric-label"><i class="fas fa-fire" aria-hidden="true"></i> Chuỗi học</span>
+                                    <strong class="home-stat-val" id="home-streak-val">0 Ngày</strong>
+                                </div>
+                                <div class="home-progress-metric">
+                                    <span class="home-progress-metric-label"><i class="fas fa-layer-group" aria-hidden="true"></i> Thẻ đã ôn</span>
+                                    <strong class="home-stat-val" id="home-answered-val">0 Thẻ</strong>
+                                </div>
+                                <div class="home-progress-metric">
+                                    <span class="home-progress-metric-label"><i class="fas fa-bullseye" aria-hidden="true"></i> Độ chính xác</span>
+                                    <strong class="home-stat-val" id="home-accuracy-val">—</strong>
+                                </div>
+                            </div>
                         </div>
-                        <div class="home-stat-data">
-                            <span class="home-stat-val" id="home-streak-val">—</span>
-                            <span class="home-stat-lbl">Chuỗi Streak</span>
+                        <span id="home-favorite-val" hidden>0 Bộ thẻ</span>
+                    </section>
+
+                    <section class="home-goals-card glass-panel" aria-labelledby="home-goals-title">
+                        <header class="home-panel-heading">
+                            <h2 id="home-goals-title">Mục tiêu hôm nay</h2>
+                            <span id="home-goals-count">0/3 xong</span>
+                        </header>
+                        <div class="home-goals-list">
+                            <label class="home-goal-item"><input type="checkbox" data-daily-goal="review"><span>Ôn lại ít nhất 1 bộ thẻ</span></label>
+                            <label class="home-goal-item"><input type="checkbox" data-daily-goal="quiz"><span>Làm một bài kiểm tra nhanh</span></label>
+                            <label class="home-goal-item"><input type="checkbox" data-daily-goal="note"><span>Ghi chú điều muốn tìm hiểu</span></label>
                         </div>
-                    </div>
-                    <div class="home-stat-box glass-panel">
-                        <div class="home-stat-icon" style="background: var(--primary-glow); color: var(--secondary-color);">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="home-stat-data">
-                            <span class="home-stat-val" id="home-answered-val">—</span>
-                            <span class="home-stat-lbl">Câu đã trả lời</span>
-                        </div>
-                    </div>
-                    <div class="home-stat-box glass-panel">
-                        <div class="home-stat-icon" style="background: var(--success-glow); color: var(--success-color);">
-                            <i class="fas fa-bullseye"></i>
-                        </div>
-                        <div class="home-stat-data">
-                            <span class="home-stat-val" id="home-accuracy-val">—</span>
-                            <span class="home-stat-lbl">Tỷ lệ chính xác</span>
-                        </div>
-                    </div>
-                    <div class="home-stat-box glass-panel">
-                        <div class="home-stat-icon" style="background: var(--primary-glow); color: var(--warning-color);">
-                            <i class="fas fa-folder-open"></i>
-                        </div>
-                        <div class="home-stat-data">
-                            <span class="home-stat-val" id="home-favorite-val">—</span>
-                            <span class="home-stat-lbl">Bộ thẻ trong thư viện</span>
-                        </div>
-                    </div>
+                        <button class="btn btn-accent home-goals-start-btn" id="home-goals-start-btn" type="button"><i class="fas fa-play" aria-hidden="true"></i> Bắt đầu ngay <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+                    </section>
                 </div>
 
                 <!-- Suggested Decks list -->
@@ -1226,7 +1228,7 @@
     <script src="auth.js?v=43"></script>
     <script src="dialogs.js?v=45"></script>
     <script src="notebook.js?v=62"></script>
-    <script src="script.js?v=64"></script>
+    <script src="script.js?v=65"></script>
     <script src="ui.js?v=59"></script>
     <script src="kanban.js?v=54"></script>
 </body>

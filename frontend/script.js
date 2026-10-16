@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.MindSprintAuth.onAuthChange((user) => {
             const nameEl = document.getElementById('sidebar-user-name');
             if (nameEl) nameEl.textContent = user ? user.displayName : 'Khách';
+            const greetingName = document.getElementById('home-greeting-name');
+            if (greetingName) greetingName.textContent = user ? user.displayName : 'Khách';
         });
     }
 
@@ -2479,11 +2481,62 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const homeStartQuizBtn = document.getElementById('home-start-quiz-btn');
         const homeCreateDeckBtn = document.getElementById('home-create-deck-btn');
         const homeViewAllDecks = document.getElementById('home-view-all-decks');
+        const homeGoalsStartBtn = document.getElementById('home-goals-start-btn');
+
+        const homeGreetingTime = document.getElementById('home-greeting-time');
+        const homeGreetingName = document.getElementById('home-greeting-name');
+        const homeDateLabel = document.getElementById('home-date-label');
+        const hcmTimeZone = 'Asia/Ho_Chi_Minh';
+        const currentHour = Number(new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit', hourCycle: 'h23', timeZone: hcmTimeZone
+        }).format(new Date()));
+        if (homeGreetingTime) {
+            homeGreetingTime.textContent = currentHour < 11 ? 'Chào buổi sáng' : currentHour < 17 ? 'Chào buổi chiều' : 'Chào buổi tối';
+        }
+        if (homeGreetingName) {
+            homeGreetingName.textContent = document.getElementById('header-user-name')?.textContent?.trim() || 'Khách';
+        }
+        if (homeDateLabel) {
+            const formattedDate = new Intl.DateTimeFormat('vi-VN', {
+                weekday: 'long', day: 'numeric', month: 'long', timeZone: hcmTimeZone
+            }).format(new Date());
+            homeDateLabel.textContent = formattedDate.replace(',', ' · ').replace(/^./, char => char.toLocaleUpperCase('vi-VN'));
+        }
+
+        const dailyGoalInputs = [...document.querySelectorAll('[data-daily-goal]')];
+        const dailyProgressRing = document.getElementById('home-daily-progress-ring');
+        const dailyProgressValue = document.getElementById('home-daily-progress-value');
+        const dailyGoalsCount = document.getElementById('home-goals-count');
+        const todayKey = new Intl.DateTimeFormat('en-CA', {
+            year: 'numeric', month: '2-digit', day: '2-digit', timeZone: hcmTimeZone
+        }).format(new Date());
+        const dailyGoalsStorageKey = `mindsprint-daily-goals:${todayKey}`;
+        let savedDailyGoals = {};
+        try { savedDailyGoals = JSON.parse(localStorage.getItem(dailyGoalsStorageKey) || '{}'); }
+        catch { savedDailyGoals = {}; }
+        dailyGoalInputs.forEach(input => { input.checked = Boolean(savedDailyGoals[input.dataset.dailyGoal]); });
+        const updateDailyGoals = () => {
+            const completedGoals = dailyGoalInputs.filter(input => input.checked).length;
+            const progressPercent = dailyGoalInputs.length ? Math.round(completedGoals / dailyGoalInputs.length * 100) : 0;
+            if (dailyProgressRing) {
+                dailyProgressRing.style.setProperty('--progress-angle', `${progressPercent * 3.6}deg`);
+                dailyProgressRing.setAttribute('aria-valuenow', String(progressPercent));
+            }
+            if (dailyProgressValue) dailyProgressValue.textContent = `${progressPercent}%`;
+            if (dailyGoalsCount) dailyGoalsCount.textContent = `${completedGoals}/${dailyGoalInputs.length} xong`;
+            savedDailyGoals = Object.fromEntries(dailyGoalInputs.map(input => [input.dataset.dailyGoal, input.checked]));
+            localStorage.setItem(dailyGoalsStorageKey, JSON.stringify(savedDailyGoals));
+        };
+        dailyGoalInputs.forEach(input => input.addEventListener('change', updateDailyGoals));
+        updateDailyGoals();
 
         if (homeStartQuizBtn) {
             homeStartQuizBtn.addEventListener('click', () => {
                 switchTab('quiz');
             });
+        }
+        if (homeGoalsStartBtn) {
+            homeGoalsStartBtn.addEventListener('click', () => switchTab('quiz'));
         }
 
         if (homeCreateDeckBtn) {

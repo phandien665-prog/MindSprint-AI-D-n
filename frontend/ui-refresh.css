@@ -37,11 +37,14 @@
     --primary-glow: rgba(199, 233, 119, .24);
     --accent-soft: #eef6d9;
     --accent-border: #dce8c2;
-    --success-color: #518267;
-    --success-glow: #e7f1e6;
+    --success-color: var(--color-sage);
+    --success-glow: var(--color-lime-soft);
     --danger-color: #bf5b52;
     --danger-glow: #f9e9e5;
-    --warning-color: #a66a3d;
+    --warning-color: var(--color-coral);
+    --warning-glow: var(--color-coral-soft);
+    --info-color: var(--color-blue);
+    --info-glow: var(--color-lavender);
     --focus-color: #78964e;
     --overlay-color: rgba(32, 43, 62, .5);
     --card-shadow: 0 8px 24px var(--color-shadow);
@@ -91,6 +94,9 @@ html[data-theme="dark"] {
     --danger-color: #eea49a;
     --danger-glow: #432d2a;
     --warning-color: #e2b08a;
+    --warning-glow: #432d2a;
+    --info-color: #9dc2d5;
+    --info-glow: #2d3547;
     --focus-color: #c6e77d;
     --overlay-color: rgba(5, 4, 9, .74);
     --card-shadow: 0 8px 24px rgba(0, 0, 0, .18);
@@ -227,17 +233,22 @@ body {
 
 #tab-content-home { gap: 23px; }
 #tab-content-home > .main-header { margin-bottom: -8px; }
+.home-greeting { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.home-greeting .header-info h1 { margin-bottom: 4px; }
+.home-greeting .header-info p { margin: 0; }
+.home-date { display: inline-flex; align-items: center; gap: 8px; padding-bottom: 4px; color: var(--color-blue); font-size: .86rem; white-space: nowrap; }
+.home-date i { color: var(--color-sage); }
 .welcome-banner {
     position: relative;
     isolation: isolate;
-    min-height: 255px;
+    min-height: 285px;
     overflow: hidden;
     padding: clamp(28px, 4vw, 48px);
     border: 1px solid #ebe8dd;
     border-radius: 26px;
     background:
         radial-gradient(ellipse at 92% 5%, rgba(218, 235, 186, .62), transparent 37%),
-        linear-gradient(112deg, #f9f8f2 0%, rgba(249, 248, 242, .97) 53%, rgba(244, 246, 232, .88) 100%);
+        linear-gradient(112deg, var(--color-paper-soft) 0%, rgba(252, 251, 248, .97) 53%, rgba(244, 246, 232, .88) 100%);
     box-shadow: var(--card-shadow);
 }
 html[data-theme="dark"] .welcome-banner {
@@ -275,7 +286,7 @@ html[data-theme="dark"] .welcome-banner {
     position: relative;
     z-index: 1;
     align-items: flex-start;
-    max-width: 520px;
+    max-width: 650px;
     gap: 10px;
     text-align: left;
 }
@@ -292,11 +303,11 @@ html[data-theme="dark"] .welcome-banner {
     font-weight: 700;
 }
 .welcome-banner h2 {
-    max-width: 16ch;
+    max-width: 20ch;
     margin: 5px 0 0;
     color: var(--text-primary);
     font-family: var(--font-heading);
-    font-size: clamp(1.8rem, 3.1vw, 2.65rem);
+    font-size: clamp(2.2rem, 4vw, 3.5rem);
     font-weight: 800;
     letter-spacing: -.065em;
     line-height: 1.13;
@@ -317,6 +328,31 @@ html[data-theme="dark"] .welcome-banner-buttons .btn-secondary {
     background: rgba(37, 33, 47, .88);
     color: var(--accent-ink);
 }
+
+.home-daily-dashboard { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr); gap: 22px; align-items: stretch; }
+.home-progress-card, .home-goals-card { min-width: 0; padding: 24px 26px; border: 1px solid var(--border-color); border-radius: 23px; background: var(--bg-panel); box-shadow: var(--card-shadow); }
+.home-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.home-panel-heading h2 { margin: 0; color: var(--text-primary); font-family: var(--font-heading); font-size: 1.12rem; font-weight: 800; letter-spacing: -.03em; }
+.home-panel-heading > span { color: var(--color-blue); font-size: .78rem; white-space: nowrap; }
+.home-progress-content { display: flex; align-items: center; gap: 28px; min-height: 135px; }
+.home-progress-ring { position: relative; display: grid; width: 135px; height: 135px; flex: 0 0 135px; place-items: center; border-radius: 50%; background: conic-gradient(var(--color-lime) var(--progress-angle, 0deg), #f0f0e9 0deg); }
+.home-progress-ring::before { position: absolute; inset: 12px; border-radius: inherit; background: var(--bg-panel); content: ''; }
+.home-progress-ring-label { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.home-progress-ring-label strong { color: var(--text-primary); font-family: var(--font-heading); font-size: 1.85rem; line-height: 1; }
+.home-progress-ring-label span { color: var(--text-muted); font-size: .67rem; }
+.home-progress-metrics { display: grid; min-width: 0; flex: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; }
+.home-progress-metric { display: flex; min-width: 0; flex-direction: column; gap: 12px; padding: 10px 17px; border-left: 1px solid var(--border-color); }
+.home-progress-metric-label { display: flex; align-items: center; gap: 7px; color: var(--color-blue); font-size: .75rem; white-space: nowrap; }
+.home-progress-metric-label i { color: var(--color-sage); }
+.home-progress-metric .home-stat-val { color: var(--text-primary); font-family: var(--font-heading); font-size: 1.55rem; font-weight: 800; letter-spacing: -.04em; white-space: nowrap; }
+.home-goals-list { display: grid; gap: 14px; margin: 4px 0 20px; }
+.home-goal-item { display: flex; align-items: center; gap: 11px; color: var(--text-secondary); font-size: .84rem; cursor: pointer; }
+.home-goal-item input { width: 19px; height: 19px; flex: 0 0 19px; margin: 0; accent-color: var(--color-lime); }
+.home-goal-item input:checked + span { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--color-sage); }
+.btn-accent, .button-accent { display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid var(--color-coral) !important; border-radius: 13px; background: var(--color-coral) !important; color: #fff !important; font-weight: 700; }
+.btn-accent:hover, .button-accent:hover { border-color: var(--orange-deep) !important; background: var(--orange-deep) !important; color: #fff !important; }
+.home-goals-start-btn { width: 100%; min-height: 48px; box-shadow: 0 7px 18px rgba(239, 121, 93, .2); }
+.home-goals-start-btn .fa-arrow-right { margin-left: auto; }
 
 .home-stats-grid {
     display: grid;
@@ -476,6 +512,7 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
 
 @media (max-width: 1100px) {
     .home-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .home-daily-dashboard { grid-template-columns: minmax(0, 1fr); }
     .welcome-banner::after { right: -110px; width: 210px; opacity: .42; }
 }
 
@@ -485,6 +522,8 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
     .workspace-search { flex-basis: 100%; max-width: none; }
     .workspace-header-actions { width: 100%; }
     .main-header { padding-left: 0; }
+    .home-greeting { align-items: flex-start; }
+    .home-date { padding-top: 4px; }
     .sidebar-toggle-btn { top: 17px; left: auto; right: 120px; }
     .tab-pane { gap: 19px; }
     #tab-content-home > .main-header { margin-bottom: 0; }
@@ -494,6 +533,10 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
     .welcome-banner p { max-width: 44ch; font-size: .85rem; }
     .welcome-banner::after { right: -37px; width: 175px; opacity: .35; }
     .home-stats-grid { gap: 10px; }
+    .home-progress-card, .home-goals-card { padding: 20px; }
+    .home-progress-content { gap: 17px; }
+    .home-progress-metric { padding-inline: 11px; }
+    .home-progress-metric-label { white-space: normal; }
     .home-stat-box { padding: 14px 12px; gap: 10px; border-radius: 16px; }
     .home-stat-icon { width: 38px; height: 38px; border-radius: 12px; }
     .home-stat-val { font-size: 1.22rem; }
@@ -502,6 +545,13 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
 
 @media (max-width: 480px) {
     .home-stats-grid, .home-tools-grid, .home-suggestions-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    .home-greeting { flex-direction: column; gap: 5px; }
+    .home-date { padding: 0; }
+    .home-progress-content { flex-direction: column; align-items: stretch; }
+    .home-progress-ring { align-self: center; }
+    .home-progress-metrics { width: 100%; grid-template-columns: minmax(0, 1fr); }
+    .home-progress-metric { gap: 5px; padding: 12px 0; border-top: 1px solid var(--border-color); border-left: 0; }
+    .home-progress-metric .home-stat-val { font-size: 1.3rem; }
     .welcome-banner { min-height: 0; }
     .welcome-banner-buttons { align-items: stretch; width: 100%; }
     .welcome-banner-buttons .btn { flex: 1 1 100%; }
