@@ -23,7 +23,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="vendor/katex/katex.min.css">
     <link rel="stylesheet" href="tokens.css?v=39">
-    <link rel="stylesheet" href="style.css?v=53">
+    <link rel="stylesheet" href="style.css?v=58">
     <link rel="stylesheet" href="kanban.css?v=54">
 </head>
 <body>
@@ -275,6 +275,9 @@
                         <p>Quản lý và lật thẻ kiến thức tự ghi nhớ.</p>
                     </div>
                     <div class="header-actions">
+                        <button class="btn btn-secondary" id="open-ai-card-modal" type="button">
+                            <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Tạo thẻ bằng AI
+                        </button>
                         <button class="btn btn-primary" id="open-add-modal">
                             <i class="fas fa-plus"></i> Tạo bộ thẻ mới
                         </button>
@@ -891,6 +894,78 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="ai-card-modal">
+        <section class="modal-content glass-panel ai-card-modal-content" role="dialog" aria-modal="true" aria-labelledby="ai-card-modal-title">
+            <div class="modal-header">
+                <h2 id="ai-card-modal-title">Tạo thẻ bằng AI</h2>
+                <button class="close-btn" id="close-ai-card-modal" type="button" aria-label="Đóng"><i class="fas fa-times" aria-hidden="true"></i></button>
+            </div>
+            <form id="ai-card-generator-form" class="add-card-form">
+                <p class="ai-card-help">Dán nội dung bài học hoặc kéo thả tài liệu vào để AI tạo flashcard. Bạn có thể xem và chọn thẻ trước khi lưu vào Thư viện.</p>
+                <div class="ai-card-dropzone" id="ai-card-dropzone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Kéo thả file tài liệu vào đây</p>
+                    <span>Hỗ trợ: .txt, .md, .pdf, .docx, .csv, .json</span>
+                    <button type="button" class="btn btn-secondary ai-card-browse-btn" id="ai-card-browse-btn"><i class="fas fa-folder-open"></i> Chọn file</button>
+                    <input type="file" id="ai-card-file-input" accept=".txt,.md,.pdf,.docx,.csv,.json,.doc" hidden>
+                    <div class="ai-card-file-info" id="ai-card-file-info" hidden>
+                        <i class="fas fa-file-alt"></i>
+                        <span id="ai-card-file-name"></span>
+                        <button type="button" class="ai-card-file-remove" id="ai-card-file-remove" title="Xóa file"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <textarea id="ai-card-source" rows="7" maxlength="60000" required placeholder=" "></textarea>
+                    <label for="ai-card-source">Nội dung tài liệu</label>
+                </div>
+                <div class="form-group-row ai-card-options">
+                    <div class="form-group">
+                        <select id="ai-card-category" required>
+                            <option value="english">Tiếng Anh</option>
+                            <option value="programming">Lập trình</option>
+                            <option value="general" selected>Kiến thức chung</option>
+                            <option value="__new_category__">+ Thêm danh mục mới...</option>
+                        </select>
+                        <label for="ai-card-category">Danh mục</label>
+                    </div>
+                    <div class="form-group">
+                        <input id="ai-card-count" type="number" min="1" max="100" value="10" required>
+                        <label for="ai-card-count">Số thẻ (1–100, tự chỉnh theo file)</label>
+                        <small id="ai-card-count-hint" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 3px;"><i class="fas fa-magic"></i> Tự ước tính số thẻ theo dung lượng file.</small>
+                    </div>
+                </div>
+                <div class="form-group" id="ai-card-new-cat-group" style="display: none; margin-top: 8px;">
+                    <input id="ai-card-new-cat" type="text" placeholder=" ">
+                    <label for="ai-card-new-cat">Tên danh mục mới (VD: Toán học, Marketing, Lịch sử...)</label>
+                </div>
+                <div class="form-group-row ai-card-options" style="margin-top: 8px;">
+                    <div class="form-group" style="position: relative; flex: 1;">
+                        <input id="ai-card-sub-search" type="text" placeholder=" " autocomplete="off" style="padding-left: 2.2rem;">
+                        <i class="fas fa-search" style="position: absolute; left: 0.85rem; top: 0.85rem; color: var(--text-muted); font-size: 0.85rem; pointer-events: none;"></i>
+                        <label for="ai-card-sub-search" style="left: 2.2rem;">Tìm kiếm theo tên chủ đề...</label>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <select id="ai-card-subcategory">
+                            <option value="__new__">+ Tạo chủ đề mới...</option>
+                        </select>
+                        <label for="ai-card-subcategory">Chủ đề chi tiết (Bộ thẻ con)</label>
+                    </div>
+                </div>
+                <div class="form-group" id="ai-card-new-sub-group" style="margin-top: 8px;">
+                    <input id="ai-card-new-sub" type="text" placeholder=" ">
+                    <label for="ai-card-new-sub">Tên chủ đề mới (VD: Lập trình Web, Cảm xúc...)</label>
+                </div>
+                <p id="ai-card-status" class="ai-card-status" role="status" aria-live="polite" hidden></p>
+                <div id="ai-card-results" class="ai-card-results" hidden></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-ai-card-modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary" id="generate-ai-cards-btn"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Tạo flashcard</button>
+                    <button type="button" class="btn btn-primary" id="save-ai-cards-btn" hidden>Lưu thẻ đã chọn</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
     <!-- Modal for Adding Timetable Slot -->
     <div class="modal-overlay" id="timetable-modal">
         <div class="modal-content glass-panel">
@@ -1000,31 +1075,31 @@
 
                 <!-- Flashcard Display Area -->
                 <section class="flashcard-container" style="display: flex; flex-direction: column; align-items: center; gap: var(--space-step-24); position: relative; z-index: 1; width: 100%;">
-                    <div class="flashcard-wrapper ai-glow-border" style="position: relative; width: 100%; height: 330px; perspective: 1000px; margin-bottom: var(--space-step-16);">
+                    <div class="flashcard-wrapper ai-glow-border" style="position: relative; width: 100%; height: 380px; min-height: 380px; perspective: 1000px; margin-bottom: var(--space-step-16);">
                         <!-- Flashcard 3D Card -->
                         <div class="flashcard" id="flashcard" style="width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; position: relative;">
-                            <div class="card-face card-front" style="position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: var(--space-step-32); border-radius: var(--border-radius-lg); background: var(--pastel-a); border: 1px solid var(--border-color); text-align: center;">
+                            <div class="card-face card-front" style="position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2.8rem var(--space-step-24) 2.8rem var(--space-step-24); border-radius: var(--border-radius-lg); background: var(--pastel-a); border: 1px solid var(--border-color); text-align: center;">
                                 <div class="card-actions-top" onclick="event.stopPropagation();" style="position: absolute; top: 1.2rem; right: 1.2rem; display: flex; gap: var(--space-step-8); z-index: 10;">
                                     <button class="card-action-btn edit-card-btn" title="Sửa thẻ"><i class="fas fa-pen"></i></button>
                                     <button class="card-action-btn delete-card-btn" title="Xóa thẻ"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                                 <span class="card-category" id="card-front-cat" style="position: absolute; top: 1.2rem; left: 1.2rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--accent-ink); letter-spacing: 1px; background: var(--primary-glow); padding: var(--space-step-4) var(--space-step-8); border-radius: 6px;">Danh mục</span>
-                                <div class="card-content">
+                                <div class="card-content" style="width: 100%; max-height: calc(100% - 3.2rem); overflow-y: auto; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 0.5rem; margin-top: 1rem; margin-bottom: 2rem;">
                                     <h2 id="card-question" style="font-family: var(--font-heading); color: var(--text-primary); font-weight: 700;">Câu hỏi sẽ hiển thị ở đây</h2>
                                 </div>
                                 <span class="card-hint" style="position: absolute; bottom: 1.2rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: var(--space-step-8);"><i class="fas fa-sync-alt"></i> Nhấp để lật xem đáp án</span>
                             </div>
-                            <div class="card-face card-back" style="position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: var(--space-step-32); border-radius: var(--border-radius-lg); background: var(--pastel-c); border: 1px solid var(--border-color); text-align: center; transform: rotateY(180deg);">
+                            <div class="card-face card-back" style="position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2.8rem var(--space-step-24) 5.8rem var(--space-step-24); border-radius: var(--border-radius-lg); background: var(--pastel-c); border: 1px solid var(--border-color); text-align: center; transform: rotateY(180deg);">
                                 <div class="card-actions-top" onclick="event.stopPropagation();" style="position: absolute; top: 1.2rem; right: 1.2rem; display: flex; gap: var(--space-step-8); z-index: 10;">
                                     <button class="card-action-btn edit-card-btn" title="Sửa thẻ"><i class="fas fa-pen"></i></button>
                                     <button class="card-action-btn delete-card-btn" title="Xóa thẻ"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                                 <span class="card-category" id="card-back-cat" style="position: absolute; top: 1.2rem; left: 1.2rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--accent-ink); letter-spacing: 1px; background: var(--primary-glow); padding: var(--space-step-4) var(--space-step-8); border-radius: 6px;">Danh mục</span>
-                                <div class="card-content" style="width: 100%;">
+                                <div class="card-content" style="width: 100%; max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 0.5rem;">
                                     <h2 id="card-answer" style="font-family: var(--font-heading); color: var(--text-primary); font-weight: 700; margin-bottom: var(--space-step-12);">Đáp án sẽ hiển thị ở đây</h2>
                                     <p id="card-example" class="card-example" style="color: var(--text-secondary); line-height: 1.5; background: var(--bg-secondary); padding: var(--space-step-12) var(--space-step-16); border-radius: var(--border-radius-md); border-left: 3px solid var(--primary-color); margin-top: var(--space-step-12); text-align: left; display: inline-block; max-width: 90%; white-space: pre-wrap; font-family: var(--font-mono); width: calc(100% - 2rem);">Ví dụ minh họa sẽ hiển thị ở đây.</p>
                                 </div>
-                                <div class="card-feedback" onclick="event.stopPropagation();" style="position: absolute; bottom: 4.5rem; display: flex; gap: var(--space-step-16); z-index: 10; width: 85%; justify-content: center;">
+                                <div class="card-feedback" onclick="event.stopPropagation();" style="position: absolute; bottom: 3.2rem; display: flex; gap: var(--space-step-16); z-index: 10; width: 85%; justify-content: center;">
                                     <button class="btn btn-danger-glow" id="btn-forget" style="flex: 1; padding: var(--space-step-8) var(--space-step-16); font-size: 0.85rem; border-radius: 8px;">
                                         <i class="fas fa-times-circle"></i> Chưa thuộc
                                     </button>
@@ -1032,7 +1107,7 @@
                                         <i class="fas fa-check-circle"></i> Đã thuộc
                                     </button>
                                 </div>
-                                <span class="card-hint" style="position: absolute; bottom: 1.2rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: var(--space-step-8);"><i class="fas fa-sync-alt"></i> Nhấp để lật lại câu hỏi</span>
+                                <span class="card-hint" style="position: absolute; bottom: 1rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: var(--space-step-8);"><i class="fas fa-sync-alt"></i> Nhấp để lật lại câu hỏi</span>
                             </div>
                         </div>
                     </div>
@@ -1111,11 +1186,11 @@
     <script src="text-renderer.js?v=31"></script>
     <script src="vocab_data.js?v=24"></script>
     <script src="runtime-config.js"></script>
-    <script src="api.js?v=53"></script>
+    <script src="api.js?v=54"></script>
     <script src="auth.js?v=43"></script>
     <script src="dialogs.js?v=45"></script>
     <script src="notebook.js?v=53"></script>
-    <script src="script.js?v=50"></script>
+    <script src="script.js?v=61"></script>
     <script src="ui.js?v=52"></script>
     <script src="kanban.js?v=54"></script>
 </body>

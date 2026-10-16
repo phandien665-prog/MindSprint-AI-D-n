@@ -72,6 +72,24 @@ await Case("invalid credentials are not retried or sent to more models", async (
     await Error(() => service.TextAsync("hi"), "ai_configuration");
     Check(handler.Models.Count == 1, "Invalid credentials retried");
 });
+await Case("placeholder API key is rejected before a provider request", async () =>
+{
+    var (service, handler, _) = Client((_, _) => Task.FromResult(Reply(200)),
+        new Dictionary<string, string?> { ["Gemini:ApiKey"] = "YOUR_GEMINI_API_KEY_HERE" });
+    var error = await Error(() => service.TextAsync("hi"), "ai_configuration");
+    Check(error.StatusCode == 503 && handler.Models.Count == 0, "Placeholder reached the provider");
+});
+await Case("invalid API key response from provider becomes a configuration error", async () =>
+{
+    var (service, handler, _) = Client((_, _) =>
+    {
+        var response = Reply(400);
+        response.Content = new StringContent("{\"error\":{\"message\":\"API key not valid. Please pass a valid API key.\"}}");
+        return Task.FromResult(response);
+    });
+    await Error(() => service.TextAsync("hi"), "ai_configuration");
+    Check(handler.Models.Count == 1, "Invalid API key retried");
+});
 await Case("unavailable model moves to fallback without retries", async () =>
 {
     var (service, handler, _) = Client((request, _) => Task.FromResult(Reply(request.RequestUri!.AbsolutePath.Contains("primary") ? 404 : 200)));

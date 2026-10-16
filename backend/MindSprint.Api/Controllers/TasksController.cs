@@ -25,8 +25,9 @@ public class TasksController(AppDbContext db) : ApiBase
         var uid = UserId;
         var status = dto.Status ?? TaskStatus.Todo;
         var pos = await db.Tasks.Where(t => t.UserId == uid && t.Status == status).CountAsync();
+        var normalizedDueDate = NormalizeUtc(dto.DueDate);
         var t = new KanbanTask { UserId = uid, Title = dto.Title.Trim(), Description = dto.Description?.Trim(),
-            DueDate = dto.DueDate, Priority = dto.Priority ?? "Medium", Status = status, Position = pos };
+            DueDate = normalizedDueDate, Priority = dto.Priority ?? "Medium", Status = status, Position = pos };
         db.Tasks.Add(t);
         await db.SaveChangesAsync();
         return Ok(t);
@@ -38,11 +39,23 @@ public class TasksController(AppDbContext db) : ApiBase
         if (Validate(dto) is { } error) return BadRequest(new { message = error });
         var t = await db.Tasks.FirstOrDefaultAsync(x => x.Id == id && x.UserId == UserId);
         if (t is null) return NotFound();
-        (t.Title, t.Description, t.DueDate) = (dto.Title.Trim(), dto.Description?.Trim(), dto.DueDate);
+        var normalizedDueDate = NormalizeUtc(dto.DueDate);
+        (t.Title, t.Description, t.DueDate) = (dto.Title.Trim(), dto.Description?.Trim(), normalizedDueDate);
         t.Priority = dto.Priority ?? t.Priority;
         if (dto.Status is { } status && status != t.Status) await Arrange(t, status, int.MaxValue);
         await db.SaveChangesAsync();
         return Ok(t);
+    }
+
+    private static DateTime? NormalizeUtc(DateTime? value)
+    {
+        if (value is null) return null;
+        return value.Value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.Value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
+        };
     }
 
     [HttpPatch("{id:int}/move")]
