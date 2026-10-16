@@ -11,13 +11,15 @@
     const $ = (sel) => pane.querySelector(sel);
 
     const emptyWork = () => ({question: '', submission: '', hints: [], revealed: false});
-    const emptyState = () => ({ notebooks: [], nb: null, sources: [], notes: [], history: [], tutorHistory: [], chatMode: 'source', tutorStyle: 'steps', tutorTask: 'solve', work: emptyWork(), drafts: {source: '', tutor: ''}, quiz: null, audio: null, lastText: null, lastTitle: '', lastCards: null });
+    const emptyCode = () => ({language: 'python', question: '', code: '', error: '', followup: '', history: []});
+    const emptyState = () => ({ notebooks: [], nb: null, sources: [], notes: [], history: [], tutorHistory: [], chatMode: 'source', tutorStyle: 'steps', tutorTask: 'solve', work: emptyWork(), programming: emptyCode(), drafts: {source: '', tutor: ''}, quiz: null, audio: null, lastText: null, lastTitle: '', lastCards: null });
     const state = emptyState();
     let workspaceVersion = 0;
     let notebookRequest = 0;
     let chatPending = false;
     let studioPending = false;
     let workVersion = 0;
+    let codeVersion = 0;
     const MAX_FILE = 10 * 1024 * 1024;
 
     // ---------- helpers ----------
@@ -147,6 +149,7 @@
                         <button type="button" role="radio" aria-checked="true" data-tutor-task="solve">Giải bài</button>
                         <button type="button" role="radio" aria-checked="false" tabindex="-1" data-tutor-task="check">Kiểm tra bài làm</button>
                         <button type="button" role="radio" aria-checked="false" tabindex="-1" data-tutor-task="practice">Tự luyện</button>
+                        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-tutor-task="code">Lập trình</button>
                     </div>
                     <div class="nb-tutor-style" role="radiogroup" aria-label="Cách giải">
                         <span>Cách giải</span>
@@ -174,6 +177,21 @@
                         </div>
                     </div>
                     <div id="nb-practice-messages" class="nb-messages" role="log" aria-label="Gợi ý tự luyện" aria-live="polite" hidden></div>
+                </div>
+                <div id="nb-code-work" class="nb-tutor-work" hidden>
+                    <label for="nb-code-language">Ngôn ngữ</label>
+                    <select id="nb-code-language"><option value="python" ${state.programming.language === 'python' ? 'selected' : ''}>Python</option><option value="javascript" ${state.programming.language === 'javascript' ? 'selected' : ''}>JavaScript</option></select>
+                    <label for="nb-code-question">Đề bài / kết quả mong muốn (nếu có)</label>
+                    <textarea id="nb-code-question" class="nb-input" rows="2" maxlength="8000" placeholder="Code cần làm gì? Đầu vào và kết quả mong muốn?">${esc(state.programming.question)}</textarea>
+                    <label for="nb-code">Đoạn code</label>
+                    <textarea id="nb-code" class="nb-input nb-code-input" rows="8" maxlength="10000" spellcheck="false" autocapitalize="off" autocorrect="off" wrap="off" aria-describedby="nb-code-help">${esc(state.programming.code)}</textarea>
+                    <label for="nb-code-error">Thông báo lỗi / kết quả đang gặp (nếu có)</label>
+                    <textarea id="nb-code-error" class="nb-input nb-code-input" rows="2" maxlength="10000" spellcheck="false">${esc(state.programming.error)}</textarea>
+                    <p class="nb-muted" id="nb-code-help">Chỉ phân tích và giải thích Python/JavaScript cơ bản. Chưa chạy code; đầu ra và bản sửa là đề xuất để bạn tự kiểm thử trong môi trường phát triển.</p>
+                    <div id="nb-code-messages" class="nb-messages" role="log" aria-label="Phân tích code" aria-live="polite"></div>
+                    <label for="nb-code-followup">Hỏi tiếp về code (nếu có)</label>
+                    <textarea id="nb-code-followup" class="nb-input" rows="2" maxlength="1500" placeholder="Ví dụ: Vì sao phải đổi kiểu dữ liệu ở dòng 2?">${esc(state.programming.followup)}</textarea>
+                    <button type="button" class="btn btn-primary" data-act="tutor-code">Phân tích / Hỏi tiếp</button>
                 </div>
                 <div class="nb-welcome">
                     <div class="welcome-orb" aria-hidden="true"></div>
@@ -262,6 +280,8 @@
                 <div class="nb-source-dialog-actions"><button class="btn btn-primary" type="button" data-act="add-text">Thêm văn bản</button></div>
             </section>
         </dialog>`;
+        // Setting value avoids HTML parsing stripping a leading newline from a code draft.
+        $('#nb-code').value = state.programming.code;
         renderSources(); renderNotes(); setChatMode(state.chatMode);
         pane.dispatchEvent(new Event('ms-notebook-rendered'));
     }
@@ -293,15 +313,18 @@
     }
 
     function syncTutorTask() {
-        const work = state.chatMode === 'tutor' && state.tutorTask !== 'solve';
+        const code = state.chatMode === 'tutor' && state.tutorTask === 'code';
+        const work = state.chatMode === 'tutor' && ['check', 'practice'].includes(state.tutorTask);
         pane.querySelectorAll('[data-tutor-task]').forEach(button => {
             const selected = button.dataset.tutorTask === state.tutorTask;
             button.setAttribute('aria-checked', String(selected)); button.tabIndex = selected ? 0 : -1;
         });
         $('#nb-tutor-work').hidden = !work;
-        $('.nb-composer').hidden = work;
-        $('.nb-tutor-style[aria-label="Cách giải"]').hidden = work;
-        $('#nb-tutor-messages').hidden = state.chatMode !== 'tutor' || work;
+        $('#nb-code-work').hidden = !code;
+        $('.nb-composer').hidden = work || code;
+        $('.nb-welcome').hidden = work || code;
+        $('.nb-tutor-style[aria-label="Cách giải"]').hidden = work || code;
+        $('#nb-tutor-messages').hidden = state.chatMode !== 'tutor' || work || code;
         const practice = state.tutorTask === 'practice';
         ['#nb-submission-field', '#nb-check-help', '[data-act="tutor-check"]', '#nb-work-messages'].forEach(sel => { $(sel).hidden = practice; });
         $('#nb-practice-controls').hidden = !practice; $('#nb-practice-messages').hidden = !practice;
@@ -313,6 +336,7 @@
         const blocked = chatPending;
         $('[data-act="send"]').disabled = chatPending || (state.chatMode === 'tutor' && blocked);
         $('[data-act="tutor-check"]').disabled = blocked;
+        $('[data-act="tutor-code"]').disabled = blocked;
         $('[data-act="tutor-hint"]').disabled = blocked || level >= 3 || state.work.revealed;
         $('[data-act="tutor-solution"]').disabled = blocked || state.work.revealed;
         $('#nb-hint-progress').textContent = state.work.revealed ? 'Đã mở lời giải. Đổi đề hoặc chọn Bài mới để tự luyện tiếp.' : `Đã mở ${level}/3 mức gợi ý.`;
@@ -326,8 +350,7 @@
         });
     }
 
-    function tutorContext() {
-        const turns = state.tutorHistory;
+    function tutorContext(turns = state.tutorHistory) {
         const history = turns.length > 12 ? [turns[0], ...turns.slice(-11)] : [...turns];
         while (history.length > 1 && history.reduce((length, turn) => length + turn.text.length, 0) > 40000) history.splice(1, 1);
         return history;
@@ -379,6 +402,7 @@
         state.history = [];
         state.tutorHistory = [];
         state.work = emptyWork(); workVersion++;
+        state.programming = emptyCode(); codeVersion++;
         state.drafts = {source: '', tutor: ''};
         state.sources = sources;
         state.notes = notes;
@@ -418,6 +442,7 @@
             workspaceVersion++; workVersion++; chatPending = false; studioPending = false;
             state.sources = sources; state.history = []; state.tutorHistory = [];
             state.work.hints = []; state.work.revealed = false;
+            state.programming.history = []; codeVersion++;
             state.lastText = null; state.lastCards = null; state.quiz = null; state.audio = null;
             stopAudio(); renderMain();
         }
@@ -430,7 +455,7 @@
 
     // ---------- chat ----------
     function addMsg(role, html, mode = 'source') {
-        const box = $(mode === 'practice' ? '#nb-practice-messages' : mode === 'work' ? '#nb-work-messages' : mode === 'tutor' ? '#nb-tutor-messages' : '#nb-messages');
+        const box = $(mode === 'code' ? '#nb-code-messages' : mode === 'practice' ? '#nb-practice-messages' : mode === 'work' ? '#nb-work-messages' : mode === 'tutor' ? '#nb-tutor-messages' : '#nb-messages');
         if (box.querySelector('.nb-muted') && box.children.length === 1) box.innerHTML = '';
         const d = document.createElement('div'); d.className = 'nb-msg ' + (role === 'user' ? 'user' : 'bot'); d.innerHTML = html;
         box.appendChild(d); box.scrollTop = box.scrollHeight; return d;
@@ -511,6 +536,51 @@
                 chatPending = false;
                 pane.querySelectorAll(controls).forEach(button => busy(button, false));
                 syncWorkButtons();
+            }
+        }
+    }
+
+    // Choose a fence longer than any run in the source so notes preserve literal backticks.
+    function codeBlock(code, language = '') {
+        const fence = '`'.repeat(Math.max(3, ...[...code.matchAll(/`+/g)].map(match => match[0].length + 1)));
+        return `${fence}${language}\n${code}\n${fence}`;
+    }
+
+    async function sendTutorCode() {
+        if (chatPending || !ensureLoggedIn() || !state.nb) return;
+        const draft = state.programming;
+        if (!draft.code.trim()) { $('#nb-code').focus(); return window.MindSprintDialogs.alert('Hãy nhập đoạn code cần phân tích.'); }
+        const question = [draft.question, draft.followup].filter(Boolean).join('\n\nHỏi tiếp: ');
+        const payload = {action: 'code', language: draft.language, question, code: draft.code, error: draft.error, history: tutorContext(draft.history)};
+        const version = workspaceVersion, revision = codeVersion, id = state.nb.id;
+        const controls = '[data-chat-mode], [data-tutor-task], [data-tutor-style], [data-act="tutor-new"]';
+        chatPending = true;
+        pane.querySelectorAll(controls).forEach(button => busy(button, true)); syncWorkButtons();
+        const wait = addMsg('bot', '<span role="status">Đang phân tích code…</span>', 'code');
+        try {
+            const reply = await api.nbTutorWork(id, payload);
+            if (version !== workspaceVersion || revision !== codeVersion || state.nb?.id !== id) return;
+            const review = reply.programming;
+            let html = '<p><strong>Chưa chạy code · Phân tích và đầu ra dự kiến</strong></p>' + md(reply.answer);
+            html += `<h4>${reply.needsClarification ? 'Cần bổ sung thông tin' : 'Chẩn đoán'}</h4><p>${esc(review.diagnosis)}</p>`;
+            if (review.location) html += `<h4>Dòng / đoạn liên quan</h4><pre><code>${esc(review.location)}</code></pre>`;
+            if (review.fixedCode) html += `<h4>Bản sửa đề xuất</h4><pre><code>${esc(review.fixedCode)}</code></pre>`;
+            html += '<h4>Lý do / Cách hoạt động</h4>' + md(review.explanation);
+            html += review.tests.map((t, i) => `<h4>Kiểm thử dự kiến ${i + 1}: ${esc(t.purpose)}</h4><p>Đầu vào</p><pre><code>${esc(t.input)}</code></pre><p>Đầu ra dự kiến</p><pre><code>${esc(t.expectedOutput)}</code></pre>`).join('');
+            wait.innerHTML = html + '<button type="button" class="nb-icon-btn" data-act="save-answer">Lưu ghi chú</button>';
+            const text = `Chưa chạy code · Phân tích và đầu ra dự kiến\n\n${reply.answer}\n\n### Chẩn đoán\n${review.diagnosis}\n\n${review.location ? '### Dòng / đoạn liên quan\n' + codeBlock(review.location) + '\n\n' : ''}${review.fixedCode ? '### Bản sửa đề xuất\n' + codeBlock(review.fixedCode, draft.language) + '\n\n' : ''}### Lý do / Cách hoạt động\n${review.explanation}\n\n${review.tests.map((t, i) => `### Kiểm thử dự kiến ${i + 1}: ${t.purpose}\nĐầu vào:\n${codeBlock(t.input)}\nĐầu ra dự kiến:\n${codeBlock(t.expectedOutput)}`).join('\n\n')}`;
+            wait.dataset.raw = `Ngôn ngữ: ${draft.language}\n\nĐề bài / câu hỏi: ${question}\n\nCode gốc:\n${codeBlock(draft.code, draft.language)}\n\nThông báo người học cung cấp:\n${codeBlock(draft.error)}\n\n${text}`;
+            wait.dataset.q = 'Lập trình: ' + (question || draft.language);
+            draft.history.push({role: 'user', text: question || 'Phân tích code và thông báo lỗi đã gửi.'}, {role: 'assistant', text: text.slice(0, 10000)});
+            if (draft.history.length > 48) draft.history = [draft.history[0], ...draft.history.slice(-47)];
+            draft.followup = ''; $('#nb-code-followup').value = '';
+        } catch (error) {
+            if (version !== workspaceVersion || revision !== codeVersion) return;
+            wait.innerHTML = `<div class="nb-ai-error" role="status">${aiError(error)}<p>Code, đề và lỗi được giữ nguyên. Bấm Phân tích / Hỏi tiếp để thử lại.</p></div>`;
+        } finally {
+            if (version === workspaceVersion) {
+                if (revision !== codeVersion) wait.remove();
+                chatPending = false; pane.querySelectorAll(controls).forEach(button => busy(button, false)); syncWorkButtons();
             }
         }
     }
@@ -623,18 +693,23 @@
         if (act !== 'nb-new' && !state.nb) return;
         if (act === 'retry-chat') return sendQuestion(el.dataset.q, el, el.dataset.mode || 'source', el.dataset.style || state.tutorStyle);
         if (act === 'tutor-check') return sendTutorWork('check');
+        if (act === 'tutor-code') return sendTutorCode();
         if (act === 'tutor-hint') return sendTutorWork('hint');
         if (act === 'tutor-solution') return sendTutorWork('solution');
         if (act === 'tutor-new') {
             if (chatPending) return;
             const version = workspaceVersion;
-            if ((state.tutorHistory.length || state.work.question) && !await window.MindSprintDialogs.confirm('Bắt đầu bài mới sẽ xóa hội thoại Gia sư đang hiển thị. Ghi chú đã lưu vẫn được giữ.', {title: 'Bắt đầu bài mới', confirmText: 'Bài mới'})) return;
+            if ((state.tutorHistory.length || state.work.question || state.programming.code) && !await window.MindSprintDialogs.confirm('Bắt đầu bài mới sẽ xóa hội thoại Gia sư đang hiển thị. Ghi chú đã lưu vẫn được giữ.', {title: 'Bắt đầu bài mới', confirmText: 'Bài mới'})) return;
             if (version !== workspaceVersion) return;
             state.tutorHistory = []; state.drafts.tutor = '';
             state.work = emptyWork(); workVersion++;
+            state.programming = emptyCode(); codeVersion++;
+            ['#nb-code', '#nb-code-question', '#nb-code-error', '#nb-code-followup'].forEach(sel => { $(sel).value = ''; });
+            $('#nb-code-language').value = 'python'; $('#nb-code-messages').replaceChildren();
             $('#nb-problem').value = ''; $('#nb-submission').value = ''; $('#nb-work-messages').replaceChildren();
             $('#nb-practice-messages').replaceChildren(); syncWorkButtons();
-            $('#nb-tutor-messages').replaceChildren(); $('#nb-q').value = ''; $('#nb-q').focus();
+            $('#nb-tutor-messages').replaceChildren(); $('#nb-q').value = '';
+            $(state.tutorTask === 'code' ? '#nb-code' : state.tutorTask === 'solve' ? '#nb-q' : '#nb-problem').focus();
             return;
         }
         if (act === 'retry-generate') return generate(el.dataset.type, pane.querySelector(`[data-gen="${el.dataset.type}"]`));
@@ -715,11 +790,13 @@
     });
 
     pane.addEventListener('change', (e) => {
+        if (e.target.id === 'nb-code-language') updateCodeDraft(e.target);
         if (e.target.id === 'nb-file') validateFile();
         if (e.target.id === 'nb-select' && e.target.value && ensureLoggedIn()) run(null, async () => { stopAudio(); await loadNotebook(e.target.value); renderMain(); });
     });
     pane.addEventListener('input', (e) => {
         if (e.target.id === 'nb-url') validateUrl();
+        if (e.target.id.startsWith('nb-code')) { updateCodeDraft(e.target); return; }
         if (!['nb-problem', 'nb-submission'].includes(e.target.id)) return;
         workVersion++;
         if (e.target.id === 'nb-problem') {
@@ -728,6 +805,12 @@
         } else state.work.submission = e.target.value;
         $('#nb-work-messages').replaceChildren();
     });
+    function updateCodeDraft(input) {
+        const field = {'nb-code': 'code', 'nb-code-question': 'question', 'nb-code-error': 'error', 'nb-code-language': 'language', 'nb-code-followup': 'followup'}[input.id];
+        if (!field) return;
+        state.programming[field] = input.value; codeVersion++;
+        if (field !== 'followup') { state.programming.history = []; $('#nb-code-messages').replaceChildren(); }
+    }
 pane.addEventListener('keydown', (e) => {
         const radio = e.target.closest('[data-chat-mode], [data-tutor-style], [data-tutor-task]');
         if (radio && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {

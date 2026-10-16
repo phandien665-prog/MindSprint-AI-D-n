@@ -1,5 +1,7 @@
 # Issue #30 — Gia sư giải bài tập
 
+Hoạt động **Lập trình** (#34), hợp đồng phân tích Python/JavaScript, giới hạn không thực thi code và kết quả kiểm tra: [PROGRAMMING.md](PROGRAMMING.md).
+
 **Thêm ảnh/PDF/TXT/MD/CSV vào nguồn của sổ tay**, rồi hỏi trực tiếp ở cả Theo nguồn và Gia sư; tệp được lưu để dùng lại, giữ công thức và không chép toàn bộ đề vào chat (#33): xem [OCR.md](OCR.md).
 
 Các hoạt động **Kiểm tra bài làm** (#31) và **Tự luyện** (#32), hợp đồng API và kiểm chứng Sprint 2 được mô tả trong [SPRINT2.md](SPRINT2.md).

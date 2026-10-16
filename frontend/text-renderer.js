@@ -14,13 +14,15 @@
         const tokens = [];
         // Protect multiline formulas and code before handling paragraphs or citations.
         const text = String(source ?? '').replace(
-            /```[\s\S]*?```|`[^`\n]+`|(?<!\\)\$\$[\s\S]+?(?<!\\)\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<![\\$])\$(?![\s$])[^$\n]+?(?<!\\)\$/g,
+            /^(?<fence>`{3,})[^\r\n]*\r?\n[\s\S]*?^\k<fence>[ \t]*(?=\r?$)|`[^`\n]+`|(?<!\\)\$\$[\s\S]+?(?<!\\)\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<![\\$])\$(?![\s$])[^$\n]+?(?<!\\)\$/gm,
             match => {
                 let html;
                 let block = false;
                 if (match.startsWith('```')) {
                     block = true;
-                    html = '<pre><code>' + escapeHTML(match.slice(3, -3).replace(/^[\w+-]*\n/, '')) + '</code></pre>';
+                    const fence = match.match(/^`+/)[0];
+                    const code = match.slice(match.indexOf('\n') + 1, match.lastIndexOf(fence)).replace(/\r?\n$/, '');
+                    html = '<pre><code>' + escapeHTML(code) + '</code></pre>';
                 } else if (match.startsWith('`')) {
                     html = '<code>' + escapeHTML(match.slice(1, -1)) + '</code>';
                 } else {
