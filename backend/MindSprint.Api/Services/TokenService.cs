@@ -89,7 +89,14 @@ public class TokenService(IConfiguration cfg, AppDbContext db)
             DeviceHint = deviceHint ?? rt.DeviceHint
         };
         db.RefreshTokens.Add(newRt);
-        await db.SaveChangesAsync();
+        try { await db.SaveChangesAsync(); }
+        catch (DbUpdateConcurrencyException)
+        {
+            // SaveChanges rolls back both the failed claim and its replacement token.
+            db.Entry(newRt).State = EntityState.Detached;
+            await db.Entry(rt).ReloadAsync();
+            return null;
+        }
         return newRt;
     }
 
@@ -99,7 +106,12 @@ public class TokenService(IConfiguration cfg, AppDbContext db)
         var rt = await db.RefreshTokens.FirstOrDefaultAsync(r => r.Token == token && r.UserId == userId);
         if (rt is null) return false;
         rt.IsRevoked = true;
-        await db.SaveChangesAsync();
+        try { await db.SaveChangesAsync(); }
+        catch (DbUpdateConcurrencyException)
+        {
+            await db.Entry(rt).ReloadAsync();
+            return db.Entry(rt).State != EntityState.Detached && rt.IsRevoked;
+        }
         return true;
     }
 

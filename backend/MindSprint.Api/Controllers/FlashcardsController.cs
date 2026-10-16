@@ -85,24 +85,7 @@ public class FlashcardsController(AppDbContext db) : ApiBase
 
         // #9 – Optimistic locking: check version
         if (dto.Version.HasValue && dto.Version.Value != card.Version)
-        {
-            return Conflict(new { message = "Thẻ đã được sửa bởi thiết bị khác. Vui lòng tải lại.", serverVersion = card.Version, serverCard = new CardResponse
-            {
-                Id = card.ExternalId,
-                Category = card.Category,
-                SubCategory = card.SubCategory,
-                Question = card.Question,
-                Answer = card.Answer,
-                Example = card.Example,
-                Status = "new",
-                Repetition = 0,
-                Interval = 1,
-                EFactor = 2.5,
-                NextReviewDate = 0,
-                Version = card.Version,
-                UpdatedAt = card.UpdatedAt
-            }});
-        }
+            return CardConflict(card);
 
         card.Category = dto.Category;
         card.SubCategory = dto.SubCategory;
@@ -112,7 +95,8 @@ public class FlashcardsController(AppDbContext db) : ApiBase
         card.UpdatedAt = DateTime.UtcNow;
         card.Version++;
 
-        await db.SaveChangesAsync();
+        try { await db.SaveChangesAsync(); }
+        catch (DbUpdateConcurrencyException) { return await ReloadConflict(card); }
         return Ok(new { version = card.Version, updatedAt = card.UpdatedAt });
     }
 
@@ -129,7 +113,24 @@ public class FlashcardsController(AppDbContext db) : ApiBase
         }
 
         db.Flashcards.Remove(card);
-        await db.SaveChangesAsync();
+        try { await db.SaveChangesAsync(); }
+        catch (DbUpdateConcurrencyException) { return await ReloadConflict(card); }
         return NoContent();
     }
+
+    private async Task<IActionResult> ReloadConflict(Flashcard card)
+    {
+        await db.Entry(card).ReloadAsync();
+        return db.Entry(card).State == EntityState.Detached ? NotFound() : CardConflict(card);
+    }
+
+    private IActionResult CardConflict(Flashcard card) => Conflict(new {
+        message = "Thẻ đã được sửa bởi thiết bị khác. Vui lòng tải lại.", serverVersion = card.Version,
+        serverCard = new CardResponse {
+            Id = card.ExternalId, Category = card.Category, SubCategory = card.SubCategory,
+            Question = card.Question, Answer = card.Answer, Example = card.Example,
+            Status = "new", Repetition = 0, Interval = 1, EFactor = 2.5, NextReviewDate = 0,
+            Version = card.Version, UpdatedAt = card.UpdatedAt
+        }
+    });
 }
