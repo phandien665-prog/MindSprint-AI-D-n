@@ -89,7 +89,8 @@
     function validateFile() {
         const file = $('#nb-file').files[0];
         const message = !file ? 'Hãy chọn một file.'
-            : !/\.(pdf|txt|md|csv)$/i.test(file.name) ? 'Chỉ hỗ trợ PDF, TXT, MD, CSV.'
+            : !/\.(jpe?g|png|webp|pdf|txt|md|csv)$/i.test(file.name) ? 'Chỉ hỗ trợ JPG, PNG, WebP, PDF, TXT, MD, CSV.'
+            : !file.size ? 'Tệp không được trống.'
             : file.size > MAX_FILE ? 'File tối đa 10 MB (10.485.760 byte).'
             : '';
         showFileFeedback(message);
@@ -132,11 +133,15 @@
             </section>
 
             <section class="nb-col nb-chat glass-panel">
-                <div class="nb-mode-switch" role="radiogroup" aria-label="Chế độ hỏi đáp">
-                    <button type="button" class="nb-mode-btn" role="radio" aria-checked="true" data-chat-mode="source">Theo nguồn</button>
-                    <button type="button" class="nb-mode-btn" role="radio" aria-checked="false" tabindex="-1" data-chat-mode="tutor">Gia sư</button>
+                <div class="nb-chat-header">
+                    <div class="nb-mode-switch" role="radiogroup" aria-label="Chế độ hỏi đáp">
+                        <button type="button" class="nb-mode-btn" role="radio" aria-checked="true" data-chat-mode="source">Theo nguồn</button>
+                        <button type="button" class="nb-mode-btn" role="radio" aria-checked="false" tabindex="-1" data-chat-mode="tutor">Gia sư</button>
+                    </div>
+                    <h3 id="nb-chat-title">Hỏi đáp theo nguồn</h3>
+                    <button id="nb-source-add" class="nb-chip" type="button" data-ui-act="open-source-dialog" title="Thêm ảnh/tài liệu vào nguồn">Thêm nguồn</button>
+                    <button class="nb-chip nb-expand-chat" type="button" data-ui-act="toggle-chat-expanded" aria-pressed="false"><i class="fas fa-expand" aria-hidden="true"></i> <span>Mở rộng</span></button>
                 </div>
-                <h3 id="nb-chat-title">Hỏi đáp theo nguồn</h3>
                 <div class="nb-tutor-controls" id="nb-tutor-controls" hidden>
                     <div class="nb-tutor-style" role="radiogroup" aria-label="Hoạt động Gia sư">
                         <button type="button" role="radio" aria-checked="true" data-tutor-task="solve">Giải bài</button>
@@ -186,7 +191,7 @@
                 </div>
                 <div class="nb-suggest" id="nb-suggest" data-source-only></div>
                 <div class="nb-composer">
-                    <textarea class="nb-input" id="nb-q" aria-label="Câu hỏi về tài liệu" rows="3" placeholder="Bạn muốn hỏi gì về tài liệu của mình?" maxlength="1000"></textarea>
+                    <textarea class="nb-input" id="nb-q" aria-label="Câu hỏi về tài liệu" rows="1" placeholder="Bạn muốn hỏi gì về tài liệu của mình?" maxlength="1000"></textarea>
                     <div class="nb-composer-footer">
                         <button class="nb-icon-btn" type="button" data-ui-act="focus-upload" aria-label="Mở phần tải tài liệu" title="Thêm tài liệu" data-source-only><i class="fas fa-plus" aria-hidden="true"></i></button>
                         <span id="nb-composer-hint">Hỏi đáp dựa trên nguồn của bạn</span>
@@ -223,7 +228,7 @@
         </div>
         <dialog class="nb-source-dialog" id="nb-add-source-dialog" aria-labelledby="nb-source-dialog-title" aria-describedby="nb-source-dialog-description">
             <div class="nb-source-dialog-header">
-                <div><h2 id="nb-source-dialog-title">Thêm nguồn cho sổ tay</h2><p id="nb-source-dialog-description">Tập hợp tài liệu của bạn để hỏi đáp và tạo nội dung ôn tập.</p></div>
+                <div><h2 id="nb-source-dialog-title">Thêm nguồn cho sổ tay</h2><p id="nb-source-dialog-description">Nguồn được lưu trong sổ tay, dùng chung cho Theo nguồn và Gia sư. Tổng ảnh/PDF tối đa 10 MB; AI đọc tệp khi bạn hỏi.</p></div>
                 <button class="nb-icon-btn" type="button" data-ui-act="close-source-dialog" aria-label="Đóng hộp thêm nguồn"><i class="fas fa-times" aria-hidden="true"></i></button>
             </div>
             <div class="nb-source-methods" role="tablist" aria-label="Cách thêm nguồn">
@@ -235,9 +240,9 @@
                 <div class="nb-file-dropzone" id="nb-file-dropzone">
                     <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
                     <strong>Kéo và thả tài liệu vào đây</strong>
-                    <span>PDF, TXT, MD hoặc CSV · tối đa 10 MB</span>
+                    <span>JPG, PNG, WebP, PDF, TXT, MD hoặc CSV · tối đa 10 MB; PDF tối đa 20 trang</span>
                     <button class="btn btn-secondary" type="button" data-ui-act="pick-source-file" aria-describedby="nb-file-feedback">Chọn tệp</button>
-                    <input type="file" id="nb-file" accept=".pdf,.txt,.md,.csv" aria-label="Chọn tài liệu để tải lên" aria-describedby="nb-file-feedback" hidden>
+                    <input type="file" id="nb-file" accept=".jpg,.jpeg,.png,.webp,.pdf,.txt,.md,.csv" aria-label="Chọn tài liệu để tải lên" aria-describedby="nb-file-feedback" hidden>
                 </div>
                 <div class="nb-url-feedback" id="nb-file-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
                 <p class="nb-file-selection" id="nb-file-selection" role="status" aria-live="polite">Chưa chọn tệp.</p>
@@ -278,7 +283,7 @@
         $('#nb-chat-title').textContent = tutor ? 'Gia sư AI' : 'Hỏi đáp theo nguồn';
         $('.nb-welcome h2').textContent = tutor ? 'Bạn muốn giải bài tập nào?' : 'Bạn muốn khám phá điều gì từ tài liệu?';
         $('.nb-welcome p').textContent = tutor ? 'Cùng tìm cách giải, hiểu từng bước và hỏi lại điều chưa rõ.' : 'Cùng AI đọc hiểu, kết nối kiến thức và chuẩn bị cho lần ôn tập tiếp theo.';
-        $('#nb-q').placeholder = tutor ? 'Nhập đề bài hoặc câu hỏi cần giải thích…' : 'Bạn muốn hỏi gì về tài liệu của mình?';
+        $('#nb-q').placeholder = tutor ? 'Nhập đề hoặc hỏi về tệp, ví dụ: Giải câu 1…' : 'Bạn muốn hỏi gì về tài liệu của mình?';
         $('#nb-q').setAttribute('aria-label', tutor ? 'Đề bài hoặc câu hỏi cho Gia sư' : 'Câu hỏi về tài liệu');
         $('#nb-q').maxLength = tutor ? 10000 : 1000;
         $('#nb-q').value = state.drafts[mode];
@@ -305,8 +310,11 @@
 
     function syncWorkButtons() {
         const level = state.work.hints.length;
-        $('[data-act="tutor-hint"]').disabled = chatPending || level >= 3 || state.work.revealed;
-        $('[data-act="tutor-solution"]').disabled = chatPending || state.work.revealed;
+        const blocked = chatPending;
+        $('[data-act="send"]').disabled = chatPending || (state.chatMode === 'tutor' && blocked);
+        $('[data-act="tutor-check"]').disabled = blocked;
+        $('[data-act="tutor-hint"]').disabled = blocked || level >= 3 || state.work.revealed;
+        $('[data-act="tutor-solution"]').disabled = blocked || state.work.revealed;
         $('#nb-hint-progress').textContent = state.work.revealed ? 'Đã mở lời giải. Đổi đề hoặc chọn Bài mới để tự luyện tiếp.' : `Đã mở ${level}/3 mức gợi ý.`;
         $('[data-act="tutor-hint"]').textContent = level >= 3 ? 'Đã mở đủ gợi ý' : `Gợi ý tiếp · Mức ${level + 1}`;
     }
@@ -329,7 +337,7 @@
         const el = $('#nb-source-list'); if (!el) return;
         el.innerHTML = state.sources.length
             ? state.sources.map((s, i) => `<div class="nb-source"><span class="nb-src-n">${i + 1}</span>
-                <i class="fas ${s.type === 'pdf' ? 'fa-file-pdf' : s.type === 'url' ? 'fa-link' : 'fa-file-alt'}"></i>
+                <i class="fas ${s.type === 'image' ? 'fa-file-image' : s.type === 'pdf' ? 'fa-file-pdf' : s.type === 'url' ? 'fa-link' : 'fa-file-alt'}"></i>
                 <span class="nb-src-t" title="${esc(s.title)}">${esc(s.title)}</span>
                 <button class="nb-icon-btn" data-act="src-del" data-id="${s.id}" title="Xóa nguồn" aria-label="Xóa nguồn ${esc(s.title)}"><i class="fas fa-times" aria-hidden="true"></i></button></div>`).join('')
             : '<div class="nb-source-empty"><i class="far fa-file-alt" aria-hidden="true"></i><strong>Chưa có tài liệu</strong><p>Thêm tệp, trang web hoặc văn bản để bắt đầu khám phá kiến thức.</p><button type="button" class="nb-empty-add" data-ui-act="open-source-dialog">Thêm nguồn đầu tiên</button></div>';
@@ -337,7 +345,7 @@
         const tutorHelp = $('#nb-tutor-help');
         if (tutorHelp) tutorHelp.textContent = state.sources.length
             ? `Gia sư đọc ${state.sources.length} nguồn trong sổ tay này. Bạn có thể hỏi “Giải câu 1” hoặc nhập đề khác.`
-            : 'Nhập đề bài trực tiếp hoặc thêm tài liệu để Gia sư đọc và giải bài trong nguồn.';
+            : 'Nhập đề bài trực tiếp hoặc thêm ảnh/tài liệu vào nguồn; Theo nguồn và Gia sư cùng đọc được.';
         pane.dispatchEvent(new Event('ms-notebook-sources-rendered'));
     }
     function renderNotes() {
@@ -403,7 +411,16 @@
     async function refreshSources() {
         const version = workspaceVersion, id = state.nb.id;
         const sources = await api.nbSources(id);
-        if (version === workspaceVersion && state.nb?.id === id) { state.sources = sources; renderSources(); }
+        if (version === workspaceVersion && state.nb?.id === id) {
+            const removed = state.sources.some(previous => !sources.some(source => source.id === previous.id));
+            if (!removed) { state.sources = sources; renderSources(); return; }
+            state.drafts[state.chatMode] = $('#nb-q').value;
+            workspaceVersion++; workVersion++; chatPending = false; studioPending = false;
+            state.sources = sources; state.history = []; state.tutorHistory = [];
+            state.work.hints = []; state.work.revealed = false;
+            state.lastText = null; state.lastCards = null; state.quiz = null; state.audio = null;
+            stopAudio(); renderMain();
+        }
     }
     async function refreshNotes() {
         const version = workspaceVersion, id = state.nb.id;
@@ -427,12 +444,13 @@
         chatPending = true;
         $('#nb-q').value = '';
         state.drafts[mode] = '';
-        addMsg('user', esc(q), mode);
+        addMsg('user', md(q), mode);
         const wait = addMsg('bot', `<span class="nb-muted" role="status"><span class="nb-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span> ${mode === 'tutor' ? 'Gia sư đang tìm cách giải…' : 'Đang đọc nguồn...'}</span>`, mode);
         busy(btn, true);
         busy($('[data-act="send"]'), true);
         busy($('#nb-q'), true);
         pane.querySelectorAll('[data-chat-mode], [data-tutor-style], [data-tutor-task], [data-act="tutor-new"]').forEach(button => busy(button, true));
+        syncWorkButtons();
         try {
             const r = mode === 'tutor'
                 ? await api.nbTutor(notebookId, q, style, tutorContext())
@@ -453,6 +471,7 @@
                 chatPending = false; busy(btn, false);
                 busy($('[data-act="send"]'), false); busy($('#nb-q'), false);
                 pane.querySelectorAll('[data-chat-mode], [data-tutor-style], [data-tutor-task], [data-act="tutor-new"]').forEach(button => busy(button, false));
+                syncWorkButtons();
             }
         }
     }
@@ -467,6 +486,7 @@
         chatPending = true;
         const controls = '[data-chat-mode], [data-tutor-task], [data-tutor-style], [data-act="tutor-new"], [data-act="tutor-check"], [data-act="tutor-hint"], [data-act="tutor-solution"]';
         pane.querySelectorAll(controls).forEach(button => busy(button, true));
+        syncWorkButtons();
         const hintLevel = state.work.hints.length + 1;
         const label = action === 'check' ? 'Nhận xét bài làm' : action === 'hint' ? 'Gợi ý mức ' + hintLevel : 'Lời giải đầy đủ';
         const wait = addMsg('bot', `<span role="status">Đang chuẩn bị ${label.toLowerCase()}…</span>`, action === 'check' ? 'work' : 'practice');
@@ -645,7 +665,14 @@
         if (act === 'add-file') {
             if (!validateFile()) { $('[data-ui-act="pick-source-file"]').focus(); return; }
             const f = $('#nb-file').files[0];
-            return run(el, async () => { await api.nbAddFile(state.nb.id, f); $('#nb-file').value = ''; showFileFeedback(''); await refreshSources(); });
+            const version = workspaceVersion, id = state.nb.id;
+            return run(el, async () => {
+                await api.nbAddFile(id, f);
+                if (version !== workspaceVersion || state.nb?.id !== id) return;
+                $('#nb-file').value = ''; showFileFeedback(''); await refreshSources();
+                $('#nb-add-source-dialog').close();
+                $('#nb-source-add').focus();
+            });
         }
         if (act === 'add-url') {
             if (!validateUrl()) { $('#nb-url').focus(); return; }

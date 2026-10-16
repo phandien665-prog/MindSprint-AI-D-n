@@ -33,7 +33,8 @@ public class FlashcardsController(AppDbContext db) : ApiBase
     public async Task<IActionResult> GetAll([FromQuery] string? category, [FromQuery] string? subCategory)
     {
         var uid = UserId;
-        var q = db.Flashcards.AsNoTracking().Where(f => f.OwnerId == null || f.OwnerId == uid);
+        // Exclude retired system cards (OwnerId == -1)
+        var q = db.Flashcards.AsNoTracking().Where(f => (f.OwnerId == null || f.OwnerId == uid) && f.OwnerId != -1);
         if (!string.IsNullOrEmpty(category) && category != "all") q = q.Where(f => f.Category == category);
         if (!string.IsNullOrEmpty(subCategory) && subCategory != "all") q = q.Where(f => f.SubCategory == subCategory);
 

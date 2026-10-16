@@ -34,6 +34,13 @@ static async Task<GeminiUnavailableException> Error(Func<Task<string>> request, 
 var count = 0;
 async Task Case(string name, Func<Task> run) { await run(); count++; Console.WriteLine("PASS: " + name); }
 
+await Case("JSON fences preserve json words inside the answer", async () =>
+{
+    var (service, _, _) = Client((_, _) => Task.FromResult(Reply(200, "```json\n{\"answer\":\"Use json.dumps and $\\\\frac{1}{2}$\"}\n```")));
+    var value = await service.JsonAsync<Dictionary<string, string>>("hi");
+    Check(value["answer"] == "Use json.dumps and $\\frac{1}{2}$", "Fences corrupted content or LaTeX");
+});
+
 await Case("503 retries the same model and recovers", async () =>
 {
     var calls = 0;

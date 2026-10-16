@@ -32,25 +32,34 @@ test('tutor and source UI: isolated context, notes, retries, keyboard, responsiv
         const base = `http://127.0.0.1:${server.address().port}`, errors=[], native=[], calls=[];
         page.on('pageerror', e => errors.push(e.message));
         page.on('dialog', async d => {native.push(d.message()); await d.dismiss();});
-        let sources=[], notes=[], user=42, failure=0, gate=null, release=null;
+        let notes=[], user=42, failure=0, gate=null, release=null;
+        const sourceSets=new Map();
         const answer = '**Cách giải**\n\nTrừ 3 ở hai vế: $2x = 8$.\n\nChia hai vế cho 2: $x = 4$.\n\n```python\nx = (11 - 3) / 2\n```';
         await context.route('**/*', async route => {
             const req=route.request(), url=new URL(req.url());
             if (url.hostname==='localhost' && ['5000','5100'].includes(url.port)) {
-                const p=url.pathname, data=req.headers()['content-type']?.includes('application/json') ? req.postDataJSON() : undefined;
-                calls.push({path:p, method:req.method(), data});
+                const p=url.pathname, fileUpload=p.endsWith('/sources/file'), multipart=p.endsWith('/tutor/file')||fileUpload;
+                const data=fileUpload ? undefined : multipart && req.postData() ? JSON.parse(req.postData().match(/name="request"\r\n\r\n([^\r]+)/)[1]) : req.postData() ? req.postDataJSON() : undefined;
+                const sourceKey=user+':'+p.split('/')[3], sources=sourceSets.get(sourceKey)||[];
+                calls.push({path:p, method:req.method(), data, raw:multipart?req.postData():undefined});
                 let status=200, body=[];
                 if(req.method()!=='OPTIONS') {
                     if(p.endsWith('/google/config')) body={enabled:false};
                     else if(p.endsWith('/auth/login')) {user=data.email.startsWith('other')?43:42; body={token:'qa-access-'+user, refreshToken:'qa-refresh-'+user, user:{id:user, displayName:'Duy', email:data.email}};}
                     else if(p.endsWith('/auth/me')) body={id:user, displayName:'Duy', email:'duy@example.test'};
                     else if(p==='/api/notebooks') body=[{id:77,title:'Sổ tay kiểm tra'}, {id:78,title:'Sổ tay khác'}];
-                    else if(req.method()==='POST' && /\/sources\/(file|url)$/.test(p)) {status=400; body={message:'Validation mock rejected source'};}
-                    else if(p.endsWith('/sources/text')) {sources=[{id:1, type:'text', title:data.title, content:data.text}]; body=sources[0];}
+                    else if(req.method()==='POST' && (p.endsWith('/sources/url') || (fileUpload && req.postData().includes('filename="lesson.PDF"')))) {status=400; body={message:'Validation mock rejected source'};}
+                    else if(p.endsWith('/sources/text')) {body={id:sources.length+1,type:'text',title:data.title,content:data.text}; sourceSets.set(sourceKey,[...sources,body]);}
+                    else if(fileUpload) {
+                        const name=req.postData().match(/filename="([^"]+)"/)[1];
+                        body={id:sources.length+1,type:name.endsWith('.pdf')?'pdf':'image',title:name.replace(/\.[^.]+$/,''),origin:name,hasFile:true,bytes:100,chars:0};
+                        sourceSets.set(sourceKey,[...sources,body]);
+                    }
+                    else if(/\/sources\/\d+$/.test(p)&&req.method()==='DELETE') sourceSets.set(sourceKey,sources.filter(s=>s.id!==Number(p.split('/').at(-1))));
                     else if(p.endsWith('/sources')) body=sources;
                     else if(p.endsWith('/notes') && req.method()==='POST') {body={id:notes.length+1, ...data}; notes.push(body);}
                     else if(p.endsWith('/notes')) body=notes;
-                    else if(p.endsWith('/tutor')) {
+                    else if(p.endsWith('/tutor') || p.endsWith('/tutor/file')) {
                         if(gate) await new Promise(resolve => {release=resolve;});
                         status=failure || 200;
                         body=failure ? {message:'AI đang bận', code:failure===429?'ai_rate_limited':'ai_unavailable', retryAfterSeconds:65} : {answer:data.question.includes('hình chữ nhật')?'Bạn cho biết chiều dài và chiều rộng nhé.':answer, needsClarification:data.question.includes('hình chữ nhật')};
@@ -108,7 +117,7 @@ test('tutor and source UI: isolated context, notes, retries, keyboard, responsiv
         console.log('PASS source dialog validation, file selection/drop, exact size boundary, blocked requests and retained failed inputs');
         const q=page.locator('#nb-q'), tutor=page.locator('[data-chat-mode=tutor]'), source=page.locator('[data-chat-mode=source]');
         const submit=async text => {await q.fill(text); await page.locator('[data-act=send]').click(); await page.locator('[data-act=send]').waitFor({state:'visible'}); await page.waitForFunction(() => !document.querySelector('[data-act=send]').disabled);};
-        const tutorCalls=() => calls.filter(c=>c.path.endsWith('/tutor')&&c.method==='POST');
+        const tutorCalls=() => calls.filter(c=>(c.path.endsWith('/tutor')||c.path.endsWith('/tutor/file'))&&c.method==='POST');
         await q.fill('Nguồn chưa gửi'); await tutor.click();
         assert.equal(await q.inputValue(),'');
         assert.equal(await page.locator('.nb-studio-grid').isVisible(),false);
@@ -120,6 +129,80 @@ test('tutor and source UI: isolated context, notes, retries, keyboard, responsiv
         assert.equal(calls.filter(c=>c.path.endsWith('/chat')).length,0);
         await tutor.click(); assert.equal(await q.inputValue(),'Nháp gia sư');
         assert.match(await page.locator('#nb-tutor-help').innerText(),/Nhập đề bài trực tiếp/);
+        assert.equal(await page.locator('#nb-ocr-file').count(),0);
+        const addSource=async name=>{
+            await page.locator('#nb-source-add').click();
+            await page.locator('#nb-file').setInputFiles({name,mimeType:name.endsWith('.pdf')?'application/pdf':'image/png',buffer:Buffer.from('ORIGINAL_FILE_BYTES')});
+            await page.locator('[data-act=add-file]').click();
+            await page.locator('#nb-add-source-dialog').waitFor({state:'hidden'});
+        };
+        await addSource('de-tieng-viet.png');
+        assert.equal(await q.inputValue(),'Nháp gia sư'); assert.equal(tutorCalls().length,0);
+        assert.equal(await page.locator('.nb-source').count(),1);
+        assert.match(calls.findLast(c=>c.path.endsWith('/sources/file')).raw,/ORIGINAL_FILE_BYTES/);
+        await submit('Giải câu 1');
+        assert.equal(tutorCalls().at(-1).path,'/api/notebooks/77/tutor');
+        assert.deepEqual(tutorCalls().at(-1).data,{question:'Giải câu 1',style:'steps',history:[]});
+        assert.doesNotMatch(await page.locator('#nb-tutor-messages').innerText(),/ORIGINAL_FILE_BYTES/);
+        const chatSize = await page.locator('#nb-tutor-messages').boundingBox();
+        assert.ok(chatSize.height >= 600, 'desktop gives at least 60% of the viewport to reading');
+        await q.fill('Nháp khi mở rộng');
+        const expandChat = page.locator('[data-ui-act=toggle-chat-expanded]');
+        await expandChat.click();
+        assert.equal(await expandChat.getAttribute('aria-pressed'), 'true');
+        assert.equal(await page.locator('.sidebar').isVisible(), false);
+        assert.equal(await page.locator('.workspace-header').isVisible(), false);
+        assert.ok((await page.locator('.nb-chat').boundingBox()).width >= 1400);
+        assert.ok((await page.locator('#nb-tutor-messages').boundingBox()).height >= 750);
+        assert.equal(await q.inputValue(), 'Nháp khi mở rộng');
+        await page.setViewportSize({width: 375, height: 700});
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+        const expandedComposer = await page.locator('.nb-composer').boundingBox();
+        assert.ok(expandedComposer.y + expandedComposer.height <= 700);
+        await page.setViewportSize({width: 1440, height: 1000});
+        await page.locator('#nb-source-add').click();
+        await page.keyboard.press('Escape');
+        assert.equal(await expandChat.getAttribute('aria-pressed'), 'true', 'closing the source dialog keeps chat expanded');
+        await page.keyboard.press('Escape');
+        assert.equal(await expandChat.getAttribute('aria-pressed'), 'false');
+        assert.equal(await page.locator('.sidebar').isVisible(), true);
+        assert.equal(await q.inputValue(), 'Nháp khi mở rộng');
+        await q.fill('');
+        await source.click(); await submit('Trong ảnh có câu hỏi nào?');
+        assert.equal(calls.filter(c=>c.path.endsWith('/chat')).at(-1).data.question,'Trong ảnh có câu hỏi nào?');
+        await addSource('scan.pdf'); assert.equal(await page.locator('.nb-source').count(),2);
+        await tutor.click(); await page.locator('[data-tutor-task=check]').click();
+        await page.locator('#nb-problem').fill('Câu 1'); await page.locator('#nb-submission').fill('2x = 8, x = 4');
+        await page.locator('[data-act=tutor-check]').click();
+        await page.waitForFunction(()=>!document.querySelector('[data-act=tutor-check]').disabled);
+        assert.equal(tutorCalls().at(-1).data.action,'check');
+        await page.locator('[data-tutor-task=practice]').click(); await page.locator('[data-act=tutor-hint]').click();
+        await page.waitForFunction(()=>!document.querySelector('[data-tutor-task=solve]').disabled);
+        assert.equal(tutorCalls().at(-1).data.action,'hint');
+        await page.locator('[data-act=tutor-new]').click(); await page.locator('#app-dialog-submit').click();
+        assert.equal(await page.locator('.nb-source').count(),2,'Bài mới keeps shared sources');
+        await page.reload(); await page.locator('.sidebar [data-tab=notebook]').click();
+        await page.locator('.nb-source').first().waitFor(); assert.equal(await page.locator('.nb-source').count(),2,'reload keeps saved sources');
+        await tutor.click(); await submit('Giải câu 2'); assert.equal(tutorCalls().at(-1).data.history.length,0);
+        const oldSources=await page.locator('.nb-source').first().elementHandle();
+        await page.locator('#nb-select').selectOption('78'); await page.waitForFunction(el=>!el.isConnected,oldSources);
+        assert.equal(await page.locator('.nb-source').count(),0);
+        const oldComposer=await q.elementHandle(); await page.locator('#nb-select').selectOption('77');
+        await page.waitForFunction(el=>!el.isConnected,oldComposer); assert.equal(await page.locator('.nb-source').count(),2);
+        for(const width of [320,768,1024,1440]) {
+            await page.setViewportSize({width,height:1000});
+            assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'shared sources overflow at '+width);
+            if(width===320||width===1440) await page.screenshot({path:path.join(os.tmpdir(),`mindsprint-shared-sources-${width}.png`),fullPage:true});
+        }
+        while(await page.locator('[data-act=src-del]').count()) {
+            const before=await q.elementHandle(); await page.locator('[data-act=src-del]').first().click();
+            await page.waitForFunction(el=>!el.isConnected,before);
+        }
+        assert.equal(await page.locator('#nb-tutor-messages .nb-msg').count(),0);
+        assert.equal(await page.locator('#nb-messages .nb-msg').count(),0);
+        await page.locator('[data-tutor-task=solve]').click();
+        calls.splice(0,calls.length);
+        console.log('PASS images/scanned PDFs saved once as sources, both chat modes/check/hint, no extracted-text echo, reload/Bài mới persistence, notebook isolation, deletion clears stale context, responsive');
         await submit('Giải 2x + 3 = 11');
         assert.deepEqual(tutorCalls().at(-1).data,{question:'Giải 2x + 3 = 11',style:'steps',history:[]});
         assert.equal(await page.locator('#nb-tutor-messages .nb-msg').count(),2);
@@ -266,8 +349,9 @@ test('tutor and source UI: isolated context, notes, retries, keyboard, responsiv
         }
         await page.emulateMedia({reducedMotion:'reduce'});
         assert.equal(await tutor.evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
-        await page.locator('#nb-select').selectOption('78'); await finishWork();
-        await page.waitForFunction(()=>document.querySelector('#nb-problem').value==='' && document.querySelector('#nb-hint-progress').textContent.includes('0/3'));
+        const previousComposer = await q.elementHandle();
+        await page.locator('#nb-select').selectOption('78');
+        await page.waitForFunction(element=>!element.isConnected,previousComposer); await finishWork();
         assert.match(await page.locator('#nb-hint-progress').innerText(),/0\/3/);
         assert.equal(await page.locator('#nb-problem').inputValue(),'');
         await page.locator('[data-tutor-task=solve]').click();
