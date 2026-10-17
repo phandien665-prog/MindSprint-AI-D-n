@@ -2732,7 +2732,7 @@ input:not([type=checkbox]):not([type=radio]), select, textarea { border-width: 1
 input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1; }
 input[type=file] { width: 100%; font-size: .8rem; }
 input[type=file]::file-selector-button { min-height: 40px; background: var(--bg-secondary); border: 1px solid var(--control-border); border-radius: var(--border-radius-md); color: var(--text-primary); font: inherit; margin-right: var(--space-step-8); }
-.btn, .auth-submit-btn, .auth-demo-btn, .nb-icon-btn, .nb-studio-grid button { min-height: var(--control-height); border-radius: var(--border-radius-md); box-shadow: none; }
+.btn, .auth-submit-btn, .nb-icon-btn, .nb-studio-grid button { min-height: var(--control-height); border-radius: var(--border-radius-md); box-shadow: none; }
 .btn:hover, .auth-submit-btn:hover, .deck-card:hover, .suggestion-card:hover, .game-card:hover { transform: none; box-shadow: none; }
 .btn-primary, .auth-submit-btn, .auth-tab-btn.active { color: var(--on-accent); }
 .quiz-option-btn.correct .option-prefix { color: var(--on-success); }
@@ -2827,8 +2827,7 @@ input[type=file]::file-selector-button { min-height: 40px; background: var(--bg-
 .auth-card { border-width: 1px; box-shadow: none; animation: none; }
 .auth-header-title { padding-right: var(--space-step-16); }
 .auth-card-header, .auth-card-body { padding: var(--space-lg); }
-.auth-tab-btn, .auth-demo-btn { min-height: 44px; }
-.auth-demo-btn { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--control-border); padding: var(--space-step-8); }
+.auth-tab-btn { min-height: 44px; }
 .auth-divider { text-align: center; font-size: .8rem; color: var(--text-secondary); }
 .auth-footer-note { font-size: .75rem; color: var(--text-secondary); }
 .auth-footer-note a { color: var(--primary-color); }
@@ -2941,7 +2940,7 @@ input[type=file]::file-selector-button { min-height: 40px; background: var(--bg-
 }
 
 /* Shared controls keep one geometry through focus, pending and validation. */
-.btn, .auth-submit-btn, .auth-demo-btn, .auth-tab-btn, .nb-row button, .nb-icon-btn { height: var(--control-height); padding-block: var(--space-sm); }
+.btn, .auth-submit-btn, .auth-tab-btn, .nb-row button, .nb-icon-btn { height: var(--control-height); padding-block: var(--space-sm); }
 input:not([type=checkbox]):not([type=radio]):not([type=file]), select { height: var(--control-height); padding-block: var(--space-sm); }
 button:active { border-color: var(--control-border); }
 #tab-content-kanban .btn-icon:hover, #tab-content-kanban .btn-move:hover, #tab-content-kanban .btn-add-col-task:hover { background: var(--bg-secondary); border-color: var(--control-border); }
@@ -3102,13 +3101,13 @@ body { transition: background-color var(--dur-short), color var(--dur-short); }
 .deck-card-actions { gap: var(--space-sm); flex-wrap: wrap; }
 .deck-card-actions .btn { min-width: 0; font-size: .8rem; padding-inline: var(--space-step-12); }
 .deck-progress-bar, .suggestion-progress-bar { border-radius: var(--border-radius-pill) !important; }
-.btn, .auth-submit-btn, .auth-demo-btn { border-radius: var(--border-radius-pill) !important; border-width: 1px; transition: transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out); }
+.btn, .auth-submit-btn { border-radius: var(--border-radius-pill) !important; border-width: 1px; transition: transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out); }
 .btn-primary, .auth-submit-btn { background: var(--orange); border-color: var(--orange); color: var(--on-accent); box-shadow: var(--button-shadow); }
 .btn-primary:hover, .auth-submit-btn:hover { background: var(--orange-deep); border-color: var(--orange-deep); box-shadow: var(--button-shadow-hover); transform: none; }
 .btn-primary:active, .auth-submit-btn:active { transform: scale(.97); box-shadow: var(--button-shadow-active); }
 .btn-secondary:hover { border-color: var(--accent-border); background: var(--accent-soft); transform: none; color: var(--accent-ink); }
-.btn-secondary:active, .auth-demo-btn:active { transform: scale(.97); }
-.btn:disabled, .auth-submit-btn:disabled, .auth-demo-btn:disabled { transform: none !important; box-shadow: none !important; }
+.btn-secondary:active { transform: scale(.97); }
+.btn:disabled, .auth-submit-btn:disabled { transform: none !important; box-shadow: none !important; }
 .btn-primary:disabled, .auth-submit-btn:disabled { background: var(--orange); color: var(--on-accent); }
 input:not([type=checkbox]):not([type=radio]), textarea, select { transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), background-color 150ms var(--ease-out); }
 input:not([type=checkbox]):not([type=radio]):focus, textarea:focus, select:focus { border-color: var(--orange-deep) !important; box-shadow: var(--input-shadow); }
