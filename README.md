@@ -33,6 +33,14 @@ Xem [hướng dẫn nguồn ảnh/PDF](backend/TutorChecks/OCR.md) để biết 
 
 ---
 
+## 🎬 Video nghiệm thu kiểm tra giữa kỳ
+
+[![Xem video nghiệm thu kiểm tra giữa kỳ](frontend/design-reference/home-desktop-v39.png)](docs/media/video-nghiem-thu-kiem-tra-giua-ky.mp4)
+
+[Xem hoặc tải video nghiệm thu kiểm tra giữa kỳ (MP4 · 11 phút 44 giây)](docs/media/video-nghiem-thu-kiem-tra-giua-ky.mp4)
+
+---
+
 ## 📸 Screenshots
 
 <!-- Thay bằng ảnh thật của dự án. Ảnh có sẵn trong frontend/design-reference/ -->
