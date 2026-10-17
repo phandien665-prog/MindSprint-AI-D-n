@@ -1,5 +1,10 @@
 # 🧠 MindSprintAI
 
+Giao diện Study Cockpit (nền kem/xanh chanh) đã được tích hợp vào frontend chức năng
+HTML/CSS/JS hiện có. Đăng nhập, flashcard/SRS, Sổ tay/Gia sư AI, giọng nói, Kanban
+và thống kê tiếp tục dùng API ASP.NET Core/PostgreSQL. Chạy frontend ở cổng 5500
+theo hướng dẫn bên dưới; không cần server Node/Vite riêng.
+
 Phần việc Đình Hùng: [báo cáo #16/#37 và NFR #45/#51/#54](docs/HUNG-ISSUES-REPORT.md), [bàn giao hiện tại](docs/AI_HANDOFF.md). Sổ tay có nhập tiếng Việt bằng giọng nói, sửa trước khi gửi và tùy chọn đọc/dừng trả lời; luôn giữ bàn phím. Nhận diện tùy trình duyệt/quyền micro và có thể dùng dịch vụ mạng. Bằng chứng tự động dùng speech/API giả lập; micro thực và toàn bộ NFR chưa nghiệm thu.
 
 [![Build](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions)

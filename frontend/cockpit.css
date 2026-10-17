@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root { --font-body: 'DM Sans', 'Segoe UI', sans-serif; --font-heading: Manrope, 'Segoe UI', sans-serif; --sidebar-width: 252px; --border-radius-lg: 22px; --border-radius-md: 14px; }
+:root:not([data-theme='dark']) {
+  --bg-primary: #f7f6ef; --bg-secondary: #f0f0e8; --bg-panel: #fffefa; --sidebar-bg: #fcfbf8;
+  --border-color: #eae8e0; --control-border: #a3aa9a; --text-primary: #202b3e; --text-secondary: #536071; --text-muted: #727a80;
+  --orange: #c7e977; --primary-color: #c7e977; --primary-hover: #badc6b; --orange-deep: #badc6b;
+  --accent-ink: #526d31; --secondary-color: #526d31; --primary-glow: #eef6d9; --accent-soft: #eef6d9; --accent-border: #d8e6bb;
+  --warning-color: #99513c; --pastel-peach: #fff0e9; --pastel-pink: #f4ece6; --pastel-purple: #eeeef6; --pastel-blue: #eef3f7;
+  --card-shadow: 0 10px 30px rgb(34 42 54 / 4.5%); --button-shadow: 0 6px 18px rgb(126 154 103 / 12%); --input-shadow: 0 0 0 4px rgb(144 184 73 / 15%);
+}
+html, body { min-width: 320px; }
+.sidebar { width: var(--sidebar-width); padding: 26px 17px 18px; border-right: 1px solid var(--border-color); }
+.logo { gap: 10px; font-size: 19px; padding-inline: 10px; margin-bottom: 24px; }
+.cockpit-brand-image { width: 40px; height: 40px; object-fit: contain; background: var(--bg-panel); border: 1px solid var(--accent-border); border-radius: 13px; box-shadow: 0 0 0 3px var(--primary-glow); }
+.cockpit-profile { margin: 0 6px 20px; padding: 14px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; }
+.cockpit-profile strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
+.cockpit-profile p { margin: 5px 0 12px; color: var(--text-secondary); font-size: 11px; line-height: 1.5; }
+.cockpit-profile .user-menu { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.cockpit-profile .user-name { display: none; }
+.cockpit-profile .btn { min-height: 36px; font-size: 12px; }
+.menu-section { min-height: 0; overflow-y: auto; }
+.menu-section .nav-group h3 { color: var(--text-muted); font-size: 10px; letter-spacing: 1.3px; text-transform: uppercase; }
+.sidebar .nav-tab { min-height: 44px; font-size: 14px; font-weight: 500; }
+.sidebar-footer { margin-top: auto; padding-top: 18px; }
+.main-content { min-width: 0; padding-inline: clamp(20px, 3.2vw, 48px); }
+.workspace-header { min-height: 82px; margin-bottom: 32px; }
+.workspace-search { max-width: 510px; }
+.workspace-search input { border-radius: 15px !important; }
+.header-icon-btn { border-radius: 13px; }
+.header-avatar { background: var(--accent-soft); color: var(--accent-ink); }
+.main-header { margin-bottom: 24px; }
+.main-header h1 { font-size: 26px; font-weight: 800; letter-spacing: -1px; }
+.main-header p { color: var(--text-secondary); font-size: 13px; line-height: 1.7; }
+.btn { border-radius: 12px; font-weight: 600; }
+.welcome-banner { position: relative; overflow: hidden; min-height: 260px; padding: 40px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 26px; text-align: left; }
+.welcome-banner::after { content: ''; position: absolute; width: 300px; height: 300px; right: -25px; top: -40px; border-radius: 50%; background: var(--primary-glow); opacity: .9; pointer-events: none; }
+.welcome-banner-content { position: relative; z-index: 1; max-width: 680px; margin: 0; }
+.welcome-banner h2 { font-size: clamp(30px, 3.3vw, 48px); font-weight: 800; letter-spacing: -2px; line-height: 1.15; }
+.welcome-badge { color: var(--accent-ink); font-size: 10px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; background: none; padding: 0; }
+.welcome-banner p { max-width: 520px; color: var(--text-secondary); line-height: 1.8; }
+.welcome-banner-buttons { justify-content: flex-start; }
+.home-stats-grid { padding: 28px 24px; box-shadow: var(--card-shadow); }
+.home-stat-val { font-family: var(--font-heading); font-weight: 800; color: var(--text-primary); }
+.home-suggestions-section, .home-tools { margin-top: 32px; }
+.suggestion-card, .deck-card { border: 1px solid var(--border-color); box-shadow: none; border-radius: 20px; }
+.suggestion-card:nth-child(3n+1), .deck-card:nth-child(3n+1) { background: color-mix(in srgb, var(--accent-soft) 35%, var(--bg-panel)); }
+.suggestion-card:nth-child(3n+2), .deck-card:nth-child(3n+2) { background: color-mix(in srgb, var(--pastel-peach) 45%, var(--bg-panel)); }
+.suggestion-card:nth-child(3n), .deck-card:nth-child(3n) { background: color-mix(in srgb, var(--pastel-blue) 55%, var(--bg-panel)); }
+.deck-title { color: var(--text-primary); }
+.deck-meta { color: var(--text-secondary); }
+.home-tool { border: 1px solid var(--border-color); border-radius: 22px; background: var(--bg-panel); box-shadow: var(--card-shadow); }
+.cockpit-goals { padding: 22px 24px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 22px; }
+.cockpit-goals h2 { margin-bottom: 16px; font-size: 17px; }
+.cockpit-goals label { display: flex; gap: 12px; align-items: center; margin: 12px 0; font-size: 13px; line-height: 1.6; }
+.cockpit-goals input { width: 18px; height: 18px; accent-color: var(--accent-ink); }
+.cockpit-goals small { color: var(--text-secondary); }
+.cockpit-home-progress { margin-block: 24px; }
+.sidebar-toggle-btn { top: 102px; left: 12px; border-radius: 12px; }
+.cockpit-mobile-nav { display: none; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+@media (min-width: 769px) {
+  .cockpit-home-progress { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(270px, 1fr); gap: 20px; align-items: stretch; }
+  .cockpit-home-progress .home-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 0; }
+  .cockpit-home-progress .home-stat-box:nth-child(even) { border-right: 0; }
+}
+@media (max-width: 1100px) and (min-width: 769px) { .cockpit-profile { display: none; } .cockpit-home-progress { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .app-container.cockpit-menu-open .sidebar { display: flex; position: fixed; inset: 0 auto 72px 0; width: min(290px, 85vw); height: auto; margin-left: 0; opacity: 1; pointer-events: auto; z-index: 100; box-shadow: 8px 0 40px rgb(32 43 62 / 15%); }
+  .sidebar .nav-tabs { display: block; }
+  .sidebar .nav-tab { flex-direction: row; justify-content: flex-start; padding: 10px 12px; }
+  .sidebar .nav-group h3, .sidebar .logo, .sidebar .sidebar-footer { display: flex; }
+  .sidebar .menu-section { display: block; }
+  .main-content { padding: 0 16px 96px; }
+  .workspace-header { min-height: 72px; margin-bottom: 22px; padding-left: 42px; gap: 8px; flex-wrap: nowrap; }
+  .workspace-header-actions { gap: 5px; width: auto; }
+  .workspace-search { order: 0; flex-basis: auto; }
+  #header-mail, .header-user-details { display: none; }
+  .workspace-search input { padding-right: 8px; font-size: 12px; }
+  .sidebar-toggle-btn { top: 15px; left: 12px; z-index: 110; }
+  .main-header h1 { font-size: 23px; }
+  .welcome-banner { padding: 28px 24px; min-height: 280px; }
+  .welcome-banner::after { width: 170px; height: 170px; right: -70px; top: 85px; }
+  .welcome-banner h2 { font-size: 34px; letter-spacing: -1.5px; }
+  .welcome-banner-buttons { gap: 10px; }
+  .cockpit-mobile-nav { position: fixed; inset: auto 0 0; z-index: 120; display: flex; gap: 4px; padding: 8px 8px max(8px, env(safe-area-inset-bottom)); background: var(--sidebar-bg); border-top: 1px solid var(--border-color); }
+  .cockpit-mobile-nav button { flex: 1; min-width: 0; min-height: 48px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center; border: 0; border-radius: 13px; color: var(--text-secondary); background: transparent; font-size: 10px; }
+  .cockpit-mobile-nav button[aria-current='page'] { color: var(--accent-ink); background: var(--accent-soft); }
+  .home-suggestions-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .cockpit-goals { margin-top: 20px; }
+  body:has(#tab-content-notebook.active.is-chat-expanded) .cockpit-mobile-nav { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; scroll-behavior: auto !important; } }
