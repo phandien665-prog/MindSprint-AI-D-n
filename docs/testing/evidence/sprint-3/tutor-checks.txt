@@ -1,0 +1,65 @@
+PASS tutor endpoint requires shared authentication
+PASS another account's notebook never reaches AI
+PASS missing notebook never reaches AI
+PASS source chat still requires at least one source
+PASS owned notebook works in tutor mode without sources
+PASS steps mode has tutor instructions, not source-only rules
+PASS brief style reaches the provider
+PASS follow-up includes the previous solution
+PASS clarification response is preserved for incomplete problems
+PASS prompt requests missing facts rather than invented values
+PASS blank question rejected before AI call
+PASS oversized question rejected before AI call
+PASS unknown style rejected before AI call
+PASS too many turns rejected before AI call
+PASS system role supplied by client rejected before AI call
+PASS blank historical turn rejected before AI call
+PASS null historical turn rejected before AI call
+PASS oversized history rejected before AI call
+[AI cost] notebook_chat_context_chars=85; full_source_chars=74; estimated_tokens_before=19; estimated_tokens_after=22; estimated_tokens_saved=0
+[AI cache] stored type=chat
+PASS existing source route still sends only its notebook sources
+[AI cache] hit type=chat
+PASS repeated source chat reuses the cached answer
+PASS tutor reads sources from its own notebook
+PASS tutor never reads another account's source
+PASS switching notebook does not carry over its sources
+PASS PDF upload extracts and stores text through the real source controller
+PASS uploaded PDF retains the exercise text
+PASS short exercise reference includes the uploaded PDF in the AI request
+PASS tutor prompt reads exercise references and asks when ambiguous
+PASS PDF exercise request stays within the chosen notebook
+PASS large sources use the existing bounded notebook context
+PASS empty model answer is retryable failure
+PASS malformed provider JSON is handled
+PASS quota preserves retry metadata, not a login error
+PASS provider outage is handled with shared availability policy
+33 checks passed (mock provider, SQLite in memory; no production data changed).
+PASS submission returns the first error with its classification
+PASS student submission and no-score rule reach the provider
+PASS checking cannot read another account's notebook
+PASS checking requires a separate submission
+PASS oversized submission is rejected
+PASS unsupported tutor action is rejected
+PASS feedback supports correct
+PASS feedback supports incomplete
+PASS feedback supports needs_clarification
+PASS checking rejects missing structured feedback
+PASS correct submissions cannot carry an invented error
+44 total checks passed.
+PASS hint level 1 works without a submission
+PASS hint prompt selects only level 1
+PASS hint level 2 works without a submission
+PASS hint prompt selects only level 2
+PASS hint level 3 works without a submission
+PASS hint prompt selects only level 3
+PASS invalid hint level 0 rejected
+PASS invalid hint level 4 rejected
+PASS hint requires its level
+PASS provider-declared full answer is rejected in hint mode
+PASS unclassified hint output is rejected
+PASS independent review blocks an answer even when the generator labels it safe
+PASS missing safety verdict cannot publish a hint
+PASS explicit solution action returns a full answer
+PASS hints enforce notebook ownership
+59 total checks passed.

@@ -272,6 +272,9 @@ Xem hướng dẫn chi tiết tại [CI-CD-SETUP.md](CI-CD-SETUP.md).
 | Tài liệu | Nội dung |
 |-----------|----------|
 | [Kiến trúc phần mềm](docs/architecture/software-architecture.md) | Bối cảnh, thành phần, dữ liệu, luồng xử lý, triển khai |
+| [Đặc tả yêu cầu 0.1](docs/requirements/software-requirements.md) | Phạm vi, 23 FR, 14 NFR, truy vết và các điểm chưa nghiệm thu (#58) |
+| [UML hiện trạng](docs/architecture/uml.md) | ERD, 18 use case, Activity/Sequence và bản SVG (#20) |
+| [Test case và kết quả ban đầu](docs/testing/sprint-3-results.md) | 46 case, log thực thi, phân biệt mock/live và phần chưa chạy (#17) |
 | [ERD](docs/architecture/erd.md) | 12 bảng, 91 cột, khóa ngoại và quan hệ nghiệp vụ; sơ đồ Mermaid cập nhật theo migrations PostgreSQL hiện tại |
 | [Yêu cầu phi chức năng](docs/architecture/non-functional-requirements.md) | 14 NFR có tiêu chí đo được |
 | [Kế hoạch kiểm thử Sprint 4](docs/architecture/sprint-4-test-plan.md) | Issues #42–#55, thứ tự và điều kiện nghiệm thu |

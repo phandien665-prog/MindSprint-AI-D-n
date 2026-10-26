@@ -1,5 +1,9 @@
 # Chỉ mục Sprint 3 và checkpoint giữa kỳ
 
+**Bàn giao ngày 26/10/2026:** ba đầu việc còn mở trên milestone Sprint 3 (#17, #20, #58) đã được bổ sung [bộ 46 test case và kết quả ban đầu](../docs/testing/sprint-3-results.md), [UML hiện trạng](../docs/architecture/uml.md) và [đặc tả yêu cầu 0.1](../docs/requirements/software-requirements.md). Xem GitHub Issues để lấy trạng thái đóng mới nhất. #17 thực tế vẫn gắn Sprint 3 trên GitHub, khác lịch điều chỉnh trong kế hoạch. Việc hoàn thành bộ test ban đầu không nghiệm thu thay NFR Sprint 4; FR-23/#36 chưa tìm thấy triển khai tại baseline, xem GAP-01 trong đặc tả.
+
+Các mốc và ô checkpoint bên dưới là kế hoạch giữa kỳ được giữ để tra cứu lịch sử; không tự đánh dấu các việc demo/đóng góp của thành viên chỉ vì tài liệu đã được bổ sung.
+
 Nguồn trạng thái: GitHub Issues. [Kế hoạch](plan.md). Hạn nội bộ Sprint 3: **22/10/2026, 20:00 Asia/Saigon**. Toàn bộ issue Test thuộc Sprint 4, chưa ấn định deadline.
 
 | Issue | Người phụ trách | Mốc gửi kết quả/PR | Nội dung |
