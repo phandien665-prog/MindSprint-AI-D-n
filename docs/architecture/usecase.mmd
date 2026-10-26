@@ -1,67 +1,33 @@
-useCaseDiagram
-    actor "Người học" as User
-    actor "Hệ thống AI" as AI
-    actor "Google Identity" as Google
-    actor "Nguồn URL công khai" as WebSource
-
-    package "Học tập & Flashcard" {
-        usecase "Học flashcard (SRS)" as UC1
-        usecase "Tạo thẻ học cá nhân" as UC2
-        usecase "Quản lý bộ thẻ (CRUD)" as UC3
-        usecase "Xem thống kê học tập" as UC4
-        usecase "Luyện tập trắc nghiệm" as UC5
-        usecase "Phân tích điểm yếu cá nhân hóa" as UC18
-    }
-
-    package "Sổ tay AI (Notebook)" {
-        usecase "Tạo sổ tay học tập" as UC6
-        usecase "Thêm nguồn: văn bản/URL/file" as UC7
-        usecase "Hỏi đáp theo tài liệu" as UC8
-        usecase "Tạo tài liệu ôn tập (Studio)" as UC9
-        usecase "Gia sư AI kiểm tra/hint/giải" as UC10
-    }
-
-    package "Lịch học & Kanban" {
-        usecase "Tạo lịch học định kỳ" as UC11
-        usecase "Quản lý công việc (Kanban)" as UC12
-        usecase "Theo dõi streak ngày học" as UC13
-    }
-
-    package "Tài khoản & Đồng bộ" {
-        usecase "Đăng nhập/Đăng ký Email" as UC14
-        usecase "Đăng nhập Google" as UC15
-        usecase "Đồng bộ dữ liệu lên server" as UC16
-        usecase "Học offline (localStorage)" as UC17
-    }
-
-    User --> UC1
-    User --> UC2
-    User --> UC3
-    User --> UC4
-    User --> UC5
-    User --> UC18
-    User --> UC6
-    User --> UC7
-    User --> UC8
-    User --> UC9
-    User --> UC10
-    User --> UC11
-    User --> UC12
-    User --> UC13
-    User --> UC14
-    User --> UC15
-    User --> UC16
-    User --> UC17
-
-    AI --> UC8
-    AI --> UC9
-    AI --> UC10
-    Google --> UC15
-    WebSource --> UC7
-
-    UC7 ..> UC8 : include
-    UC10 ..> UC8 : extend
-    UC16 ..> UC2 : include
-    UC16 ..> UC3 : include
-    UC16 ..> UC6 : include
-    UC16 ..> UC12 : include
+flowchart LR
+    Guest["Khách / người học cục bộ"]
+    User["Người học đã đăng nhập"]
+    AI["Google Gemini"]
+    Google["Google Identity"]
+    Web["Nguồn URL công khai"]
+    subgraph App["MindSprintAI 0.1"]
+        UC1(["UC1: Ôn flashcard SRS"])
+        UC2(["UC2: Tạo thẻ cá nhân / tạo thẻ AI"])
+        UC3(["UC3: Xem và quản lý thư viện thẻ"])
+        UC4(["UC4: Xem thống kê học tập"])
+        UC5(["UC5: Luyện tập trắc nghiệm"])
+        UC6(["UC6: Tạo, mở, xóa sổ tay"])
+        UC7(["UC7: Thêm / xóa nguồn text, URL, ảnh, PDF"])
+        UC8(["UC8: Hỏi đáp theo nguồn và gợi ý"])
+        UC9(["UC9: Tạo Studio, lưu ghi chú / thẻ"])
+        UC10(["UC10: Gia sư giải, kiểm tra, gợi ý, code, giọng nói"])
+        UC11(["UC11: Quản lý lịch học định kỳ"])
+        UC12(["UC12: Quản lý và sắp xếp Kanban"])
+        UC13(["UC13: Theo dõi chuỗi ngày học"])
+        UC14(["UC14: Đăng ký, đăng nhập, làm mới, đăng xuất"])
+        UC15(["UC15: Đăng nhập / liên kết Google"])
+        UC16(["UC16: Đồng bộ thẻ, xử lý xung đột"])
+        UC17(["UC17: Học dữ liệu cục bộ / đã cache"])
+        UC18(["UC18: Phân tích điểm yếu và luyện tập"])
+    end
+    Guest --> UC14 & UC15 & UC17
+    User --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6
+    User --> UC7 & UC8 & UC9 & UC10 & UC11 & UC12
+    User --> UC13 & UC14 & UC15 & UC16 & UC17 & UC18
+    UC2 & UC5 & UC8 & UC9 & UC10 --> AI
+    UC15 --> Google
+    UC7 --> Web

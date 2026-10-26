@@ -1,5 +1,7 @@
 # BÁO CÁO DỰ ÁN MINDSprintAI
 
+**Đối chiếu 0.1 ngày 26/10/2026:** [đặc tả yêu cầu và ma trận truy vết](../requirements/software-requirements.md), [UML](../architecture/uml.md), [kết quả chạy ban đầu](../testing/sprint-3-results.md). Mốc mã nguồn: `1a9fecb807e7232a898a27c826615aac657fd798`. Các mô tả tính năng dưới đây là phạm vi/mã nguồn, không thay nghiệm thu live. FR-23 (AI lập kế hoạch, #36) chưa tìm thấy triển khai ở baseline dù issue đã đóng; xem GAP-01. #19 đã đóng nhưng không đính kèm báo cáo để xác minh lại; các kết quả mới tách rõ giả lập, SQLite và phần chưa chạy.
+
 ## TẦM NHÌN MVP (Minimum Viable Product)
 
 MindSprintAI là nền tảng học tập thông minh giúp người học tối ưu hóa quá trình học tập thông qua:
@@ -29,8 +31,8 @@ MindSprintAI là nền tảng học tập thông minh giúp người học tối
 Xem file: `docs/architecture/erd.md`
 
 **Điểm nổi bật:**
-- 10 bảng chính: Users, Flashcards, CardProgresses, RefreshTokens, Notebooks, NotebookSources, NotebookNotes, Tasks, UserStudyDays, StudySchedules
-- 5 khóa ngoại thực (FK)
+- 12 bảng, 91 cột: Users, Flashcards, CardProgresses, RefreshTokens, Notebooks, NotebookSources, NotebookNotes, NotebookGenerationCaches, Tasks, UserStudyDays, StudySchedules, WeakAreas
+- 7 khóa ngoại thực (FK)
 - 5 tham chiếu nghiệp vụ chưa có FK (logical references)
 - Unique indexes để bảo toàn toàn vẹn dữ liệu
 - OwnerId trong Flashcards cho phép NULL (thẻ hệ thống dùng chung)
@@ -39,12 +41,7 @@ Xem file: `docs/architecture/erd.md`
 
 Xem file: `docs/architecture/usecase.mmd`
 
-**17 use cases được phân loại thành 5 gói:**
-1. Học tập & Flashcard (5 UC)
-2. Sổ tay AI (Notebook) (5 UC)
-3. Lịch học & Kanban (3 UC)
-4. Tài khoản & Đồng bộ (4 UC)
-5. Tích hợp với AI và nguồn ngoại (3 actor)
+**18 use case hiện trạng**, giữ ID UC1…UC18 trong [danh mục UML](../architecture/uml.md): học/thư viện/luyện tập, Sổ tay/Studio/Gia sư, lịch/Kanban/streak, tài khoản/Google/đồng bộ/offline và điểm yếu. Khách và người học đã đăng nhập tương tác với hệ thống; Google Identity, Gemini và nguồn URL là tác nhân ngoài. Kế hoạch AI UC19 là mục tiêu chưa có trong sơ đồ hiện trạng.
 
 ### 3. Kiến trúc phần mềm
 
