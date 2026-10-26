@@ -61,6 +61,8 @@ Tổng: **33 test Node/browser và 78 checks backend đạt**, không phải 111
 
 Chạy `python tests/check-sprint3-docs.py` để đối chiếu tên 91 cột/12 bảng với EF snapshot, 23 FR có truy vết, 18 UC hiện trạng, 46 case không trùng, liên kết nội bộ và verdict của các log. Kiểm tra này dùng thư viện chuẩn, không cần thêm dependency. Render dùng Mermaid 11.4.1; nguồn `.mmd` và SVG hiện hành đều được bàn giao.
 
+Đã thử bỏ tạm điều kiện bỏ qua thẻ đã lưu trong vòng retry: test browser mới thất bại đúng assertion chống lưu trùng. Mã ứng dụng được khôi phục nguyên byte sau kiểm tra, không có diff: [bằng chứng mutation](evidence/sprint-3/mutation-check.txt). Khi có bản nháp khác trong workspace, dùng `python tests/check-sprint3-docs.py --index` để kiểm tra đúng nội dung đã stage và chỉ chấp nhận liên kết tới file được quản lý phiên bản.
+
 ## Kết luận cho phạm vi issue
 
 #17 yêu cầu bộ test case và **kết quả chạy ban đầu**: đã có 46 case và kết quả thực tế ở bốn nhóm chức năng, kèm ca chưa chạy/blocked. Hoàn thành issue này không có nghĩa mọi case đều PASS hoặc mọi FR đã nghiệm thu. #20/#58 bàn giao sơ đồ và đặc tả hiện trạng, ghi rõ các điểm chưa nghiệm thu.

@@ -4,7 +4,10 @@ Bộ tài liệu phục vụ yêu cầu kiến trúc [#40](https://github.com/tu
 
 | Tài liệu | Nội dung |
 | --- | --- |
-| [ERD](erd.md) | 12 bảng, 91 cột; khóa ngoại, quan hệ nghiệp vụ và Mermaid source hiện hành; PNG/SVG còn theo bản 10 bảng |
+| [ERD](erd.md) | 12 bảng, 91 cột; khóa ngoại, quan hệ nghiệp vụ; Mermaid/PNG/SVG cùng bản hiện hành ngày 26/10/2026 |
+| [UML baseline 0.1](uml.md) | 18 ca sử dụng, Activity/Sequence, nguồn mã và đối chiếu #19/#20 |
+| [Đặc tả yêu cầu 0.1](../requirements/software-requirements.md) | Phạm vi, ưu tiên, tiêu chí và ma trận FR ↔ UC ↔ issue ↔ test (#58) |
+| [Test case/kết quả ban đầu](../testing/sprint-3-results.md) | Bộ 46 case và log kiểm thử #17, giới hạn nghiệm thu |
 | [Kiến trúc phần mềm](software-architecture.md) | Bối cảnh, thành phần, dữ liệu, luồng xử lý, triển khai và rủi ro |
 | [Yêu cầu phi chức năng](non-functional-requirements.md) | 14 yêu cầu NFR-01…NFR-14, ngưỡng và cách đo |
 | [Kế hoạch kiểm thử Sprint 4](sprint-4-test-plan.md) | Issue tương ứng, thứ tự thực hiện và điều kiện nghiệm thu |
