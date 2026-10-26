@@ -1,0 +1,20 @@
+PASS move to start of same column
+PASS stored column order: 3,1,2
+PASS stored column order: 1,2,3
+PASS stored column order: 2,3
+PASS stored column order: 1,4
+PASS stored column order: 3
+PASS stored column order: 2
+PASS edit task
+PASS cannot move another account's task
+PASS cannot edit another account's task
+PASS cannot delete another account's task
+PASS another account's list is empty
+PASS reject negative position
+PASS reject invalid status
+PASS reject empty title
+PASS edits persist in a fresh context
+PASS delete task
+PASS stored column order: 4
+PASS deletion persists in a fresh context
+19 Kanban checks passed.
