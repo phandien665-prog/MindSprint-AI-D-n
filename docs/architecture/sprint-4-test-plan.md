@@ -64,6 +64,17 @@ Các nhóm kiểm thử độc lập có thể chạy cùng thời gian nếu kh
 
 Race/ownership/migrations/restore cần PostgreSQL thật của staging. Các test Python tier1…tier4 dành cho FastAPI/SQLite, không dùng để kết luận API C# pass.
 
+## CI tự động
+
+Workflow [Build, test and deploy MindSprint](../../.github/workflows/ci-cd.yml) chạy khi push lên nhánh và khi mở/cập nhật PR vào `main`. CI thực hiện:
+
+- Build backend ASP.NET Core và frontend.
+- Chạy các harness `ConcurrencyChecks`, `GoogleAuthChecks`, `KanbanChecks`, `SeedChecks`, `TutorChecks`, `UrlImportChecks` và `GeminiReliability`; log của mỗi harness được lưu thành artifact của workflow.
+- Cài Chromium rồi chạy các bài Node.js frontend/browser; log TAP được lưu thành artifact. Bài `kanban-integration.test.cjs` chỉ chạy khi có `MINDSPRINT_TEST_API`, nếu không sẽ được đánh dấu skip.
+- Chỉ kích hoạt deploy Render khi push trực tiếp lên `main` và các job build/kiểm tra đều pass.
+
+Các harness backend hiện dùng SQLite cô lập hoặc provider giả lập; các bài browser dùng API mock. Vì vậy CI là cổng hồi quy tự động cho những hành vi đã được bao phủ, không phải bằng chứng cho PostgreSQL staging, traffic thật, cấu hình production hay bất kỳ NFR nào. Bộ Python tier1…tier4 nhắm FastAPI/SQLite lịch sử nên không chạy trong workflow hiện tại. Vẫn cần chạy và ghi kết quả live riêng cho #42–#55 theo điều kiện nghiệm thu ở dưới.
+
 ## Cách ghi kết quả
 
 | Trường | Nội dung bắt buộc |
