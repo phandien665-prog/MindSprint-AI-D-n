@@ -42,7 +42,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p test-results
-          node --test --test-reporter=tap tests/*.test.cjs backend/GoogleAuthChecks/*.test.cjs backend/TutorChecks/*.test.cjs 2>&1 | tee test-results/node-tests.tap
+          node --test --test-concurrency=1 --test-reporter=tap tests/*.test.cjs backend/GoogleAuthChecks/*.test.cjs backend/TutorChecks/*.test.cjs 2>&1 | tee test-results/node-tests.tap
       - name: Upload frontend test log
         if: always()
         uses: actions/upload-artifact@v4

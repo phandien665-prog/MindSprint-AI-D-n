@@ -70,7 +70,7 @@ Workflow [Build, test and deploy MindSprint](../../.github/workflows/ci-cd.yml) 
 
 - Build backend ASP.NET Core và frontend.
 - Chạy các harness `ConcurrencyChecks`, `GoogleAuthChecks`, `KanbanChecks`, `SeedChecks`, `TutorChecks`, `UrlImportChecks` và `GeminiReliability`; log của mỗi harness được lưu thành artifact của workflow.
-- Cài Chromium rồi chạy các bài Node.js frontend/browser; log TAP được lưu thành artifact. Bài `kanban-integration.test.cjs` chỉ chạy khi có `MINDSPRINT_TEST_API`, nếu không sẽ được đánh dấu skip.
+- Cài Chromium rồi chạy tuần tự các bài Node.js frontend/browser để hạn chế tranh chấp tài nguyên; log TAP được lưu thành artifact. Bài `kanban-integration.test.cjs` chỉ chạy khi có `MINDSPRINT_TEST_API`, nếu không sẽ được đánh dấu skip. Có thể đặt `TUTOR_BROWSER` để chọn browser khác khi chạy thủ công.
 - Chỉ kích hoạt deploy Render khi push trực tiếp lên `main` và các job build/kiểm tra đều pass.
 
 Các harness backend hiện dùng SQLite cô lập hoặc provider giả lập; các bài browser dùng API mock. Vì vậy CI là cổng hồi quy tự động cho những hành vi đã được bao phủ, không phải bằng chứng cho PostgreSQL staging, traffic thật, cấu hình production hay bất kỳ NFR nào. Bộ Python tier1…tier4 nhắm FastAPI/SQLite lịch sử nên không chạy trong workflow hiện tại. Vẫn cần chạy và ghi kết quả live riêng cho #42–#55 theo điều kiện nghiệm thu ở dưới.
