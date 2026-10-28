@@ -4,6 +4,7 @@ const path = require('node:path');
 const http = require('node:http');
 const test = require('node:test');
 const root = path.resolve(__dirname, '../..');
+const {launchBrowser} = require('../../tests/playwright-launch.cjs');
 let chromium;
 try { ({chromium} = require('playwright')); }
 catch { ({chromium} = require(path.join(root, 'backend/MindSprint.Api/bin/Release/net8.0/.playwright/package'))); }
@@ -20,7 +21,7 @@ test('programming tutor preserves code, isolates follow-ups, escapes output, sav
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     let browser;
     try {
-        browser = await chromium.launch({executablePath: process.env.TUTOR_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless:true});
+        browser = await launchBrowser(chromium);
         const context = await browser.newContext({serviceWorkers:'block', viewport:{width:1440,height:1000}});
         const page = await context.newPage(), errors = [], calls = [], notes = [];
         const base = `http://127.0.0.1:${server.address().port}`;
