@@ -27,7 +27,26 @@ test('Cockpit preserves shared login, account checklists, feature routes and mob
         const page = await context.newPage(), calls = [], errors = [];
         const base = `http://127.0.0.1:${server.address().port}`;
         let user = null;
+        const authTraffic = [];
         page.on('pageerror', error => errors.push(error.message));
+        page.on('request', request => {
+            const path = new URL(request.url()).pathname;
+            if (path.endsWith('/auth/login') || path.endsWith('/auth/revoke')) {
+                authTraffic.push({event:'request', method:request.method(), path});
+            }
+        });
+        page.on('response', response => {
+            const path = new URL(response.url()).pathname;
+            if (path.endsWith('/auth/login') || path.endsWith('/auth/revoke')) {
+                authTraffic.push({event:'response', status:response.status(), path});
+            }
+        });
+        page.on('requestfailed', request => {
+            const path = new URL(request.url()).pathname;
+            if (path.endsWith('/auth/login') || path.endsWith('/auth/revoke')) {
+                authTraffic.push({event:'failed', error:request.failure()?.errorText, path});
+            }
+        });
         await context.route('**/*', async route => {
             const request = route.request(), url = new URL(request.url());
             if (url.pathname.startsWith('/api/')) {
@@ -58,8 +77,27 @@ test('Cockpit preserves shared login, account checklists, feature routes and mob
             assert.doesNotMatch(await page.locator('#auth-google-status').innerText(),/demo/i);
             await page.locator('#auth-email').fill(email);
             await page.locator('#auth-pass').fill('SyntheticPass123!');
+            const loginResponse = page.waitForResponse(response => new URL(response.url()).pathname === '/api/auth/login');
             await page.locator('#auth-submit-btn').click();
-            await page.locator('.auth-overlay').waitFor({state:'detached'});
+            assert.equal((await loginResponse).status(),200,'mock login endpoint should accept the test account');
+            try {
+                await page.locator('.auth-overlay').waitFor({state:'detached', timeout:30000});
+            } catch (error) {
+                const state = await page.evaluate(() => {
+                    const submit = document.querySelector('#auth-submit-btn');
+                    const errorBox = document.querySelector('#auth-error-box');
+                    return {
+                        loggedIn: MindSprintAuth.isLoggedIn(),
+                        user: MindSprintAuth.getCurrentUser(),
+                        apiUser: MindSprintApi.getUser(),
+                        submitDisabled: submit?.disabled,
+                        submitText: submit?.textContent?.trim(),
+                        authError: errorBox?.querySelector('#auth-error-text')?.textContent,
+                        authErrorVisible: errorBox ? getComputedStyle(errorBox).display !== 'none' : false
+                    };
+                });
+                throw new Error(`${error.message}; login state=${JSON.stringify(state)}; auth traffic=${JSON.stringify(authTraffic)}; api calls=${JSON.stringify(calls)}`);
+            }
         }
         await signIn('first@example.test');
         assert.equal(await name.innerText(),'First User');
@@ -74,7 +112,10 @@ test('Cockpit preserves shared login, account checklists, feature routes and mob
         await page.locator('.sidebar [data-tab=kanban]').click();
         await page.waitForFunction(() => document.querySelector('#tab-content-kanban').classList.contains('active'));
         assert.ok(calls.includes('/api/tasks'));
+        const revokeResponse = page.waitForResponse(response => new URL(response.url()).pathname === '/api/auth/revoke');
         await page.locator('#sidebar-auth [data-act=logout]').click();
+        await revokeResponse;
+        await page.waitForFunction(() => !MindSprintAuth.isLoggedIn());
         await page.locator('.sidebar [data-tab=home]').click();
         assert.equal(await goals.nth(0).isChecked(),true);
         assert.equal(await goals.nth(1).isChecked(),false);
