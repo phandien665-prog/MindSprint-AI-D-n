@@ -53,8 +53,18 @@ public class TasksController(AppDbContext db) : ApiBase
         var t = await db.Tasks.FirstOrDefaultAsync(x => x.Id == id && x.UserId == uid);
         if (t is null) return NotFound();
 
-        await Arrange(t, dto.Status, dto.Position);
-        await db.SaveChangesAsync();
+        using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
+        {
+            await Arrange(t, dto.Status, dto.Position);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            return Conflict(new { message = "Cập nhật đồng thời, vui lòng thử lại." });
+        }
         return Ok(t);
     }
 
@@ -63,11 +73,22 @@ public class TasksController(AppDbContext db) : ApiBase
     {
         var t = await db.Tasks.FirstOrDefaultAsync(x => x.Id == id && x.UserId == UserId);
         if (t is null) return NotFound();
-        db.Tasks.Remove(t);
-        var remaining = await db.Tasks.Where(x => x.UserId == UserId && x.Status == t.Status && x.Id != id)
-            .OrderBy(x => x.Position).ThenBy(x => x.Id).ToListAsync();
-        for (var position = 0; position < remaining.Count; position++) remaining[position].Position = position;
-        await db.SaveChangesAsync();
+        
+        using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
+        {
+            db.Tasks.Remove(t);
+            var remaining = await db.Tasks.Where(x => x.UserId == UserId && x.Status == t.Status && x.Id != id)
+                .OrderBy(x => x.Position).ThenBy(x => x.Id).ToListAsync();
+            for (var position = 0; position < remaining.Count; position++) remaining[position].Position = position;
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            return Conflict(new { message = "Cập nhật đồng thời, vui lòng thử lại." });
+        }
         return NoContent();
     }
 

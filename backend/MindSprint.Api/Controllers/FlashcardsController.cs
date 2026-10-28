@@ -112,7 +112,15 @@ public class FlashcardsController(AppDbContext db) : ApiBase
         card.UpdatedAt = DateTime.UtcNow;
         card.Version++;
 
-        await db.SaveChangesAsync();
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Handle race condition: another request updated the card
+            return Conflict(new { message = "Thẻ đã được sửa bởi thiết bị khác. Vui lòng tải lại.", serverVersion = card.Version });
+        }
         return Ok(new { version = card.Version, updatedAt = card.UpdatedAt });
     }
 

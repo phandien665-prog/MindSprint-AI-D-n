@@ -53,8 +53,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<UserStudyDay>().HasIndex(d => new { d.UserId, d.StudyDate }).IsUnique();
         b.Entity<StudySchedule>().HasIndex(s => new { s.UserId, s.DayOfWeek });
 
-        // #35 – Điểm yếu: unique per user per topic, index cho truy vấn
-        b.Entity<WeakArea>().HasIndex(w => new { w.UserId, w.Category, w.Topic }).IsUnique();
-        b.Entity<WeakArea>().HasIndex(w => new { w.UserId, w.AnalyzedAt });
+        // Configure concurrency token for Flashcard.Version (optimistic concurrency)
+        b.Entity<Flashcard>().Property(f => f.Version).IsConcurrencyToken();
+        b.Entity<Flashcard>().Property(f => f.UpdatedAt).IsConcurrencyToken();
+        // Kanban task position integrity
+        b.Entity<KanbanTask>().Property(t => t.Position).IsConcurrencyToken();
     }
 }
