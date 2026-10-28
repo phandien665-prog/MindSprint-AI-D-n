@@ -23,6 +23,8 @@ if (args.Length == 2 && args[0] == "--live-shared-sources") { await SharedSource
 if (args.Contains("--ocr")) { await OcrChecks.Run(); return; }
 if (args.Contains("--file-tutor")) { await FileTutorChecks.Run(); return; }
 if (args.Contains("--shared-sources")) { await SharedSourceChecks.Run(); return; }
+if (args.Contains("--programming")) { await ProgrammingChecks.Run(); return; }
+if (args.Contains("--live-programming")) { await ProgrammingChecks.Live(args.FirstOrDefault(a => a.StartsWith("--case="))?[7..]); return; }
 var passed = 0;
 void Check(bool condition, string name) { if (!condition) throw new Exception("FAIL " + name); passed++; Console.WriteLine("PASS " + name); }
 static int Status(IActionResult result) => result switch { ObjectResult o => o.StatusCode ?? 200, StatusCodeResult s => s.StatusCode, _ => throw new Exception("Unexpected result") };

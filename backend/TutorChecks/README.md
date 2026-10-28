@@ -1,5 +1,7 @@
 # Issue #30 — Gia sư giải bài tập
 
+Hoạt động **Lập trình** (#34), hợp đồng phân tích Python/JavaScript, giới hạn không thực thi code và kết quả kiểm tra: [PROGRAMMING.md](PROGRAMMING.md).
+
 **Thêm ảnh/PDF/TXT/MD/CSV vào nguồn của sổ tay**, rồi hỏi trực tiếp ở cả Theo nguồn và Gia sư; tệp được lưu để dùng lại, giữ công thức và không chép toàn bộ đề vào chat (#33): xem [OCR.md](OCR.md).
 
 Các hoạt động **Kiểm tra bài làm** (#31) và **Tự luyện** (#32), hợp đồng API và kiểm chứng Sprint 2 được mô tả trong [SPRINT2.md](SPRINT2.md).
@@ -40,7 +42,7 @@ dotnet run --project backend/TutorChecks/TutorChecks.csproj -c Release
 node --test backend/TutorChecks/browser.test.cjs
 ```
 
-C# checks dùng SQLite trong bộ nhớ và HTTP Gemini giả lập; không ghi database thực. Browser checks dùng Edge headless, Playwright của API (hoặc package `playwright` đã cài), mock API và storage mới; biến `TUTOR_BROWSER` có thể chỉ đường dẫn browser khác. Không gọi Gemini thực trong các kiểm tra tự động mặc định.
+C# checks dùng SQLite trong bộ nhớ và HTTP Gemini giả lập; không ghi database thực. Browser checks dùng Chromium headless do Playwright quản lý, API mock và storage mới; đặt `TUTOR_BROWSER` thành đường dẫn tuyệt đối nếu cần dùng browser khác. Khi chạy toàn bộ test browser, nên dùng `node --test --test-concurrency=1` để tránh tranh chấp tài nguyên. Không gọi Gemini thực trong các kiểm tra tự động mặc định.
 
 Kiểm thử Gemini thực tùy chọn, lấy cấu hình riêng hiện có và gửi bốn đề mẫu; không in khóa API:
 

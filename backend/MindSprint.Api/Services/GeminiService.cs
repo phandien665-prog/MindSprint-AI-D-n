@@ -19,21 +19,60 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
 
     public Task<List<GeneratedCard>> GenerateFlashcardsAsync(string text, int count) => JsonAsync<List<GeneratedCard>>(
         $$"""
-        Bạn là trợ lý học tập. Từ tài liệu dưới đây, tạo đúng {{count}} flashcard bằng tiếng Việt.
-        Chỉ trả về JSON hợp lệ, KHÔNG kèm giải thích hay markdown, theo dạng:
-        [{"question":"...","answer":"...","example":"..."}]
+        Bạn là chuyên gia sư phạm và AI thiết kế học liệu chuẩn phương pháp Active Recall & Spaced Repetition.
+        Nhiệm vụ: Phân tích tài liệu bên dưới và tạo danh sách flashcard ghi nhớ chất lượng cao nhất bằng tiếng Việt.
+        Số lượng thẻ yêu cầu tối đa: {{count}} thẻ (trong khoảng 1 đến 100).
 
-        TÀI LIỆU:
+        QUY TRÌNH XỬ LÝ NỘI DUNG (BẮT BUỘC):
+        1. BỘ LỌC & TÓM TẮT TRỌNG TÂM LÝ THUYẾT (Pre-filtering & Synthesis):
+           - Tài liệu nguồn thường có lẫn tạp âm: bài tập tự luyện dài dòng, số liệu đề bài, mục lục, số trang, lời dẫn mở đầu, thông tin hành chính...
+           - BƯỚC 1: Hãy chủ động phân tích và CHỈ CHẮT LỌC các hạt nhân kiến thức cốt lõi: định nghĩa, khái niệm then chốt, định lý, công thức toán học/khoa học, nguyên lý, quy tắc, bản chất hiện tượng hoặc phương pháp giải mẫu.
+           - BỎ QUA hoàn toàn các bài tập rèn luyện tính toán lan man hoặc chi tiết phụ không có giá trị ghi nhớ lâu dài.
+
+        2. TỰ ĐIỀU CHỈNH SỐ THẺ THEO DUNG LƯỢNG VÀ ĐỘ SÂU CỦA FILE:
+           - Tùy theo dung lượng và lượng kiến thức thực tế của tài liệu, bạn hãy tạo số lượng thẻ phù hợp nhất (tối đa {{count}} thẻ).
+           - Nếu tài liệu ngắn hoặc chỉ có vài khái niệm cốt lõi: CHỈ tạo đủ số thẻ tương ứng với các ý trọng tâm đó, TUYỆT ĐỐI KHÔNG sinh thẻ gượng ép, trùng lặp hay hỏi vụn vặt để "cố cho đủ chỉ tiêu".
+           - Nếu tài liệu dài, phong phú: Khai thác toàn diện mọi khía cạnh quan trọng để đạt số lượng {{count}} thẻ bao quát toàn bộ tài liệu.
+
+        3. NGUYÊN TẮC THIẾT KẾ THẺ (Active Recall & Single Fact Principle):
+           - Mỗi thẻ CHỈ hỏi 1 sự thật hoặc 1 công thức duy nhất (Single Fact Principle). TUYỆT ĐỐI KHÔNG gộp cả đoạn văn dài vào một thẻ.
+           - CÂU HỎI (question): Trực diện, rõ ràng, kích thích tư duy (VD: "Định nghĩa hình thang cong?", "Công thức tính độ rộng mỗi đoạn chia $\Delta x$ khi chia đoạn $[a, b]$ thành $n$ phần bằng nhau?").
+           - CÂU TRẢ LỜI (answer): Cô đọng, súc tích, ngắn gọn (tối đa 2-3 câu, dưới 40 từ), nêu bật bản chất hoặc công thức.
+
+        4. CÔNG THỨC TOÁN HỌC & KHOA HỌC:
+           - Mọi công thức, ký hiệu toán học, biến số phải viết bằng LaTeX chuẩn đặt trong cặp dấu $...$ (nội dòng) hoặc $$...$$ (khối).
+           - Tự động sửa triệt để các lỗi font OCR từ file PDF:
+             * '£' hoặc ký hiệu lạ giữa biến -> sửa thành '$\le$' hoặc '$\ge$'.
+             * 'Dx' trong chia khoảng -> '$\Delta x = \frac{b - a}{n}$'.
+             * Ký hiệu chỉ số bị vỡ như 'x!"#' -> '$x_{i-1}, x_i$'.
+             * Tích phân 'ò' hoặc 'S' -> '$\int_a^b f(x)dx$'.
+
+        5. VÍ DỤ / ÁP DỤNG (example): Đưa ra 1 ví dụ minh họa hoặc công thức mở rộng ngắn gọn.
+
+        Chỉ trả về JSON thuần túy theo cấu trúc sau (không kèm markdown fence hay văn bản thừa):
+        [
+          {"question":"...","answer":"...","example":"..."}
+        ]
+
+        TÀI LIỆU NGUỒN:
         {{text}}
         """);
 
     public Task<List<GeneratedQuiz>> GenerateQuizAsync(string text, int count) => JsonAsync<List<GeneratedQuiz>>(
         $$"""
-        Bạn là trợ lý học tập. Từ tài liệu dưới đây, tạo đúng {{count}} câu hỏi trắc nghiệm 4 đáp án bằng tiếng Việt.
-        Chỉ trả về JSON hợp lệ, KHÔNG kèm giải thích hay markdown, theo dạng:
+        Bạn là chuyên gia giáo dục. Từ tài liệu dưới đây, hãy chắt lọc lý thuyết trọng tâm và tạo tối đa {{count}} câu hỏi trắc nghiệm 4 đáp án bằng tiếng Việt.
+        Yêu cầu:
+        1. Lọc bỏ các bài tập tính toán lan man hoặc tạp âm, chỉ tập trung vào các khái niệm, định lý, công thức quan trọng.
+        2. Tự điều chỉnh số câu hỏi tương xứng với khối lượng kiến thức thực tế (tối đa {{count}} câu), không sinh câu hỏi trùng lặp hoặc vô nghĩa.
+        3. Câu hỏi rõ ràng, các phương án nhiễu hợp lý, chỉ có 1 đáp án đúng duy nhất.
+        4. Ký hiệu và công thức toán học/khoa học viết bằng LaTeX chuẩn trong cặp dấu $...$.
+        5. Tự sửa các lỗi font OCR từ tài liệu nếu có.
+        6. Giải thích (explanation) ngắn gọn lý do vì sao đáp án đó đúng.
+
+        Chỉ trả về JSON thuần túy theo dạng:
         [{"question":"...","options":["A","B","C","D"],"correctIndex":0,"explanation":"..."}]
 
-        TÀI LIỆU:
+        TÀI LIỆU NGUỒN:
         {{text}}
         """);
 
@@ -67,7 +106,8 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
         if ((bytes?.LongLength ?? 0) + (attachments?.Sum(a => a.Bytes.LongLength) ?? 0) > MaxAttachmentBytes)
             throw new GeminiUnavailableException("ai_attachment_limit", "Tổng ảnh/PDF vượt 10 MB. Hãy bớt nguồn hoặc chọn tệp nhỏ hơn trước khi hỏi.", 422);
         var key = cfg["Gemini:ApiKey"];
-        if (string.IsNullOrWhiteSpace(key)) throw ConfigurationError();
+        if (!IsConfiguredApiKey(key)) throw ConfigurationError();
+        var apiKey = key!.Trim();
 
         var models = new List<string>();
         var primary = cfg["Gemini:Model"];
@@ -87,7 +127,7 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
         budget.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(cfg.GetValue("Gemini:TotalTimeoutSeconds", 150), 10, 300)));
         var acquired = false;
         var failures = new List<GeminiUnavailableException>();
-        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)));
+        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)));
         try
         {
             await availability.Slots.WaitAsync(budget.Token);
@@ -110,7 +150,7 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
                     {
                         using var attemptTimeout = CancellationTokenSource.CreateLinkedTokenSource(budget.Token);
                         attemptTimeout.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(cfg.GetValue("Gemini:AttemptTimeoutSeconds", 60), 1, 120)));
-                        return await TrySingleModelAsync(prompt, model, key, json, attemptTimeout.Token, bytes, mimeType, responseSchema, attachments);
+                        return await TrySingleModelAsync(prompt, model, apiKey, json, attemptTimeout.Token, bytes, mimeType, responseSchema, attachments);
                     }
                     catch (OperationCanceledException) when (!budget.IsCancellationRequested)
                     {
@@ -126,7 +166,7 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
                     catch (ModelFailure failure)
                     {
                         logger.LogWarning("Gemini model {Model} returned {Status}; attempt {Attempt}", model, (int)failure.Status, attempt + 1);
-                        if (failure.Status is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                        if ((failure.Status is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) || failure.IsCredentialError)
                             throw ConfigurationError();
                         if (failure.Status == HttpStatusCode.NotFound)
                         {
@@ -168,8 +208,8 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
     {
         var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent";
 
-        object gen = json ? new { responseMimeType = "application/json", temperature = 0.3 } : new { temperature = 0.5 };
-        if (responseSchema is not null) gen = new { responseMimeType = "application/json", responseSchema, temperature = 0.1 };
+        object gen = json ? (object)new { responseMimeType = "application/json", temperature = 0.3, maxOutputTokens = 8192 } : new { temperature = 0.5, maxOutputTokens = 8192 };
+        if (responseSchema is not null) gen = new { responseMimeType = "application/json", responseSchema, temperature = 0.1, maxOutputTokens = 8192 };
         var requestParts = new List<object> { new { text = prompt } };
         if (bytes is not null)
         {
@@ -193,7 +233,7 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
         using var res = await http.SendAsync(req, cancellation);
         var raw = await res.Content.ReadAsStringAsync(cancellation);
         if (!res.IsSuccessStatusCode)
-            throw new ModelFailure(res.StatusCode, RetryAfter(res, raw));
+            throw new ModelFailure(res.StatusCode, RetryAfter(res, raw), IsCredentialError(raw));
 
         try
         {
@@ -213,13 +253,30 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
         throw new GeminiUnavailableException("ai_empty_response", "AI chưa trả về nội dung. Hãy đổi cách hỏi hoặc kiểm tra tài liệu nguồn.", 422);
     }
 
-    private sealed class ModelFailure(HttpStatusCode status, int? retryAfterSeconds) : Exception
+    private sealed class ModelFailure(HttpStatusCode status, int? retryAfterSeconds, bool isCredentialError) : Exception
     {
         public HttpStatusCode Status { get; } = status;
         public int? RetryAfterSeconds { get; } = retryAfterSeconds;
+        public bool IsCredentialError { get; } = isCredentialError;
     }
     private static bool IsTransient(HttpStatusCode status) => (int)status >= 500 || status == HttpStatusCode.RequestTimeout;
-    private static GeminiUnavailableException ConfigurationError() => new("ai_configuration", "Dịch vụ AI chưa sẵn sàng. Quản trị viên cần kiểm tra cấu hình và quyền truy cập AI.", 503);
+    private static bool IsConfiguredApiKey(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return false;
+        var value = key.Trim();
+        return !value.Contains("YOUR_", StringComparison.OrdinalIgnoreCase) &&
+            !value.Contains("PLACEHOLDER", StringComparison.OrdinalIgnoreCase) &&
+            !value.Contains("CHANGE_ME", StringComparison.OrdinalIgnoreCase) &&
+            !value.Contains("CHANGEME", StringComparison.OrdinalIgnoreCase) &&
+            !value.Contains('<') && !value.Contains('>');
+    }
+    private static bool IsCredentialError(string response)
+    {
+        return response.Contains("API_KEY_INVALID", StringComparison.OrdinalIgnoreCase) ||
+            response.Contains("API key not valid", StringComparison.OrdinalIgnoreCase) ||
+            response.Contains("API key invalid", StringComparison.OrdinalIgnoreCase);
+    }
+    private static GeminiUnavailableException ConfigurationError() => new("ai_configuration", "Gemini API key chưa được cấu hình hoặc không hợp lệ. Hãy cấu hình Gemini:ApiKey cho backend rồi thử lại.", 503);
     private static GeminiUnavailableException BusyError() => new("ai_busy", "AI đang bận. Vui lòng thử lại sau ít phút; tài liệu của bạn vẫn được lưu.", 503, 15);
     private static GeminiUnavailableException TimeoutError() => new("ai_timeout", "AI đang xử lý chậm. Bạn có thể thử lại với trọng tâm cụ thể hơn; tài liệu vẫn được lưu.", 504);
     private static GeminiUnavailableException RateLimitError(int seconds) => new("ai_rate_limited", "AI đã đạt hạn mức sử dụng tạm thời. Vui lòng thử lại sau; tài liệu của bạn vẫn được lưu.", 429, seconds);

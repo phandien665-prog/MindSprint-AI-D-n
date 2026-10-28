@@ -6,6 +6,7 @@ const http = require('node:http');
 const os = require('node:os');
 const test = require('node:test');
 const root = path.resolve(__dirname, '../..');
+const {launchBrowser} = require('../../tests/playwright-launch.cjs');
 let chromium;
 try { ({chromium} = require('playwright')); }
 catch {
@@ -25,8 +26,7 @@ test('tutor and source UI: isolated context, notes, retries, keyboard, responsiv
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     let browser;
     try {
-        const edge = process.env.TUTOR_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
-        browser = await chromium.launch({executablePath: edge, headless:true});
+        browser = await launchBrowser(chromium);
         const context = await browser.newContext({serviceWorkers:'block', viewport:{width:1440, height:1000}});
         const page = await context.newPage();
         const base = `http://127.0.0.1:${server.address().port}`, errors=[], native=[], calls=[];

@@ -1,12 +1,12 @@
 # Yêu cầu phi chức năng — MindSprintAI
 
-Ngày lập: **12/10/2026** (Asia/Saigon). Nguồn kiến trúc: nhánh `main`, commit `9ba7acd2de05bf017ad5c2711644c9ee98bd6542`.
+Ngày lập: **12/10/2026**; rà schema: **16/10/2026** (Asia/Saigon). Nguồn kiến trúc nền: nhánh `main`, commit `9ba7acd2de05bf017ad5c2711644c9ee98bd6542`; phạm vi dữ liệu hiện hành gồm các migration PostgreSQL tiếp theo cho cache notebook, file nguồn và điểm yếu cá nhân. Các ngưỡng NFR vẫn là mục tiêu đề xuất, chưa nghiệm thu.
 
 ## Quy ước và phạm vi
 
-Các mục dưới đây là **mục tiêu nghiệm thu đề xuất cho Sprint 4**, không phải cam kết hệ thống đã đạt. Ngưỡng do tài liệu này đề xuất cần được nhóm chốt tại sprint planning và ghi phiên bản trước khi đo; không giảm ngưỡng để hợp thức hóa kết quả thất bại. Các giới hạn ghi “hiện có” được đọc từ mã nguồn, chưa thay cho kiểm thử runtime.
+Các mục dưới đây là **mục tiêu nghiệm thu đề xuất cho Sprint 4**, không phải cam kết hệ thống đã đạt. Theo [phân công giữa kỳ được điều chỉnh ngày 14/10/2026](../../tasks/plan.md), toàn bộ nhiệm vụ Test, gồm 14 NFR, ở Sprint 4; các nhiệm vụ tính năng/giao diện/tài liệu ở Sprint 3. Ngưỡng do tài liệu này đề xuất cần được nhóm chốt tại sprint planning và ghi phiên bản trước khi đo; không giảm ngưỡng để hợp thức hóa kết quả thất bại. Các giới hạn ghi “hiện có” được đọc từ mã nguồn, chưa thay cho kiểm thử runtime.
 
-Phạm vi: giao diện chính + ASP.NET Core/PostgreSQL trên `main`; FastAPI/SQLite độc lập không nằm trong kết quả nghiệm thu này. P0 là rủi ro bảo mật/toàn vẹn chặn nghiệm thu; P1 là chất lượng/vận hành cần xác nhận. Mọi yêu cầu đều có một issue kiểm thử riêng trong milestone Sprint 4.
+Phạm vi: giao diện chính + ASP.NET Core/PostgreSQL trên `main`; FastAPI/SQLite độc lập không nằm trong kết quả nghiệm thu này. P0 là rủi ro bảo mật/toàn vẹn chặn nghiệm thu; P1 là chất lượng/vận hành cần xác nhận. Mọi yêu cầu đều có một issue kiểm thử riêng ở Sprint 4; người chủ trì nằm trong [kế hoạch kiểm thử Sprint 4](sprint-4-test-plan.md).
 
 Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên bản image/.NET/PostgreSQL và network RTT; 50 tài khoản test, 1.814 thẻ hệ thống theo seed hiện có và mỗi tài khoản 500 thẻ riêng, 100 task, 10 notebook × 5 nguồn × 5.000 ký tự. Dữ liệu này là fixture cần tạo, không phải dữ liệu thực đã thống kê. Mỗi VU giữ tài khoản riêng, think time 1 giây; request mix 35% GET flashcards, 25% GET tasks, 20% GET notebooks, 10% POST task và 10% PATCH move task đã tạo. Tối thiểu 100 mẫu cho mỗi route mỗi lần chạy; báo p95 riêng từng route. Kiểm tra assert body/ownership, không tính response sai nội dung là thành công. Loại AI/upload/Google provider thật khỏi benchmark CRUD và đo riêng. Lỗi ngoài dự kiến gồm timeout, network error, assertion fail và status không thuộc hợp đồng; 429/quota chỉ được loại ở các bài cố ý gây lỗi provider.
 
@@ -84,7 +84,7 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 ## NFR-03: Xác thực, phân quyền và cô lập tài khoản
 
-**Ưu tiên:** P0. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** JWT, TokenService, GoogleSignInService, controllers, phiên frontend.
+**Ưu tiên:** P0. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** JWT, TokenService, GoogleSignInService, controllers gồm `/api/weak-areas`, phiên frontend.
 
 **Hiện trạng:** JWT kiểm tra issuer/audience/signature/lifetime; refresh rotation/revoke; lọc UserId/OwnerId. Token đang lưu localStorage.
 
@@ -97,7 +97,7 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 **Cách kiểm thử:**
 
-1. Tạo A/B riêng; chạy ma trận endpoint CRUD, review, study, notebook, tutor và nested resources.
+1. Tạo A/B riêng; chạy ma trận endpoint CRUD, review, study, notebook, tutor, `/api/weak-areas` (GET/analyze) và nested resources.
 2. Kiểm tra rotation/revoke tuần tự và 2 request refresh đồng thời; nếu cùng token cấp hai phiên mới thì ghi lỗi, không coi single-flight trong một tab là bảo đảm server.
 3. Chạy các ca Google giả lập và chuyển tài khoản khi API đang chờ.
 
@@ -193,19 +193,20 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 **Ưu tiên:** P0. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** EF Core, PostgreSQL, Flashcards/Tasks/Study controllers.
 
-**Hiện trạng:** Có unique indexes và Version của thẻ; kiểm tra Version là optional, chưa cấu hình EF concurrency token. Kanban sắp vị trí trong SaveChanges nhưng chưa bảo đảm giữa request đồng thời.
+**Hiện trạng:** Có unique indexes cho progress/ngày học/cache notebook/điểm yếu và Version của thẻ; kiểm tra Version là optional, chưa cấu hình EF concurrency token. Kanban sắp vị trí trong SaveChanges nhưng chưa bảo đảm giữa request đồng thời.
 
 **Tiêu chí đạt:**
 
 - Hai client sửa thẻ cùng Version: chỉ một cập nhật thắng; bản còn lại nhận 409 và không ghi đè âm thầm. Test cả request cùng thời điểm và request thiếu Version.
 - Hai thao tác move/create/delete Kanban đồng thời không mất task hoặc để Position trùng/hổng sau khi hoàn tất; mỗi cột có thứ tự 0..n-1.
 - Review/ngày học lặp hoặc đồng thời không tạo hàng trùng theo unique key, không mất dữ liệu đã xác nhận; lỗi ghi một phần được rollback.
+- Phân tích đồng thời không tạo trùng `WeakAreas` theo UserId/Category/Topic; cache tạo nội dung không trùng theo NotebookId/Type/RequestHash/SourcesHash và không được dùng chéo notebook.
 - Ngày học/streak giữ đúng ngày Asia/Saigon qua biên 23:59/00:00 và restart; UTC timestamp không được dùng thay ngày học địa phương.
 
 **Cách kiểm thử:**
 
 1. Dùng barrier gửi request đồng thời tới PostgreSQL thật, tối thiểu 20 vòng mỗi ca; không thay bằng SQLite/in-memory.
-2. Đọc DB/GET sau mỗi vòng, kiểm tra version/count/order/foreign key và dấu mốc thời gian.
+2. Đọc DB/GET sau mỗi vòng, kiểm tra version/count/order/foreign key, unique key cache/điểm yếu và dấu mốc thời gian.
 
 **Bằng chứng:** Timeline request/response, truy vấn invariants đã che dữ liệu, kết quả race test.
 

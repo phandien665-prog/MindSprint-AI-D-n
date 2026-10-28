@@ -1,11 +1,12 @@
 // Generate a synthetic exercise image for opt-in live OCR checks; no user data.
 const path = require('node:path');
 const fs = require('node:fs');
+const {launchBrowser} = require('../../tests/playwright-launch.cjs');
 let chromium;
 try { ({chromium} = require('playwright')); }
 catch { ({chromium} = require('../MindSprint.Api/bin/Debug/net8.0/.playwright/package')); }
 (async () => {
-    const browser = await chromium.launch({executablePath: process.env.TUTOR_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless:true});
+    const browser = await launchBrowser(chromium);
     try {
         const page = await browser.newPage({viewport:{width:1100,height:600}});
         await page.setContent(`<html lang="vi"><style>body{padding:32px;font:26px Arial;line-height:1.8;background:white;color:black}h1{font-size:30px}.fraction{display:inline-flex;vertical-align:middle;flex-direction:column;text-align:center;line-height:1.1}.fraction span:first-child{border-bottom:2px solid}</style><h1>ĐỀ BÀI LUYỆN TẬP</h1><p>Câu 1. Giải phương trình 2x + 3 = 11.</p><p>Câu 2. Tính A = <span class="fraction"><span>1</span><span>2</span></span> + √4 và viết x².</p><p>Câu 3. Một hình chữ nhật có chiều dài 8 cm,<br>chiều rộng 5 cm. Tính diện tích hình chữ nhật.</p></html>`);
