@@ -1,0 +1,4 @@
+PASS ERD matches EF snapshot: 12 tables, 91 column names
+PASS 23 FR rows have priority, UC, implementation issue and test IDs; 18 current UCs; 46 unique cases
+PASS local handoff links resolve
+PASS attached initial-run and diagram logs contain success verdicts

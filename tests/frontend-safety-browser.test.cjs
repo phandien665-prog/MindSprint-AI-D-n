@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const test = require('node:test');
+const {launchBrowser} = require('./playwright-launch.cjs');
 const root = path.resolve(__dirname, '..');
 let chromium;
 try { ({chromium} = require('playwright')); }
@@ -21,7 +22,7 @@ async function fixture(run) {
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     let browser;
     try {
-        browser = await chromium.launch({executablePath:process.env.TUTOR_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless:true});
+        browser = await launchBrowser(chromium);
         const context = await browser.newContext({serviceWorkers:'block',viewport:{width:1440,height:1000}});
         const page = await context.newPage(), base = `http://127.0.0.1:${server.address().port}`, calls = [], errors = [];
         const payload = '"><img src="/missing-audit-image" onerror="document.documentElement.dataset.auditXss=\'yes\'">';

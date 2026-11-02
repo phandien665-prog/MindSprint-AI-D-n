@@ -1,8 +1,7 @@
-name: Build and deploy MindSprint
+name: Build, test and deploy MindSprint
 
 on:
   push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -23,7 +22,7 @@ jobs:
       - run: dotnet build backend/MindSprint.Api/MindSprint.Api.csproj --configuration Release --no-restore
 
   frontend-build:
-    name: Frontend build
+    name: Frontend build and browser tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,11 +31,70 @@ jobs:
           node-version: 20
       - run: npm run build
         working-directory: frontend
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet build backend/MindSprint.Api/MindSprint.Api.csproj --configuration Release
+      - name: Install Chromium for Playwright checks
+        run: pwsh backend/MindSprint.Api/bin/Release/net8.0/playwright.ps1 install chromium --with-deps
+      - name: Run frontend and browser checks
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p test-results
+          node --test --test-concurrency=1 --test-reporter=tap tests/*.test.cjs backend/GoogleAuthChecks/*.test.cjs backend/TutorChecks/*.test.cjs 2>&1 | tee test-results/node-tests.tap
+      - name: Upload frontend test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-log
+          path: test-results/node-tests.tap
+          if-no-files-found: ignore
+
+  backend-checks:
+    name: Backend checks · ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: concurrency
+            project: backend/ConcurrencyChecks/ConcurrencyChecks.csproj
+          - name: google-auth
+            project: backend/GoogleAuthChecks/GoogleAuthChecks.csproj
+          - name: kanban
+            project: backend/KanbanChecks/KanbanChecks.csproj
+          - name: seed
+            project: backend/SeedChecks/SeedChecks.csproj
+          - name: tutor
+            project: backend/TutorChecks/TutorChecks.csproj
+          - name: url-import
+            project: backend/UrlImportChecks/UrlImportChecks.csproj
+          - name: gemini-reliability
+            project: tests/GeminiReliability/GeminiReliability.csproj
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Run isolated backend checks
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p test-results
+          dotnet run --project "${{ matrix.project }}" --configuration Release 2>&1 | tee "test-results/${{ matrix.name }}.log"
+      - name: Upload backend check log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-check-${{ matrix.name }}
+          path: test-results/${{ matrix.name }}.log
+          if-no-files-found: ignore
 
   deploy-backend:
     name: Deploy backend to Render
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [backend-build, frontend-build]
+    needs: [backend-build, frontend-build, backend-checks]
     runs-on: ubuntu-latest
     env:
       RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}

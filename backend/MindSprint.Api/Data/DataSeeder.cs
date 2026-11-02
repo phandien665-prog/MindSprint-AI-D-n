@@ -64,7 +64,7 @@ public static class DataSeeder
         }
 
         // Upsert new seed cards
-        foreach (var c in cards)
+        foreach (var c in cards.DistinctBy(card => card.ExternalId))
         {
             if (existingSystemCards.TryGetValue(c.ExternalId, out var existing))
             {

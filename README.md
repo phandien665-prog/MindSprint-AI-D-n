@@ -1,5 +1,12 @@
 # 🧠 MindSprintAI
 
+Giao diện Study Cockpit (nền kem/xanh chanh) đã được tích hợp vào frontend chức năng
+HTML/CSS/JS hiện có. Đăng nhập, flashcard/SRS, Sổ tay/Gia sư AI, giọng nói, Kanban
+và thống kê tiếp tục dùng API ASP.NET Core/PostgreSQL. Chạy frontend ở cổng 5500
+theo hướng dẫn bên dưới; không cần server Node/Vite riêng.
+
+Phần việc Đình Hùng: [báo cáo #16/#37 và NFR #45/#51/#54](docs/HUNG-ISSUES-REPORT.md), [bàn giao hiện tại](docs/AI_HANDOFF.md). Sổ tay có nhập tiếng Việt bằng giọng nói, sửa trước khi gửi và tùy chọn đọc/dừng trả lời; luôn giữ bàn phím. Nhận diện tùy trình duyệt/quyền micro và có thể dùng dịch vụ mạng. Bằng chứng tự động dùng speech/API giả lập; micro thực và toàn bộ NFR chưa nghiệm thu.
+
 [![Build](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions)
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -23,6 +30,14 @@
 | 📱 **PWA** | Service Worker + Manifest · Cài như app trên mobile · Chạy offline bằng localStorage |
 
 Xem [hướng dẫn nguồn ảnh/PDF](backend/TutorChecks/OCR.md) để biết giới hạn tệp và cách sử dụng.
+
+---
+
+## 🎬 Video nghiệm thu kiểm tra giữa kỳ
+
+[![Xem video nghiệm thu kiểm tra giữa kỳ](frontend/design-reference/home-desktop-v39.png)](docs/media/video-nghiem-thu-kiem-tra-giua-ky.mp4)
+
+[Xem hoặc tải video nghiệm thu kiểm tra giữa kỳ (MP4 · 11 phút 44 giây)](docs/media/video-nghiem-thu-kiem-tra-giua-ky.mp4)
 
 ---
 
@@ -257,6 +272,9 @@ Xem hướng dẫn chi tiết tại [CI-CD-SETUP.md](CI-CD-SETUP.md).
 | Tài liệu | Nội dung |
 |-----------|----------|
 | [Kiến trúc phần mềm](docs/architecture/software-architecture.md) | Bối cảnh, thành phần, dữ liệu, luồng xử lý, triển khai |
+| [Đặc tả yêu cầu 0.1](docs/requirements/software-requirements.md) | Phạm vi, 23 FR, 14 NFR, truy vết và các điểm chưa nghiệm thu (#58) |
+| [UML hiện trạng](docs/architecture/uml.md) | ERD, 18 use case, Activity/Sequence và bản SVG (#20) |
+| [Test case và kết quả ban đầu](docs/testing/sprint-3-results.md) | 46 case, log thực thi, phân biệt mock/live và phần chưa chạy (#17) |
 | [ERD](docs/architecture/erd.md) | 12 bảng, 91 cột, khóa ngoại và quan hệ nghiệp vụ; sơ đồ Mermaid cập nhật theo migrations PostgreSQL hiện tại |
 | [Yêu cầu phi chức năng](docs/architecture/non-functional-requirements.md) | 14 NFR có tiêu chí đo được |
 | [Kế hoạch kiểm thử Sprint 4](docs/architecture/sprint-4-test-plan.md) | Issues #42–#55, thứ tự và điều kiện nghiệm thu |

@@ -139,9 +139,11 @@ await Case("invalid JSON gives a safe actionable error", async () =>
 await Case("request concurrency is limited across service instances", async () =>
 {
     var active = 0; var peak = 0;
+    var peakLock = new object();
     async Task<HttpResponseMessage> Send(HttpRequestMessage request, CancellationToken token)
     {
-        var current = Interlocked.Increment(ref active); peak = Math.Max(peak, current);
+        var current = Interlocked.Increment(ref active);
+        lock (peakLock) peak = Math.Max(peak, current);
         await Task.Delay(25, token); Interlocked.Decrement(ref active); return Reply(200);
     }
     var (service, _, state) = Client(Send);
@@ -151,10 +153,19 @@ await Case("request concurrency is limited across service instances", async () =
 });
 await Case("client cancellation stops retries and releases the request slot", async () =>
 {
-    using var cancellation = new CancellationTokenSource(25);
+    using var cancellation = new CancellationTokenSource();
+    var requestStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     var context = new DefaultHttpContext { RequestAborted = cancellation.Token };
-    var (service, handler, state) = Client(async (_, token) => { await Task.Delay(5000, token); return Reply(200); }, context: context);
-    try { await service.TextAsync("hi"); throw new Exception("Expected cancellation"); }
+    var (service, handler, state) = Client(async (_, token) =>
+    {
+        requestStarted.TrySetResult();
+        await Task.Delay(5000, token);
+        return Reply(200);
+    }, context: context);
+    var pending = service.TextAsync("hi");
+    await requestStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    cancellation.Cancel();
+    try { await pending; throw new Exception("Expected cancellation"); }
     catch (OperationCanceledException) { }
     Check(handler.Models.Count == 1 && state.Slots.CurrentCount == 2, "Cancelled request kept running");
 });
