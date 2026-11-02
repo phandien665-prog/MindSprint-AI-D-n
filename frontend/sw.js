@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mindsprintai-cache-v65';
+const CACHE_NAME = 'mindsprintai-cache-v76';
 const MATH_FONTS = [
   'AMS-Regular', 'Caligraphic-Bold', 'Caligraphic-Regular', 'Fraktur-Bold', 'Fraktur-Regular',
   'Main-Bold', 'Main-BoldItalic', 'Main-Italic', 'Main-Regular', 'Math-BoldItalic', 'Math-Italic',
@@ -11,9 +11,10 @@ const ASSETS = [
   './tokens.css?v=39',
   './style.css?v=64',
   './cockpit.css?v=65',
-  './cockpit.js?v=65',
+  './cockpit.js?v=66',
   './assets/mindsprint-avatar-site.png',
-  './script.js?v=63',
+  './ui-refresh.css?v=10',
+  './script.js?v=67',
   './ui.js?v=59',
   './vocab_data.js?v=24',
   './api.js?v=56',
@@ -31,7 +32,7 @@ const ASSETS = [
   './manifest.json',
   './icon-192.jpg',
   './icon-512.jpg',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
+  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const esc = window.MindSprintText.escapeHTML;
     let activeAccountId = auth?.isLoggedIn() ? String(auth.getCurrentUser().id) : 'guest';
     let accountVersion = 0;
+    let restoreDailyGoals = () => {};
     const personalStorage = {
         key: (key) => activeAccountId === 'guest' ? key : `ms-account:${activeAccountId}:${key}`,
         getItem(key) { return localStorage.getItem(this.key(key)); },
@@ -21,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.MindSprintAuth.onAuthChange((user) => {
             const nameEl = document.getElementById('sidebar-user-name');
             if (nameEl) nameEl.textContent = user ? user.displayName : 'Khách';
+            const greetingName = document.getElementById('home-greeting-name');
+            if (greetingName) greetingName.textContent = user ? user.displayName : 'Khách';
         });
     }
 
@@ -2274,18 +2277,23 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             
             html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('app-theme', newTheme);
+            localStorage.setItem('app-theme-v2', newTheme);
             
             const icon = themeToggle.querySelector('i');
             icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         });
 
-        const savedTheme = localStorage.getItem('app-theme');
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            const icon = themeToggle.querySelector('i');
-            icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        // Migrate the earlier dark preference once so everyone sees the refreshed
+        // light palette after this release. New choices can still be saved normally.
+        const lightPaletteMigrationKey = 'app-theme-light-palette-v3';
+        if (localStorage.getItem(lightPaletteMigrationKey) !== 'done') {
+            localStorage.setItem('app-theme-v2', 'light');
+            localStorage.setItem(lightPaletteMigrationKey, 'done');
         }
+        const savedTheme = localStorage.getItem('app-theme-v2') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const themeIcon = themeToggle?.querySelector('i');
+        if (themeIcon) themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
 
         // Sidebar Toggle action listener for Focused Study Mode
         const sidebarToggleBtn = document.getElementById('sidebar-toggle');
@@ -2476,11 +2484,65 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const homeStartQuizBtn = document.getElementById('home-start-quiz-btn');
         const homeCreateDeckBtn = document.getElementById('home-create-deck-btn');
         const homeViewAllDecks = document.getElementById('home-view-all-decks');
+        const homeGoalsStartBtn = document.getElementById('home-goals-start-btn');
+
+        const homeGreetingTime = document.getElementById('home-greeting-time');
+        const homeGreetingName = document.getElementById('home-greeting-name');
+        const homeDateLabel = document.getElementById('home-date-label');
+        const hcmTimeZone = 'Asia/Ho_Chi_Minh';
+        const currentHour = Number(new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit', hourCycle: 'h23', timeZone: hcmTimeZone
+        }).format(new Date()));
+        if (homeGreetingTime) {
+            homeGreetingTime.textContent = currentHour < 11 ? 'Chào buổi sáng' : currentHour < 17 ? 'Chào buổi chiều' : 'Chào buổi tối';
+        }
+        if (homeGreetingName) {
+            homeGreetingName.textContent = document.getElementById('header-user-name')?.textContent?.trim() || 'Khách';
+        }
+        if (homeDateLabel) {
+            const formattedDate = new Intl.DateTimeFormat('vi-VN', {
+                weekday: 'long', day: 'numeric', month: 'long', timeZone: hcmTimeZone
+            }).format(new Date());
+            homeDateLabel.textContent = formattedDate.replace(',', ' · ').replace(/^./, char => char.toLocaleUpperCase('vi-VN'));
+        }
+
+        const dailyGoalInputs = [...document.querySelectorAll('[data-daily-goal]')];
+        const dailyProgressRing = document.getElementById('home-daily-progress-ring');
+        const dailyProgressValue = document.getElementById('home-daily-progress-value');
+        const dailyGoalsCount = document.getElementById('home-goals-count');
+        const todayKey = new Intl.DateTimeFormat('en-CA', {
+            year: 'numeric', month: '2-digit', day: '2-digit', timeZone: hcmTimeZone
+        }).format(new Date());
+        const dailyGoalsStorageKey = () => personalStorage.key(`mindsprint-daily-goals:${todayKey}`);
+        let savedDailyGoals = {};
+        const updateDailyGoals = () => {
+            const completedGoals = dailyGoalInputs.filter(input => input.checked).length;
+            const progressPercent = dailyGoalInputs.length ? Math.round(completedGoals / dailyGoalInputs.length * 100) : 0;
+            if (dailyProgressRing) {
+                dailyProgressRing.style.setProperty('--progress-angle', `${progressPercent * 3.6}deg`);
+                dailyProgressRing.setAttribute('aria-valuenow', String(progressPercent));
+            }
+            if (dailyProgressValue) dailyProgressValue.textContent = `${progressPercent}%`;
+            if (dailyGoalsCount) dailyGoalsCount.textContent = `${completedGoals}/${dailyGoalInputs.length} xong`;
+            savedDailyGoals = Object.fromEntries(dailyGoalInputs.map(input => [input.dataset.dailyGoal, input.checked]));
+            localStorage.setItem(dailyGoalsStorageKey(), JSON.stringify(savedDailyGoals));
+        };
+        restoreDailyGoals = () => {
+            try { savedDailyGoals = JSON.parse(localStorage.getItem(dailyGoalsStorageKey()) || '{}'); }
+            catch { savedDailyGoals = {}; }
+            dailyGoalInputs.forEach(input => { input.checked = Boolean(savedDailyGoals[input.dataset.dailyGoal]); });
+            updateDailyGoals();
+        };
+        dailyGoalInputs.forEach(input => input.addEventListener('change', updateDailyGoals));
+        restoreDailyGoals();
 
         if (homeStartQuizBtn) {
             homeStartQuizBtn.addEventListener('click', () => {
                 switchTab('quiz');
             });
+        }
+        if (homeGoalsStartBtn) {
+            homeGoalsStartBtn.addEventListener('click', () => switchTab('quiz'));
         }
 
         if (homeCreateDeckBtn) {
@@ -4419,6 +4481,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     async function loadAccountData(user) {
         const version = ++accountVersion;
         activeAccountId = user ? String(user.id) : 'guest';
+        restoreDailyGoals();
         flashcards = loadLocalCards();
         timetableSlots = readPersonalJSON('timetable-slots', user ? [] : defaultSlots.map(slot => ({...slot})));
         offlineQueue = readPersonalJSON(OFFLINE_QUEUE_KEY, []);
