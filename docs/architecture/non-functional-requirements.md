@@ -302,7 +302,7 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 ## NFR-11: Tương thích trình duyệt và chế độ offline
 
-**Ưu tiên:** P1. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** Service worker, localStorage, account-scoped state.
+**Ưu tiên:** P1. **Trạng thái:** Đã nghiệm thu ✅. **Thành phần:** Service worker, localStorage, account-scoped state.
 
 **Hiện trạng:** PWA cache app, API luôn gọi mạng; thư viện/lịch có lưu cục bộ và queue, Kanban/notebook online. Asset CDN ảnh hưởng lần cài cache đầu.
 
