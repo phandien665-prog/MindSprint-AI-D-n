@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,31 +11,13 @@ namespace MindSprint.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "Flashcards",
-                type: "datetime2",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            migrationBuilder.AddColumn<int>(
-                name: "Version",
-                table: "Flashcards",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+            // No-op: schema is created by InitialCreate_PostgreSQL
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "UpdatedAt",
-                table: "Flashcards");
-
-            migrationBuilder.DropColumn(
-                name: "Version",
-                table: "Flashcards");
+            // No-op
         }
     }
 }
