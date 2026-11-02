@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const esc = window.MindSprintText.escapeHTML;
     let activeAccountId = auth?.isLoggedIn() ? String(auth.getCurrentUser().id) : 'guest';
     let accountVersion = 0;
+    let restoreDailyGoals = () => {};
     const personalStorage = {
         key: (key) => activeAccountId === 'guest' ? key : `ms-account:${activeAccountId}:${key}`,
         getItem(key) { return localStorage.getItem(this.key(key)); },
@@ -2512,11 +2513,8 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const todayKey = new Intl.DateTimeFormat('en-CA', {
             year: 'numeric', month: '2-digit', day: '2-digit', timeZone: hcmTimeZone
         }).format(new Date());
-        const dailyGoalsStorageKey = `mindsprint-daily-goals:${todayKey}`;
+        const dailyGoalsStorageKey = () => personalStorage.key(`mindsprint-daily-goals:${todayKey}`);
         let savedDailyGoals = {};
-        try { savedDailyGoals = JSON.parse(localStorage.getItem(dailyGoalsStorageKey) || '{}'); }
-        catch { savedDailyGoals = {}; }
-        dailyGoalInputs.forEach(input => { input.checked = Boolean(savedDailyGoals[input.dataset.dailyGoal]); });
         const updateDailyGoals = () => {
             const completedGoals = dailyGoalInputs.filter(input => input.checked).length;
             const progressPercent = dailyGoalInputs.length ? Math.round(completedGoals / dailyGoalInputs.length * 100) : 0;
@@ -2527,10 +2525,16 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             if (dailyProgressValue) dailyProgressValue.textContent = `${progressPercent}%`;
             if (dailyGoalsCount) dailyGoalsCount.textContent = `${completedGoals}/${dailyGoalInputs.length} xong`;
             savedDailyGoals = Object.fromEntries(dailyGoalInputs.map(input => [input.dataset.dailyGoal, input.checked]));
-            localStorage.setItem(dailyGoalsStorageKey, JSON.stringify(savedDailyGoals));
+            localStorage.setItem(dailyGoalsStorageKey(), JSON.stringify(savedDailyGoals));
+        };
+        restoreDailyGoals = () => {
+            try { savedDailyGoals = JSON.parse(localStorage.getItem(dailyGoalsStorageKey()) || '{}'); }
+            catch { savedDailyGoals = {}; }
+            dailyGoalInputs.forEach(input => { input.checked = Boolean(savedDailyGoals[input.dataset.dailyGoal]); });
+            updateDailyGoals();
         };
         dailyGoalInputs.forEach(input => input.addEventListener('change', updateDailyGoals));
-        updateDailyGoals();
+        restoreDailyGoals();
 
         if (homeStartQuizBtn) {
             homeStartQuizBtn.addEventListener('click', () => {
@@ -4477,6 +4481,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     async function loadAccountData(user) {
         const version = ++accountVersion;
         activeAccountId = user ? String(user.id) : 'guest';
+        restoreDailyGoals();
         flashcards = loadLocalCards();
         timetableSlots = readPersonalJSON('timetable-slots', user ? [] : defaultSlots.map(slot => ({...slot})));
         offlineQueue = readPersonalJSON(OFFLINE_QUEUE_KEY, []);

@@ -14,26 +14,51 @@ if (sidebar && home) {
   sidebar.querySelector('.logo').after(profile);
   home.querySelector('.welcome-banner h2').textContent = 'Hôm nay học gì?';
 
-  const progress = document.createElement('div');
-  progress.className = 'cockpit-home-progress';
-  const stats = home.querySelector('.home-stats-grid');
-  stats.before(progress);
-  progress.append(stats);
-  const goals = document.createElement('section');
-  goals.className = 'cockpit-goals';
-  goals.innerHTML = '<h2>Mục tiêu hôm nay</h2><label><input type="checkbox"> Ôn lại ít nhất 1 bộ thẻ</label><label><input type="checkbox"> Làm một bài luyện tập</label><label><input type="checkbox"> Ghi chú điều mới muốn tìm hiểu</label><small>Đánh dấu mục tiêu bạn đã hoàn thành.</small>';
-  progress.append(goals);
-  let account = 'guest';
-  const goalKey = () => `ms-account:${account}:goals:${new Date().toLocaleDateString('en-CA')}`;
-  const checkboxes = [...goals.querySelectorAll('input')];
-  function restoreGoals() {
-    let saved = [];
-    try { saved = JSON.parse(localStorage.getItem(goalKey()) || '[]'); } catch { /* Optional browser storage. */ }
-    checkboxes.forEach((checkbox, index) => { checkbox.checked = saved?.[index] === true; });
+  let progress = home.querySelector('.home-daily-dashboard');
+  if (progress) {
+    progress.classList.add('cockpit-home-progress');
+  } else {
+    const stats = home.querySelector('.home-stats-grid');
+    if (stats) {
+      progress = document.createElement('div');
+      progress.className = 'cockpit-home-progress';
+      stats.before(progress);
+      progress.append(stats);
+    }
   }
-  goals.addEventListener('change', () => {
-    try { localStorage.setItem(goalKey(), JSON.stringify(checkboxes.map(input => input.checked))); } catch { /* Optional browser storage. */ }
-  });
+  let goals = home.querySelector('.home-goals-card, .cockpit-goals');
+  if (goals) {
+    goals.classList.add('cockpit-goals');
+  } else {
+    goals = document.createElement('section');
+    goals.className = 'cockpit-goals';
+    goals.innerHTML = '<h2>Mục tiêu hôm nay</h2><label><input type="checkbox"> Ôn lại ít nhất 1 bộ thẻ</label><label><input type="checkbox"> Làm một bài luyện tập</label><label><input type="checkbox"> Ghi chú điều mới muốn tìm hiểu</label><small>Đánh dấu mục tiêu bạn đã hoàn thành.</small>';
+    (progress || home).append(goals);
+  }
+  if (progress && goals.parentElement !== progress) progress.append(goals);
+  const checkboxes = [...goals.querySelectorAll('input[type="checkbox"]')];
+  // Current dashboard goals are account-scoped by script.js using data-daily-goal.
+  // Keep the legacy checklist storage for upstream markup without those keys.
+  if (checkboxes.length && checkboxes.every(input => !input.dataset.dailyGoal)) {
+    let account = 'guest';
+    const day = () => new Intl.DateTimeFormat('en-CA', {
+      year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Ho_Chi_Minh'
+    }).format(new Date());
+    const goalKey = () => `ms-account:${account}:goals:${day()}`;
+    function restoreGoals() {
+      let saved = [];
+      try { saved = JSON.parse(localStorage.getItem(goalKey()) || '[]'); } catch { /* Optional browser storage. */ }
+      checkboxes.forEach((checkbox, index) => { checkbox.checked = saved?.[index] === true; });
+    }
+    goals.addEventListener('change', () => {
+      try { localStorage.setItem(goalKey(), JSON.stringify(checkboxes.map(input => input.checked))); } catch { /* Optional browser storage. */ }
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+      window.MindSprintAuth.onAuthChange(user => { account = user?.id ?? 'guest'; restoreGoals(); });
+      account = window.MindSprintAuth.getCurrentUser()?.id ?? 'guest';
+      restoreGoals();
+    });
+  }
 
   const dock = document.createElement('nav');
   dock.className = 'cockpit-mobile-nav';
@@ -74,9 +99,7 @@ if (sidebar && home) {
         setMenu(!container.classList.contains('cockpit-menu-open'));
       }
     }, true);
-    window.MindSprintAuth.onAuthChange(user => { account = user?.id ?? 'guest'; restoreGoals(); });
-    account = window.MindSprintAuth.getCurrentUser()?.id ?? 'guest';
-    restoreGoals(); syncDock(); setMenu(false);
+    syncDock(); setMenu(false);
   });
 }
 
