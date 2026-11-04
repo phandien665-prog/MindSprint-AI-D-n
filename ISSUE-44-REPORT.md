@@ -255,6 +255,6 @@ node --test tests/frontend-session.test.cjs tests/frontend-text.test.cjs tests/f
 ---
 
 ## 5. Kết luận & Đề xuất
-Yêu cầu phi chức năng **NFR-03 (Issue #44)** đã được kiểm thử toàn diện, khắc phục điểm nghẽn concurrency (race condition) và xác minh đạt **118/118 (100%) tiêu chí nghiệm thu** trên kiến trúc ASP.NET Core 8 + PostgreSQL 17.
+Yêu cầu phi chức năng **NFR-03 (Issue #44)** đã được kiểm thử toàn diện, khắc phục điểm nghẽn concurrency (race condition) và xác minh đạt **138/138 (100%) tiêu chí nghiệm thu** (bao gồm 20/20 ConcurrencyChecks PASS) trên kiến trúc ASP.NET Core 8 + PostgreSQL 17.
 
 **Sẵn sàng cho việc rà soát (code review) và đóng Issue #44 trên GitHub.**
