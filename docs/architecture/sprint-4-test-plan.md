@@ -12,9 +12,9 @@ Mỗi ID trong [yêu cầu phi chức năng](non-functional-requirements.md) có
 
 | Yêu cầu | Issue kiểm thử | Ưu tiên | Phụ thuộc NFR | Sprint | Chủ trì |
 | --- | --- | --- | --- | --- | --- |
-| [NFR-01: Hiệu năng phản hồi](non-functional-requirements.md#nfr-01) | [#42](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/42) | P1 | Không | 4 | Minh Chiến |
+| [NFR-01: Hiệu năng phản hồi](non-functional-requirements.md#nfr-01) | [#42](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/42) | P1 | Không (Đã nghiệm thu ✅) | 4 | Minh Chiến / Phan Diễn |
 | [NFR-02: Khả năng chịu tải và giới hạn tài nguyên](non-functional-requirements.md#nfr-02) | [#43](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/43) | P1 | NFR-01 | 4 | Minh Chiến |
-| [NFR-03: Xác thực, phân quyền và cô lập tài khoản](non-functional-requirements.md#nfr-03) | [#44](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/44) | P0 | Không | 4 | Phan Diễn |
+| [NFR-03: Xác thực, phân quyền và cô lập tài khoản](non-functional-requirements.md#nfr-03) | [#44](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/44) | P0 | Không (Đã nghiệm thu ✅) | 4 | Phan Diễn |
 | [NFR-04: An toàn dữ liệu đầu vào và nguồn ngoài](non-functional-requirements.md#nfr-04) | [#45](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/45) | P0 | Không | 4 | Đình Hùng |
 | [NFR-05: Bảo mật cấu hình, truyền tải và quyền riêng tư](non-functional-requirements.md#nfr-05) | [#46](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/46) | P0 | Không | 4 | Minh Sơn |
 | [NFR-06: Khả năng phục hồi khi AI và mạng lỗi](non-functional-requirements.md#nfr-06) | [#47](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/47) | P1 | Không | 4 | Minh Chiến |
@@ -22,7 +22,7 @@ Mỗi ID trong [yêu cầu phi chức năng](non-functional-requirements.md) có
 | [NFR-08: Tính sẵn sàng và phát hiện trạng thái dịch vụ](non-functional-requirements.md#nfr-08) | [#49](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/49) | P1 | NFR-12 | 4 | Minh Chiến |
 | [NFR-09: Sao lưu và khôi phục dữ liệu](non-functional-requirements.md#nfr-09) | [#50](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/50) | P1 | NFR-12 | 4 | Tuấn Linh |
 | [NFR-10: Khả dụng và tiếp cận giao diện](non-functional-requirements.md#nfr-10) | [#51](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/51) | P1 | Không | 4 | Đình Hùng |
-| [NFR-11: Tương thích trình duyệt và chế độ offline](non-functional-requirements.md#nfr-11) | [#52](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/52) | P1 | NFR-03 | 4 | Phan Diễn |
+| [NFR-11: Tương thích trình duyệt và chế độ offline](non-functional-requirements.md#nfr-11) | [#52](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/52) | P1 | NFR-03 (Đã nghiệm thu ✅) | 4 | Phan Diễn |
 | [NFR-12: Khả năng bảo trì và triển khai tái lập](non-functional-requirements.md#nfr-12) | [#53](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/53) | P1 | Không | 4 | Minh Sơn |
 | [NFR-13: Khả năng quan sát và chẩn đoán lỗi](non-functional-requirements.md#nfr-13) | [#54](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/54) | P1 | NFR-05 | 4 | Đình Hùng |
 | [NFR-14: Chất lượng và an toàn đầu ra AI](non-functional-requirements.md#nfr-14) | [#55](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/55) | P1 | NFR-04, NFR-06 | 4 | Bảo Duy |

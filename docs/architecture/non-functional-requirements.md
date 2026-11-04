@@ -35,7 +35,7 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 ## NFR-01: Hiệu năng phản hồi
 
-**Ưu tiên:** P1. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** API CRUD, frontend, EF Core.
+**Ưu tiên:** P1. **Trạng thái:** Đã nghiệm thu ✅. **Thành phần:** API CRUD, frontend, EF Core.
 
 **Hiện trạng:** API đọc toàn bộ danh sách thẻ/công việc; chưa có báo cáo tải hoặc phân trang.
 
@@ -84,7 +84,7 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 ## NFR-03: Xác thực, phân quyền và cô lập tài khoản
 
-**Ưu tiên:** P0. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** JWT, TokenService, GoogleSignInService, controllers gồm `/api/weak-areas`, phiên frontend.
+**Ưu tiên:** P0. **Trạng thái:** Đã kiểm thử và nghiệm thu (Sprint 4 — Issue #44, commit 2cf980c). **Thành phần:** JWT, TokenService, GoogleSignInService, controllers gồm /api/weak-areas, phiên frontend.
 
 **Hiện trạng:** JWT kiểm tra issuer/audience/signature/lifetime; refresh rotation/revoke; lọc UserId/OwnerId. Token đang lưu localStorage.
 
@@ -101,7 +101,17 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 2. Kiểm tra rotation/revoke tuần tự và 2 request refresh đồng thời; nếu cùng token cấp hai phiên mới thì ghi lỗi, không coi single-flight trong một tab là bảo đảm server.
 3. Chạy các ca Google giả lập và chuyển tài khoản khi API đang chờ.
 
-**Bằng chứng:** Ma trận endpoint/status, response đã che token, test session và ảnh chuyển tài khoản.
+**Bằng chứng:** Ma trận endpoint/status ([ISSUE-44-REPORT.md](../../ISSUE-44-REPORT.md)), test harness C# [backend/AuthIsolationChecks](../../backend/AuthIsolationChecks), test session và Google frontend đạt 118/118 tests.
+
+| Trường | Nội dung nghiệm thu Sprint 4 |
+| --- | --- |
+| **NFR / test case** | NFR-03: JWT verification, Anti-IDOR matrix (Tasks, Flashcards, Notebooks, Study, Tutor), Refresh concurrency & Google sign-in |
+| **Baseline** | Commit `2cf980c`, .NET 8.0, PostgreSQL 17.11 (`mindsprint`), Node.js v20 |
+| **Kỳ vọng** | Mọi API từ chối unauthorized 401/404; Anti-IDOR 100%; Concurrency 10 luồng xoay vòng cùng token chỉ đúng 1 thành công |
+| **Thực tế** | JWT tampering 401; Anti-IDOR 404 trên toàn bộ endpoints User A vs B; Concurrency: 1 succeeded, 9 rejected |
+| **Bằng chứng** | `ISSUE-44-REPORT.md`, `SPEC-issue44.md`, `backend/AuthIsolationChecks/Program.cs` |
+| **Kết luận** | **Pass (118/118 tests đạt 100%)**, người chạy: `phandien665-prog` (28/10/2026) |
+| **Theo dõi** | Đã sửa race condition `TokenService.RotateAsync` qua atomic `ExecuteUpdateAsync`, PR branch `dien/issue-44-nfr03-auth-isolation` |
 
 **Nguồn mã:** [backend/MindSprint.Api/Services/TokenService.cs](https://github.com/tungtungsahul/MindSprint-AI-D-n/blob/9ba7acd2de05bf017ad5c2711644c9ee98bd6542/backend/MindSprint.Api/Services/TokenService.cs), [backend/MindSprint.Api/Services/GoogleSignInService.cs](https://github.com/tungtungsahul/MindSprint-AI-D-n/blob/9ba7acd2de05bf017ad5c2711644c9ee98bd6542/backend/MindSprint.Api/Services/GoogleSignInService.cs), [frontend/auth.js](https://github.com/tungtungsahul/MindSprint-AI-D-n/blob/9ba7acd2de05bf017ad5c2711644c9ee98bd6542/frontend/auth.js), [frontend/api.js](https://github.com/tungtungsahul/MindSprint-AI-D-n/blob/9ba7acd2de05bf017ad5c2711644c9ee98bd6542/frontend/api.js).
 
@@ -293,7 +303,7 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 ## NFR-11: Tương thích trình duyệt và chế độ offline
 
-**Ưu tiên:** P1. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** Service worker, localStorage, account-scoped state.
+**Ưu tiên:** P1. **Trạng thái:** Đã nghiệm thu ✅. **Thành phần:** Service worker, localStorage, account-scoped state.
 
 **Hiện trạng:** PWA cache app, API luôn gọi mạng; thư viện/lịch có lưu cục bộ và queue, Kanban/notebook online. Asset CDN ảnh hưởng lần cài cache đầu.
 
