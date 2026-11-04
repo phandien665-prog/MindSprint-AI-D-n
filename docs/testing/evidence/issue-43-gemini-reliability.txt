@@ -1,0 +1,18 @@
+C:\Users\Admin\Projects\crypto-intelligence\mindsprint-push\tests\GeminiReliability\GeminiReliability.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+C:\Users\Admin\Projects\crypto-intelligence\mindsprint-push\tests\GeminiReliability\GeminiReliability.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+PASS: JSON fences preserve json words inside the answer
+PASS: 503 retries the same model and recovers
+PASS: daily quota falls back immediately and shared cooldown skips exhausted model
+PASS: all models out of quota return an accurate error and wait time
+PASS: invalid credentials are not retried or sent to more models
+PASS: placeholder API key is rejected before a provider request
+PASS: invalid API key response from provider becomes a configuration error
+PASS: unavailable model moves to fallback without retries
+PASS: network errors recover with bounded retries
+PASS: slow primary times out and leaves time for backup
+PASS: all failed models report busy without exposing provider details
+PASS: multipart answers join text and omit thinking parts
+PASS: invalid JSON gives a safe actionable error
+PASS: request concurrency is limited across service instances
+PASS: client cancellation stops retries and releases the request slot
+All 15 Gemini reliability checks passed.
