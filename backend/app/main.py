@@ -12,9 +12,11 @@ from fastapi.staticfiles import StaticFiles
 
 try:
     from backend.app.database import engine, Base
+    from backend.app import schemas
     from backend.app.routers import auth, tasks, flashcards_review, flashcards_bulk
 except ImportError:
     from app.database import engine, Base
+    from app import schemas
     from app.routers import auth, tasks, flashcards_review, flashcards_bulk
 
 # Locate project root and frontend directories
@@ -63,6 +65,22 @@ app.include_router(auth.router)
 app.include_router(tasks.router)
 app.include_router(flashcards_review.router)
 app.include_router(flashcards_bulk.router)
+
+
+@app.post("/api/ai/flashcards", tags=["AI"])
+def api_ai_flashcards(dto: schemas.AIGenerateIn):
+    text = (dto.text or dto.notes or "").strip()
+    if not text:
+        return JSONResponse(status_code=400, content={"message": "Nội dung trống."})
+    from backend.app.routers.flashcards_bulk import _heuristic_generate_cards
+    count = max(1, min(dto.count or dto.num_cards or 10, 30))
+    drafts = _heuristic_generate_cards(text, "Chung", count)
+    return [
+        {"question": d.front, "answer": d.back, "example": f"Ví dụ: {d.front}"}
+        for d in drafts
+    ]
+
+
 
 
 # Lifecycle Startup: Initialize Database Tables & Mount Frontend

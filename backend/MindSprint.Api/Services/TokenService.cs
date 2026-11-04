@@ -77,6 +77,8 @@ public class TokenService(IConfiguration cfg, AppDbContext db)
         var rt = await db.RefreshTokens.Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Token == oldToken);
         if (rt is null || rt.IsRevoked || rt.ExpiresAt < DateTime.UtcNow) return null;
+        var affected = await db.RefreshTokens.Where(r => r.Id == rt.Id && !r.IsRevoked).ExecuteUpdateAsync(s => s.SetProperty(x => x.IsRevoked, true));
+        if (affected == 0) return null;
 
         rt.IsRevoked = true; // vô hiệu hoá cũ
         var newRt = new RefreshToken

@@ -33,7 +33,8 @@ var cfg = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string
     ["Google:ClientId"] = "google-check.apps.googleusercontent.com",
     ["Cors:Origins:0"] = "http://127.0.0.1:5500",
     ["Jwt:Key"] = "test-only-key-012345678901234567890123456789",
-    ["Jwt:Issuer"] = "auth-check", ["Jwt:Audience"] = "auth-check"
+    ["Jwt:Issuer"] = "auth-check", ["Jwt:Audience"] = "auth-check",
+    ["Cors:Origins:0"] = "http://127.0.0.1:5500", ["Cors:Origins:1"] = "http://localhost:5500"
 }).Build();
 var clock = new TestClock();
 var challenges = new GoogleLoginChallenges(clock);
