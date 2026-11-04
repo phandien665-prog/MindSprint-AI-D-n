@@ -14,7 +14,7 @@ public record RefreshDto([Required] string RefreshToken, string? DeviceHint);
 public record RevokeDto(string? RefreshToken);
 
 [Route("api/auth")]
-public class AuthController(AppDbContext db, IPasswordHasher<User> hasher, TokenService tokens) : ApiBase
+public class AuthController(AppDbContext db, IPasswordHasher<User> hasher, TokenService tokens, IHostEnvironment environment) : ApiBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterDto dto)
@@ -36,6 +36,8 @@ public class AuthController(AppDbContext db, IPasswordHasher<User> hasher, Token
     {
         var email = dto.Email.Trim().ToLowerInvariant();
         if (email == "demo") email = "notebookai@demo.local";
+        if (environment.IsProduction() && email == "notebookai@demo.local")
+            return Unauthorized(new { message = "Sai email hoặc mật khẩu." });
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user is null || hasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password) == PasswordVerificationResult.Failed)
             return Unauthorized(new { message = "Sai email hoặc mật khẩu." });
@@ -77,6 +79,7 @@ public class AuthController(AppDbContext db, IPasswordHasher<User> hasher, Token
     [HttpPost("demo")]
     public async Task<IActionResult> DemoLogin()
     {
+        if (environment.IsProduction()) return NotFound();
         const string demoEmail = "notebookai@demo.local";
         const string demoPassword = "MindSprint123!";
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == demoEmail);

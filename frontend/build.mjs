@@ -26,7 +26,9 @@ for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
         recursive: true,
         filter(source) {
             const relative = path.relative(root, source);
-            return !relative.split(path.sep).some(segment => ignored.has(segment) || segment.startsWith('.env'));
+            const relativePath = relative.split(path.sep).join('/');
+            return relativePath !== 'js/auth.js' &&
+                !relative.split(path.sep).some(segment => ignored.has(segment) || segment.startsWith('.env'));
         }
     });
 }

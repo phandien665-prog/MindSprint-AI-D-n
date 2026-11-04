@@ -12,20 +12,8 @@ public class WeakAreaService(AppDbContext db)
             .Where(w => w.UserId == userId)
             .OrderByDescending(w => w.AccuracyRate)
             .ThenByDescending(w => w.WrongCount)
-            .Select(w => new WeakAreaDto(
-                w.Id,
-                w.Category,
-                w.SubCategory,
-                w.Topic,
-                w.Reason,
-                w.WrongCount,
-                w.TotalAttempts,
-                w.AccuracyRate,
-                w.SuggestedAction,
-                w.AnalyzedAt,
-                w.LastUpdatedAt
-            ))
-            .ToListAsync();
+            .Select(w => new WeakAreaDto(w.Id, w.Category, w.SubCategory, w.Topic, w.Reason,
+                w.WrongCount, w.TotalAttempts, w.AccuracyRate, w.SuggestedAction, w.AnalyzedAt, w.LastUpdatedAt))
     }
 
     public async Task<AnalyzeResultDto> AnalyzeAndUpdateWeakAreasAsync(int userId)

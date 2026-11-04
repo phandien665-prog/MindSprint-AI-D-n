@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MindSprint.Api;
 using MindSprint.Api.Data;
 using MindSprint.Api.Models;
 using MindSprint.Api.Services;
@@ -13,25 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
 var isProduction = builder.Environment.IsProduction();
 
-var connectionString = cfg.GetConnectionString("Default");
-if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("ConnectionStrings:Default must be configured.");
-if (isProduction && connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase))
-    throw new InvalidOperationException("Set ConnectionStrings__Default to the production PostgreSQL URL or connection string.");
-
-var jwtKey = cfg["Jwt:Key"];
-if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32 ||
-    (isProduction && jwtKey.Contains("DOI_KHOA_NAY", StringComparison.OrdinalIgnoreCase)))
-    throw new InvalidOperationException("Set Jwt__Key to a secret value with at least 32 characters.");
-
-var defaultCorsOrigins = isProduction ? Array.Empty<string>() : cfg.GetSection("Cors:Origins").Get<string[]>() ?? [];
-var corsOrigins = defaultCorsOrigins
-    .Concat((cfg["Cors:AllowedOrigins"] ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-    .Where(origin => Uri.TryCreate(origin, UriKind.Absolute, out var uri) && (uri.Scheme is "http" or "https"))
-    .Distinct(StringComparer.OrdinalIgnoreCase)
-    .ToArray();
-if (isProduction && corsOrigins.Length == 0)
-    throw new InvalidOperationException("Set Cors__AllowedOrigins to the public frontend origin(s), separated by commas.");
+var connectionString = SecurityConfiguration.GetConnectionString(cfg, isProduction);
+var jwtKey = SecurityConfiguration.GetJwtKey(cfg, isProduction);
+var corsOrigins = SecurityConfiguration.GetCorsOrigins(cfg, isProduction);
 
 builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(PostgresConnectionString.Normalize(connectionString)));
 builder.Services.AddControllers();
@@ -88,24 +73,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ValidateLifetime = true
-    };
-    o.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = ctx =>
-        {
-            Console.WriteLine($"[AUTH ERROR] OnAuthenticationFailed: {ctx.Exception}");
-            return Task.CompletedTask;
-        },
-        OnChallenge = ctx =>
-        {
-            Console.WriteLine($"[AUTH CHALLENGE] Error: {ctx.Error}, Desc: {ctx.ErrorDescription}");
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = ctx =>
-        {
-            Console.WriteLine($"[AUTH SUCCESS] Token validated for: {ctx.Principal?.Identity?.Name}");
-            return Task.CompletedTask;
-        }
     };
 });
 builder.Services.AddAuthorization();

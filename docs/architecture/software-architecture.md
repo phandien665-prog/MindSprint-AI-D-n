@@ -141,7 +141,7 @@ flowchart LR
 | Google__ClientId | OAuth client ID để bật Google Sign-In |
 | API_BASE | HTTPS URL API nhúng vào runtime-config.js lúc build frontend |
 
-main chỉ mở Swagger ở Development. Startup chạy MigrateAsync và seed; lỗi DB/migration ngăn startup. Seed bỏ demo ở Production nhưng /api/auth/demo vẫn có thể tạo user với mật khẩu cố định — chưa thể kết luận demo đã bị khóa production.
+main chỉ mở Swagger ở Development. Startup chạy MigrateAsync và seed; lỗi DB/migration ngăn startup. Production yêu cầu JWT key hợp lệ và HTTPS CORS allowlist; seed, endpoint `/api/auth/demo` và đăng nhập tài khoản demo đều bị tắt. Kiểm thử local chưa thay thế xác minh staging.
 
 Docker hiện chưa cài Chromium; renderer dùng Edge trên Windows hoặc Playwright Chromium trên Linux. URL cần JS có thể thiếu runtime trong image; NFR-12 cần kiểm tra. Free hosting/cold start và lưu giữ database phải đối chiếu thực tế trước khi chốt SLO; tài liệu này không khẳng định một SLA của nhà cung cấp.
 
@@ -152,7 +152,7 @@ Docker hiện chưa cài Chromium; renderer dùng Edge trên Windows hoặc Play
 | Async API, AsNoTracking, indexes, frontend tĩnh | 01, 02 | Chưa có benchmark; GET danh sách chưa phân trang |
 | JWT/refresh, user filtering, Google nonce | 03 | Race rotation và giới hạn thu hồi access JWT |
 | URL guard, output renderer, validation | 04 | XSS toàn luồng, cắt nguồn âm thầm, giới hạn concurrent sources |
-| CORS allowlist, env config, TLS hosting | 05 | Demo endpoint, secret/log redaction, thông báo dữ liệu gửi AI |
+| CORS allowlist, env config, TLS hosting | 05 | HTTPS/CORS staging, secret/log scan trên deployment, ảnh xác nhận thông báo AI |
 | Gemini timeout/retry/fallback, giới hạn slot | 02, 06 | Mỗi CallAsync có budget riêng; tutor nhiều lượt có thể lâu hơn |
 | Version/index/SaveChanges | 07 | Lost update và thứ tự Kanban giữa request đồng thời |
 | /healthz và cấu hình Render health check | 08 | Health hiện không kiểm tra DB; chưa có monitor nghiệm thu |

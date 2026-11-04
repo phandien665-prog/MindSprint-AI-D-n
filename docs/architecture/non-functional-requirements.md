@@ -149,7 +149,7 @@ Hồ sơ tải chuẩn (NFR-01/02): staging riêng, ghi CPU/RAM, region, phiên 
 
 **Ưu tiên:** P0. **Trạng thái:** Đề xuất / chưa nghiệm thu. **Thành phần:** Vercel, Render, Program.cs, cấu hình và log.
 
-**Hiện trạng:** main có CORS allowlist, kiểm tra JWT key, Swagger chỉ Development. Seed demo tắt Production nhưng endpoint /api/auth/demo vẫn có thể tạo tài khoản.
+**Hiện trạng:** Production kiểm tra JWT key và HTTPS CORS allowlist, Swagger chỉ Development. Seed demo, endpoint `/api/auth/demo` và đăng nhập danh tính demo đều bị khóa ở Production. Cần chạy harness và xác minh trên staging trước khi nghiệm thu.
 
 **Tiêu chí đạt:**
 

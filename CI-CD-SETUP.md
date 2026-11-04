@@ -11,7 +11,7 @@ Nhánh hiện tại dùng **ASP.NET Core 8 + PostgreSQL** cho API và HTML/CSS/J
    - `Google__ClientId`: OAuth client ID nếu cần đăng nhập Google.
 3. Đợi lần deploy đầu hoàn tất. Ghi lại URL HTTPS và Service ID của `mindsprint-api` trong Render Dashboard.
 
-Render tạo `Jwt__Key` ngẫu nhiên và cấp URL PostgreSQL nội bộ qua `ConnectionStrings__Default`. API tự chuyển URL `postgresql://...` thành định dạng Npgsql, tự bind vào `PORT`, chỉ mở CORS cho origin đã cấu hình, và tắt Swagger ngoài môi trường Development. Tài khoản demo mật khẩu cố định chỉ được tạo ở Development.
+Render tạo `Jwt__Key` ngẫu nhiên và cấp URL PostgreSQL nội bộ qua `ConnectionStrings__Default`. API tự chuyển URL `postgresql://...` thành định dạng Npgsql, tự bind vào `PORT`, chỉ mở CORS cho origin HTTPS đã cấu hình, và tắt Swagger ngoài môi trường Development. Tài khoản demo mật khẩu cố định chỉ được tạo và đăng nhập ở Development; `/api/auth/demo` bị tắt ở Production.
 
 ## 2. Đưa giao diện lên Vercel
 
