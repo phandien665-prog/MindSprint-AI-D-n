@@ -3615,6 +3615,7 @@ dialog.app-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, c
 #tab-content-notebook .nb-messages { max-height: 65dvh; scrollbar-gutter: stable; }
 #tab-content-notebook .nb-msg { font-size: 1rem; line-height: 1.75; }
 #tab-content-notebook .nb-composer { flex-shrink: 0; padding: var(--space-md); }
+#tab-content-notebook .nb-ai-privacy { margin: 0; color: var(--text-secondary); font-size: .75rem; line-height: 1.4; }
 #tab-content-notebook .nb-composer #nb-q { min-height: 64px; max-height: 160px; }
 #tab-content-notebook .nb-composer-footer { margin-top: var(--space-sm); }
 .nb-expand-chat { display: inline-flex; align-items: center; gap: var(--space-sm); }
@@ -3633,8 +3634,9 @@ dialog.app-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, c
     #tab-content-notebook .nb-chat { gap: var(--space-sm); }
     #tab-content-notebook .nb-tutor-controls { padding-block: 0; }
     #tab-content-notebook .nb-composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-step-12); padding: var(--space-sm) var(--space-step-12); border-radius: var(--border-radius-md); }
-    #tab-content-notebook .nb-composer #nb-q { min-height: 44px; padding-block: var(--space-sm); }
-    #tab-content-notebook .nb-composer-footer { margin-top: 0; }
+    #tab-content-notebook .nb-composer #nb-q { grid-column: 1; grid-row: 1; min-height: 44px; padding-block: var(--space-sm); }
+    #tab-content-notebook .nb-composer-footer { grid-column: 2; grid-row: 1; margin-top: 0; }
+    #tab-content-notebook .nb-ai-privacy { grid-column: 1 / -1; grid-row: 2; }
     #tab-content-notebook #nb-composer-hint { display: none; }
 }
 
@@ -3657,9 +3659,10 @@ dialog.app-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, c
 .main-content:has(#tab-content-notebook.active.is-chat-expanded) { height: 100%; padding: var(--space-sm); overflow: hidden; }
 #tab-content-notebook.active.is-chat-expanded { height: 100%; min-height: 0; }
 #tab-content-notebook.is-chat-expanded .nb-layout { display: flex; flex: 1; min-height: 0; align-items: stretch; }
-#tab-content-notebook.is-chat-expanded .nb-chat { flex: 1; min-height: 0; height: auto; gap: var(--space-sm); }
+#tab-content-notebook.is-chat-expanded .nb-chat { flex: 1; min-height: 0; height: auto; gap: var(--space-step-4); }
 #tab-content-notebook.is-chat-expanded .nb-chat > * { flex-shrink: 0; }
 #tab-content-notebook.is-chat-expanded .nb-chat > .nb-messages { flex: 1; max-height: none; }
+#tab-content-notebook.is-chat-expanded .nb-composer { padding-block: var(--space-step-4); }
 #tab-content-notebook.is-chat-expanded .nb-welcome,
 #tab-content-notebook.is-chat-expanded .nb-tutor-work { flex: 1; min-height: 0; overflow-y: auto; }
 
