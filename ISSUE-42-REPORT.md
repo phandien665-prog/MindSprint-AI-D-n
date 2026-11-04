@@ -81,7 +81,7 @@ cd "C:\Users\phand\.gemini\antigravity\scratch\MindSprint-AI-D-n"
 node --test tests/nfr01-load-test.cjs
 
 # 2. Chạy bài đo Web Vitals (LCP, CLS, INP) trên Desktop & Mobile
-node --test tests/nfr01-web-vitals.test.cjs
+node --test tests/nfr01-web-vitals.cjs
 ```
 
 ---
