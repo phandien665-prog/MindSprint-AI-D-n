@@ -1,4 +1,5 @@
 using System.Text;
+using System.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using MindSprint.Api.Data;
 using MindSprint.Api.Models;
 using MindSprint.Api.Services;
 using UglyToad.PdfPig;
+using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 
 namespace MindSprint.Api.Controllers;
 
@@ -23,10 +25,10 @@ public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFact
 {
     private const int MaxSources = 20;
     private const int MaxCharsPerSource = 200_000;
-    private const long MaxFileBytes = 10 * 1024 * 1024;
+    private const long MaxFileBytes = TutorFileReader.MaxFileBytes;
 
     private Task<Notebook?> Own(int id) => db.Notebooks.FirstOrDefaultAsync(n => n.Id == id && n.UserId == UserId);
-    private Task<List<NotebookSource>> SourcesOf(int id) => db.NotebookSources.Where(s => s.NotebookId == id).OrderBy(s => s.Id).ToListAsync();
+    private Task<List<NotebookSource>> SourcesOf(int id) => db.NotebookSources.AsNoTracking().Where(s => s.NotebookId == id).OrderBy(s => s.Id).ToListAsync();
 
     // ---------- Notebook ----------
     [HttpGet]
@@ -57,7 +59,8 @@ public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFact
     public async Task<IActionResult> Sources(int id)
     {
         if (await Own(id) is null) return NotFound();
-        return Ok((await SourcesOf(id)).Select(s => new { s.Id, s.Title, s.Type, s.Origin, chars = s.Content.Length }));
+        return Ok(await db.NotebookSources.AsNoTracking().Where(s => s.NotebookId == id).OrderBy(s => s.Id)
+            .Select(s => new { s.Id, s.Title, s.Type, s.Origin, chars = s.Content.Length, hasFile = s.FileBytes != null, bytes = s.FileBytes == null ? 0 : s.FileBytes.Length }).ToListAsync());
     }
 
     [HttpPost("{id:int}/sources/text")]
@@ -68,38 +71,31 @@ public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFact
         return await Store(id, string.IsNullOrWhiteSpace(dto.Title) ? "Văn bản dán" : dto.Title.Trim(), "text", null, dto.Text);
     }
 
-    [HttpPost("{id:int}/sources/file"), RequestSizeLimit(MaxFileBytes)]
+    [HttpPost("{id:int}/sources/file"), RequestSizeLimit(MaxFileBytes + 64 * 1024)]
     public async Task<IActionResult> AddFile(int id, IFormFile file)
     {
         if (await Own(id) is null) return NotFound();
-        if (file is null || file.Length == 0) return BadRequest(new { message = "File trống." });
-        if (file.Length > MaxFileBytes) return BadRequest(new { message = "File tối đa 10MB." });
-
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        string text, type;
         try
         {
-            if (ext == ".pdf")
+            var uploaded = await TutorFileReader.ReadAsync(file, HttpContext.RequestAborted, allowText: true);
+            string text = "", type = "image";
+            if (uploaded.MimeType == "application/pdf")
             {
-                using var ms = new MemoryStream();
-                await file.CopyToAsync(ms);
-                ms.Position = 0;
-                using var pdf = PdfDocument.Open(ms);
-                text = string.Join("\n\n", pdf.GetPages().Select(p => p.Text));
+                using var pdf = PdfDocument.Open(uploaded.Bytes);
+                text = string.Join("\n\n", pdf.GetPages().Select(page => ContentOrderTextExtractor.GetText(page)));
                 type = "pdf";
             }
-            else if (ext is ".txt" or ".md" or ".csv")
+            else if (uploaded.MimeType == "text/plain")
             {
-                using var r = new StreamReader(file.OpenReadStream(), Encoding.UTF8);
-                text = await r.ReadToEndAsync();
+                text = Encoding.UTF8.GetString(uploaded.Bytes).Trim('\uFEFF');
                 type = "file";
             }
-            else return BadRequest(new { message = "Chỉ hỗ trợ PDF, TXT, MD, CSV." });
+            return await Store(id, Path.GetFileNameWithoutExtension(file.FileName), type, Path.GetFileName(file.FileName), text,
+                uploaded.MimeType == "text/plain" ? null : uploaded.Bytes, uploaded.MimeType);
         }
-        catch (Exception) { return BadRequest(new { message = "Không đọc được file này." }); }
-
-        if (string.IsNullOrWhiteSpace(text)) return BadRequest(new { message = "Không trích xuất được chữ (PDF dạng ảnh scan chưa được hỗ trợ)." });
-        return await Store(id, Path.GetFileNameWithoutExtension(file.FileName), type, file.FileName, text);
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested) { throw; }
+        catch (ArgumentException error) { return BadRequest(new { message = error.Message }); }
+        catch (Exception) { return BadRequest(new { message = "Không lưu được nguồn này. Tệp được giữ để bạn thử lại." }); }
     }
 
     [HttpPost("{id:int}/sources/url")]
@@ -206,16 +202,25 @@ public class NotebooksController(AppDbContext db, NotebookAi ai, IHttpClientFact
     }
 
     // ---------- helpers ----------
-    private async Task<IActionResult> Store(int id, string title, string type, string? origin, string text)
+    private async Task<IActionResult> Store(int id, string title, string type, string? origin, string text, byte[]? fileBytes = null, string? fileMediaType = null)
     {
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, HttpContext.RequestAborted);
         if (await db.NotebookSources.CountAsync(s => s.NotebookId == id) >= MaxSources)
             return BadRequest(new { message = $"Tối đa {MaxSources} nguồn mỗi sổ tay." });
         text = text.Trim();
-        if (text.Length > MaxCharsPerSource) text = text[..MaxCharsPerSource];
-        var s = new NotebookSource { NotebookId = id, Title = title.Length > 200 ? title[..200] : title, Type = type, Origin = origin, Content = text };
+        if (text.Length > MaxCharsPerSource) return BadRequest(new { message = "Nguồn vượt 200.000 ký tự. Hãy chọn phần cần học; nội dung chưa được cắt hoặc lưu." });
+        if (fileBytes is not null)
+        {
+            var used = await db.NotebookSources.Where(s => s.NotebookId == id)
+                .SumAsync(s => (long)(s.FileBytes == null ? 0 : s.FileBytes.Length));
+            if (used + fileBytes.LongLength > GeminiService.MaxAttachmentBytes)
+                return BadRequest(new { message = "Tổng ảnh/PDF trong sổ tay tối đa 10 MB để AI đọc đủ các nguồn. Hãy bớt nguồn hoặc dùng tệp nhỏ hơn." });
+        }
+        var s = new NotebookSource { NotebookId = id, Title = title.Length > 200 ? title[..200] : title, Type = type, Origin = origin, Content = text, FileBytes = fileBytes, FileMediaType = fileMediaType };
         db.NotebookSources.Add(s);
         await db.SaveChangesAsync();
-        return Ok(new { s.Id, s.Title, s.Type, s.Origin, chars = s.Content.Length });
+        await transaction.CommitAsync(HttpContext.RequestAborted);
+        return Ok(new { s.Id, s.Title, s.Type, s.Origin, chars = s.Content.Length, hasFile = s.FileBytes != null, bytes = s.FileBytes?.Length ?? 0 });
     }
 
     private static async Task<IActionResult> GuardImpl<T>(Func<Task<T>> work)

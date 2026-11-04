@@ -1,0 +1,35 @@
+flowchart TD
+    Start(["Mở Sổ tay AI"]) --> Auth{"Đã đăng nhập?"}
+    Auth -- Không --> Login["Đăng nhập dùng chung"]
+    Login --> Auth
+    Auth -- Có --> Notebook["Chọn / tạo sổ tay thuộc tài khoản"]
+    Notebook --> Action{"Chọn thao tác"}
+    Action -- "Thêm nguồn" --> Source["Text / URL công khai / JPG, PNG, WebP, PDF, TXT, MD, CSV"]
+    Source --> Validate["Kiểm tra ownership, đầu vào, URL/DNS, dung lượng, số nguồn"]
+    Validate --> Stored{"Lưu nguồn thành công?"}
+    Stored -- Không --> SourceError["Báo lỗi; giữ đầu vào để sửa / thử lại"]
+    SourceError --> Action
+    Stored -- Có --> List["Cập nhật nguồn; upload không tự giải bài"]
+    List --> Action
+    Action -- "Hỏi theo nguồn / Studio" --> HasSources{"Có nguồn?"}
+    HasSources -- Không --> NeedSource["Yêu cầu thêm ít nhất một nguồn"]
+    NeedSource --> Action
+    HasSources -- Có --> Request["Gửi question, history hoặc type, focus, count"]
+    Action -- "Gia sư" --> Tutor["Nhập đề / bài làm / code; có thể dùng nguồn đã lưu"]
+    Tutor --> Request
+    Request --> AI["Đọc nguồn; gọi Gemini; Studio có cache theo hash"]
+    AI --> Success{"Nhận JSON hợp lệ?"}
+    Success -- Không --> Retry["Báo lỗi / hạn mức; giữ nháp để thử lại"]
+    Retry --> Action
+    Success -- Có --> Context{"Tài khoản / sổ tay còn khớp?"}
+    Context -- Không --> Discard["Bỏ phản hồi đến trễ"]
+    Discard --> Notebook
+    Context -- Có --> Answer["Hiển thị trả lời; history hiện tại ở trình duyệt"]
+    Answer --> Save{"Người dùng chọn lưu?"}
+    Save -- "Ghi chú" --> Note["POST notes; đọc lại khi mở sổ tay"]
+    Save -- "Flashcard Studio" --> Cards["POST save-cards; thẻ thuộc người dùng"]
+    Save -- Không --> Action
+    Note & Cards --> Action
+    Action -- "Xóa nguồn" --> Remove["DELETE nguồn; bỏ chat / gợi ý cũ, giữ ghi chú"]
+    Remove --> Action
+    Action -- "Rời / đổi tài khoản" --> End(["Bỏ ngữ cảnh; dừng micro / đọc tiếng"])

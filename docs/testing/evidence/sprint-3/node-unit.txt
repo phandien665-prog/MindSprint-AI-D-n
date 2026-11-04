@@ -1,0 +1,37 @@
+✔ cleanOcrText cleans corrupted OCR symbols and fixes joined words (0.9494ms)
+✔ estimateOptimalCardCount estimates appropriate number of cards between 5 and 100 (1.2664ms)
+✔ extractFallbackCards filters exercise noise and produces atomic cards (2.1805ms)
+✔ AI quota errors preserve retry information without ending the login session (33.9315ms)
+✔ one login authorizes all features and notifies the app with the normalized user (2.3677ms)
+✔ simultaneous expired requests share one refresh and retry with the new access token (3.854ms)
+✔ failed refresh settles every pending request and signs out all app features (1.9654ms)
+✔ a late refresh from the previous account cannot overwrite a new login (2.4344ms)
+✔ switching accounts while a refresh body is being parsed preserves the new login (1.4433ms)
+✔ reload verifies the saved session and accepts PascalCase user fields (0.9893ms)
+✔ wrong credentials preserve the current session and surface the server error (1.0638ms)
+✔ login completes after account data subscribers are ready (1.6299ms)
+✔ demo login shares the same account and refresh session as regular login (1.4019ms)
+✔ upload refresh preserves a real file validation error instead of signing out (1.6636ms)
+✔ Vietnamese answer renders an inverse matrix and both source citation formats (18.3961ms)
+✔ multiline matrices stay intact with brackets, subscripts and line breaks (3.1899ms)
+✔ all common formula delimiters render fractions and exponents (2.3184ms)
+✔ code and untrusted HTML stay literal while normal math still renders (2.6644ms)
+✔ malformed formulas and escaped dollars do not break the rest of the answer (1.0503ms)
+✔ long fences preserve literal triple backticks, indentation and HTML inside saved programming notes (0.781ms)
+✔ auth validates while typing, handles Unicode length boundaries and blocks invalid submit/Enter (25.4962ms)
+✔ URL validates on input and submit, rejects broken HTTP URLs, clears errors and sends valid URLs (32.3744ms)
+✔ file change validates extension and 10 MiB boundary inline; submit checks again before upload (11.531ms)
+✔ failed uploads keep the selected file and show an inline error that clears after a new selection (8.3518ms)
+✔ voice is opt-in, keeps the typed draft, returns editable Vietnamese text and never auto-submits (14.104ms)
+✔ permission, silence and network failures retain keyboard input; unsupported browser has a fallback (4.2828ms)
+✔ manual editing, context changes and logout discard late recognition and stop speech (2.559ms)
+✔ answer reading is opt-in and cancellable, and speech errors do not break input (0.8476ms)
+✔ failed speech services and a reply after leaving notebook preserve keyboard fallback (1.2416ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 168.7908

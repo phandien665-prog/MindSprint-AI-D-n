@@ -1,0 +1,27 @@
+flowchart TD
+    Start(["Mở Kanban"]) --> Auth{"Đã đăng nhập?"}
+    Auth -- Không --> Login["Mời đăng nhập; không lưu task server"]
+    Login --> Auth
+    Auth -- Có --> Load["GET /api/tasks theo tài khoản"]
+    Load --> Loaded{"Tải thành công?"}
+    Loaded -- Không --> Error["Báo lỗi; cho thử lại"]
+    Error --> Load
+    Loaded -- Có --> Board["Todo / Doing / Done theo Position"]
+    Board --> Action{"Chọn thao tác"}
+    Action -- "Tìm / lọc / xem" --> Local["Chỉ đổi cách hiển thị"]
+    Local --> Board
+    Action -- "Tạo / sửa" --> Form["Nhập tiêu đề, mô tả, ưu tiên, hạn, trạng thái"]
+    Form --> Valid{"Dữ liệu hợp lệ?"}
+    Valid -- Không --> Form
+    Valid -- Có --> Save["POST tasks hoặc PUT tasks/id"]
+    Action -- "Kéo thả / bàn phím / nút di chuyển" --> Position["Tính vị trí, giữ cả task ẩn bởi bộ lọc"]
+    Position --> Move["PATCH tasks/id/move: status, position"]
+    Action -- Xóa --> Confirm{"Xác nhận xóa?"}
+    Confirm -- Hủy --> Board
+    Confirm -- Có --> Delete["DELETE tasks/id"]
+    Save & Move & Delete --> Response{"Server xác nhận?"}
+    Response -- Có --> Reload["Tải lại bảng; báo thành công"]
+    Reload --> Board
+    Response -- Không --> Keep["Báo lỗi; cho thử lại, không báo đã đồng bộ"]
+    Keep --> Board
+    Action -- Rời --> End(["Rời Kanban / đổi tài khoản: bỏ phản hồi cũ"])

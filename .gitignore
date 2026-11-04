@@ -38,3 +38,7 @@ test_results.json
 
 dist/
 release/
+
+# Local worktrees and design exploration
+.worktrees/
+.taste-skill/

@@ -1,0 +1,69 @@
+sequenceDiagram
+    autonumber
+    actor User as Người học
+    participant UI as auth.js / api.js / script.js
+    participant Auth as AuthController / GoogleAuthController
+    participant Cards as FlashcardsController / ReviewController
+    participant DB as AppDbContext
+    participant Google as Google Identity
+    User->>UI: Đăng nhập email và mật khẩu
+    UI->>Auth: POST /api/auth/login (email, password)
+    Auth->>DB: Tìm email chuẩn hóa, xác minh PasswordHash
+    alt Sai thông tin
+        Auth-->>UI: 401 và message
+    else Hợp lệ
+        Auth->>DB: Tạo RefreshToken
+        Auth-->>UI: token, refreshToken, user
+        UI->>UI: Lưu phiên, tải dữ liệu đúng tài khoản
+    end
+    opt Đăng nhập Google thay email
+        UI->>Auth: GET /api/auth/google/config và challenge
+        Auth-->>UI: enabled, clientId, nonce có thời hạn
+        UI->>Google: Yêu cầu ID token với nonce
+        Google-->>UI: credential
+        UI->>Auth: POST /api/auth/google (credential, nonce)
+        Auth->>Auth: Xác minh chữ ký, audience, nonce, origin và email
+        alt Email cũ chưa liên kết
+            Auth-->>UI: 409 google_link_required
+            User->>UI: Nhập mật khẩu tài khoản hiện có
+            UI->>Auth: POST google với existingPassword và challenge hợp lệ
+        end
+        Auth->>DB: Tạo / liên kết user khi xác minh thành công
+        Auth-->>UI: token, refreshToken, user
+    end
+    UI->>Cards: GET /api/flashcards và GET /api/review/due (Bearer token)
+    Cards->>DB: Thẻ hệ thống / OwnerId, tiến độ của UserId
+    Cards-->>UI: Thẻ và danh sách due, fresh
+    User->>UI: Mở đáp án, chọn Nhớ / Chưa nhớ
+    UI->>Cards: POST /api/review (cardId là ExternalId, remembered)
+    Cards->>DB: Kiểm tra quyền thẻ, đọc / tạo CardProgress
+    Cards->>Cards: SpacedRepetitionService.Apply
+    Cards->>DB: SaveChangesAsync
+    Cards-->>UI: repetition, intervalDays, eFactor, nextReviewDate, status
+    User->>UI: Sửa thẻ cá nhân
+    UI->>Cards: PUT /api/flashcards/externalId với version
+    Cards->>DB: Kiểm tra OwnerId và concurrency Version
+    alt Version cũ
+        Cards-->>UI: 409 với serverVersion, serverCard
+        UI-->>User: Cho chọn xử lý xung đột
+    else Hợp lệ
+        Cards->>DB: Lưu nội dung, tăng Version
+        Cards-->>UI: version, updatedAt
+    end
+    opt Request gặp 401 và còn refresh token
+        UI->>Auth: POST /api/auth/refresh (refreshToken)
+        Auth->>DB: RotateAsync: thu hồi token cũ, tạo token mới
+        alt Refresh hợp lệ
+            Auth-->>UI: token, refreshToken
+            UI->>Cards: Thử lại request gốc với token mới
+        else Refresh hết hạn / bị thu hồi
+            Auth-->>UI: 401
+            UI-->>User: Xóa phiên, yêu cầu đăng nhập lại
+        end
+    end
+    User->>UI: Đăng xuất
+    UI->>Auth: POST /api/auth/revoke (refreshToken), Bearer token
+    UI->>UI: Xóa phiên và ngữ cảnh cá nhân cục bộ
+    Auth->>DB: Thu hồi refresh token thuộc UserId
+    Auth-->>UI: 200 hoặc lỗi thu hồi
+    Note over UI,Auth: UI bỏ lỗi revoke, access token đã cấp không bị vô hiệu ngay

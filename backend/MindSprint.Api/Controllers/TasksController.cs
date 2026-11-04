@@ -25,8 +25,9 @@ public class TasksController(AppDbContext db) : ApiBase
         var uid = UserId;
         var status = dto.Status ?? TaskStatus.Todo;
         var pos = await db.Tasks.Where(t => t.UserId == uid && t.Status == status).CountAsync();
+        var normalizedDueDate = NormalizeUtc(dto.DueDate);
         var t = new KanbanTask { UserId = uid, Title = dto.Title.Trim(), Description = dto.Description?.Trim(),
-            DueDate = dto.DueDate, Priority = dto.Priority ?? "Medium", Status = status, Position = pos };
+            DueDate = normalizedDueDate, Priority = dto.Priority ?? "Medium", Status = status, Position = pos };
         db.Tasks.Add(t);
         await db.SaveChangesAsync();
         return Ok(t);
@@ -38,11 +39,23 @@ public class TasksController(AppDbContext db) : ApiBase
         if (Validate(dto) is { } error) return BadRequest(new { message = error });
         var t = await db.Tasks.FirstOrDefaultAsync(x => x.Id == id && x.UserId == UserId);
         if (t is null) return NotFound();
-        (t.Title, t.Description, t.DueDate) = (dto.Title.Trim(), dto.Description?.Trim(), dto.DueDate);
+        var normalizedDueDate = NormalizeUtc(dto.DueDate);
+        (t.Title, t.Description, t.DueDate) = (dto.Title.Trim(), dto.Description?.Trim(), normalizedDueDate);
         t.Priority = dto.Priority ?? t.Priority;
         if (dto.Status is { } status && status != t.Status) await Arrange(t, status, int.MaxValue);
         await db.SaveChangesAsync();
         return Ok(t);
+    }
+
+    private static DateTime? NormalizeUtc(DateTime? value)
+    {
+        if (value is null) return null;
+        return value.Value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.Value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
+        };
     }
 
     [HttpPatch("{id:int}/move")]
@@ -53,8 +66,18 @@ public class TasksController(AppDbContext db) : ApiBase
         var t = await db.Tasks.FirstOrDefaultAsync(x => x.Id == id && x.UserId == uid);
         if (t is null) return NotFound();
 
-        await Arrange(t, dto.Status, dto.Position);
-        await db.SaveChangesAsync();
+        using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
+        {
+            await Arrange(t, dto.Status, dto.Position);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            return Conflict(new { message = "Cập nhật đồng thời, vui lòng thử lại." });
+        }
         return Ok(t);
     }
 
@@ -63,11 +86,22 @@ public class TasksController(AppDbContext db) : ApiBase
     {
         var t = await db.Tasks.FirstOrDefaultAsync(x => x.Id == id && x.UserId == UserId);
         if (t is null) return NotFound();
-        db.Tasks.Remove(t);
-        var remaining = await db.Tasks.Where(x => x.UserId == UserId && x.Status == t.Status && x.Id != id)
-            .OrderBy(x => x.Position).ThenBy(x => x.Id).ToListAsync();
-        for (var position = 0; position < remaining.Count; position++) remaining[position].Position = position;
-        await db.SaveChangesAsync();
+        
+        using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        try
+        {
+            db.Tasks.Remove(t);
+            var remaining = await db.Tasks.Where(x => x.UserId == UserId && x.Status == t.Status && x.Id != id)
+                .OrderBy(x => x.Position).ThenBy(x => x.Id).ToListAsync();
+            for (var position = 0; position < remaining.Count; position++) remaining[position].Position = position;
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            return Conflict(new { message = "Cập nhật đồng thời, vui lòng thử lại." });
+        }
         return NoContent();
     }
 

@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const os = require('node:os');
+const {launchBrowser} = require('./playwright-launch.cjs');
 const root = path.resolve(__dirname, '..');
 let chromium;
 try { ({chromium} = require('playwright')); }
@@ -25,7 +26,7 @@ test('Kanban CRUD, ordered drops, filters, failed moves, reload and touch contro
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     let browser;
     try {
-        browser = await chromium.launch({executablePath:process.env.TUTOR_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless:true});
+        browser = await launchBrowser(chromium);
         const context = await browser.newContext({serviceWorkers:'block', viewport:{width:1440, height:1000}});
         const page = await context.newPage(), base = `http://127.0.0.1:${server.address().port}`;
         const errors = [], moves = [];

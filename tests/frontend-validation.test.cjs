@@ -137,7 +137,7 @@ test('URL validates on input and submit, rejects broken HTTP URLs, clears errors
 test('file change validates extension and 10 MiB boundary inline; submit checks again before upload', async () => {
     const h = await notebookHarness(), input = h.input('nb-file');
     assert.equal(h.input('nb-file-feedback').hidden, true);
-    for (const file of [null, {name: 'bad.exe', size: 1}, {name: 'report.pdf.exe', size: 1}, {name: 'large.pdf', size: 10 * 1024 * 1024 + 1}]) {
+    for (const file of [null, {name: 'empty.png', size: 0}, {name: 'bad.exe', size: 1}, {name: 'report.pdf.exe', size: 1}, {name: 'large.pdf', size: 10 * 1024 * 1024 + 1}]) {
         input.files = file ? [file] : [];
         await h.pane.dispatch('change', input);
         assert.equal(input.getAttribute('aria-invalid'), 'true');
@@ -145,7 +145,7 @@ test('file change validates extension and 10 MiB boundary inline; submit checks 
         await h.pane.dispatch('click', h.pane.querySelector('[data-act="add-file"]'));
     }
     assert.equal(h.calls.length, 0);
-    for (const name of ['report.PDF', 'notes.txt', 'lesson.md', 'data.csv']) {
+    for (const name of ['report.PDF', 'notes.txt', 'lesson.md', 'data.csv', 'photo.JPEG', 'diagram.png', 'chart.webp']) {
         input.files = [{name, size: 10 * 1024 * 1024}];
         await h.pane.dispatch('change', input);
         assert.equal(input.getAttribute('aria-invalid'), 'false');

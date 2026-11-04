@@ -66,3 +66,9 @@ test('malformed formulas and escaped dollars do not break the rest of the answer
     assert.match(html, /<strong>Vẫn đọc được<\/strong>/);
     assert.match(html, /class="nb-cite"/);
 });
+
+test('long fences preserve literal triple backticks, indentation and HTML inside saved programming notes', () => {
+    const source = '\n\tprint("``` <script> $[1] &")\n  ';
+    const html = renderer().markdown('````python\n' + source + '\n````');
+    assert.equal(html, '<pre><code>\n\tprint(&quot;``` &lt;script&gt; $[1] &amp;&quot;)\n  </code></pre>');
+});

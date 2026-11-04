@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using MindSprint.Api.Controllers;
@@ -30,6 +31,7 @@ JsonElement Body(IActionResult result) => JsonSerializer.SerializeToElement(((Ob
 int Status(IActionResult result) => ((ObjectResult)result).StatusCode ?? 200;
 var cfg = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> {
     ["Google:ClientId"] = "google-check.apps.googleusercontent.com",
+    ["Cors:Origins:0"] = "http://127.0.0.1:5500",
     ["Jwt:Key"] = "test-only-key-012345678901234567890123456789",
     ["Jwt:Issuer"] = "auth-check", ["Jwt:Audience"] = "auth-check",
     ["Cors:Origins:0"] = "http://127.0.0.1:5500", ["Cors:Origins:1"] = "http://localhost:5500"
@@ -51,11 +53,11 @@ await using var connection = new SqliteConnection("Data Source=:memory:");
 await connection.OpenAsync();
 await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).Options);
 await db.Database.EnsureCreatedAsync();
-var hasher = new PasswordHasher<User>(); var env = new TestHostEnvironment();
+var hasher = new PasswordHasher<User>();
 var validator = new StubValidator();
 var accounts = new GoogleAccountService(db, hasher);
 var tokens = new TokenService(cfg, db);
-GoogleAuthController Controller() => new(cfg, env, db, tokens, validator, challenges, accounts) {
+GoogleAuthController Controller() => new(cfg, new TestEnvironment(), db, tokens, validator, challenges, accounts) {
     ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
 };
 async Task<IActionResult> Login(string subject, string email, string nonceValue, string? password = null)
@@ -184,7 +186,14 @@ class TestClock : TimeProvider
     public DateTimeOffset Now { get; set; } = DateTimeOffset.UtcNow;
     public override DateTimeOffset GetUtcNow() => Now;
 }
-class TestHostEnvironment : IHostEnvironment { public string EnvironmentName { get; set; } = "Development"; public string ApplicationName { get; set; } = "MindSprint.Api"; public string ContentRootPath { get; set; } = AppContext.BaseDirectory; public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = null!; } class StubValidator : IGoogleTokenValidator
+class TestEnvironment : IHostEnvironment
+{
+    public string EnvironmentName { get; set; } = Environments.Development;
+    public string ApplicationName { get; set; } = "GoogleAuthChecks";
+    public string ContentRootPath { get; set; } = Directory.GetCurrentDirectory();
+    public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+}
+class StubValidator : IGoogleTokenValidator
 {
     public GoogleIdentity Identity { get; set; } = new("subject", "user@example.test", "Test");
     public GoogleSignInException? Failure { get; set; }

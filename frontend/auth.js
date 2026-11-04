@@ -220,11 +220,6 @@
                         <button type="button" class="auth-google-retry" data-act="google-retry" hidden>Thử lại với Google</button>
                     </div>
 
-                    <!-- Demo login -->
-                    <button class="auth-demo-btn" data-act="demo">
-                        <i class="fas fa-flask"></i> Thử với tài khoản Demo
-                    </button>
-
                     <!-- Footer note -->
                     <p class="auth-footer-note">
                         Bằng cách tiếp tục, bạn đồng ý với
@@ -290,7 +285,7 @@
                 const config = await api.googleConfig();
                 if (!isCurrent()) return;
                 if (!config.enabled || !config.clientId) {
-                    status.textContent = 'Đăng nhập Google chưa được bật. Bạn có thể dùng email hoặc Demo.';
+                    status.textContent = 'Đăng nhập Google chưa được bật. Bạn có thể đăng nhập hoặc đăng ký bằng email.';
                     return;
                 }
                 const [google, challenge] = await Promise.all([loadGoogleIdentity(), api.googleChallenge()]);
@@ -394,25 +389,6 @@
             }
         }
 
-        async function handleDemo() {
-            if (submitting || !overlay) return;
-            submitting = true;
-            overlay.querySelectorAll('button, input').forEach(element => { element.disabled = true; });
-            const btn = overlay.querySelector('[data-act="demo"]');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="auth-spinner"></span> Đang kết nối...'; }
-            try {
-                await demoLogin();
-                submitting = false;
-                close();
-                onSuccess?.();
-            } catch (e) {
-                showError(e.message || 'Không thể đăng nhập demo. Thử lại sau.');
-                submitting = false;
-                overlay?.querySelectorAll('button, input').forEach(element => { element.disabled = false; });
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-flask"></i> Thử với tài khoản Demo'; }
-            }
-        }
-
         render();
 
         overlay.addEventListener('input', (e) => {
@@ -432,8 +408,6 @@
                 mode = 'register'; render();
             } else if (act === 'submit') {
                 handleSubmit();
-            } else if (act === 'demo') {
-                handleDemo();
             } else if (act === 'google-retry') {
                 pendingGoogle = null;
                 overlay.querySelector('#auth-field-group').hidden = false;

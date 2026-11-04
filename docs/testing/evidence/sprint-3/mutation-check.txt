@@ -1,0 +1,2 @@
+PASS intentional mutation detected: removing the saved-card retry guard makes the AI browser test fail at "retry excludes saved and unselected cards".
+Original frontend/script.js restored byte-for-byte in finally.

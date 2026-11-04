@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const auth = window.MindSprintAuth;
     const api = window.MindSprintApi;
+    const esc = window.MindSprintText.escapeHTML;
     let activeAccountId = auth?.isLoggedIn() ? String(auth.getCurrentUser().id) : 'guest';
     let accountVersion = 0;
+    let restoreDailyGoals = () => {};
     const personalStorage = {
         key: (key) => activeAccountId === 'guest' ? key : `ms-account:${activeAccountId}:${key}`,
         getItem(key) { return localStorage.getItem(this.key(key)); },
@@ -20,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.MindSprintAuth.onAuthChange((user) => {
             const nameEl = document.getElementById('sidebar-user-name');
             if (nameEl) nameEl.textContent = user ? user.displayName : 'Khách';
+            const greetingName = document.getElementById('home-greeting-name');
+            if (greetingName) greetingName.textContent = user ? user.displayName : 'Khách';
         });
     }
 
@@ -344,12 +348,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function removeVietnameseTones(str) {
         if (!str) return '';
-        str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
-        str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
-        str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
-        str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
-        str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
-        str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+        str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a"); 
+        str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e"); 
+        str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i"); 
+        str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o"); 
+        str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u"); 
+        str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y"); 
         str = str.replace(/đ/g, "d");
         str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
         str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
@@ -358,8 +362,8 @@ document.addEventListener('DOMContentLoaded', () => {
         str = str.replace(/Ù|Ý|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
         str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
         str = str.replace(/Đ/g, "D");
-        str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, "");
-        str = str.replace(/\u02C6|\u0306|\u031B/g, "");
+        str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, ""); 
+        str = str.replace(/\u02C6|\u0306|\u031B/g, ""); 
         return str;
     }
 
@@ -421,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let filteredSubs = existingSubs;
         if (normalizedSearch) {
-            filteredSubs = existingSubs.filter(sub =>
+            filteredSubs = existingSubs.filter(sub => 
                 removeVietnameseTones(sub.toLowerCase()).includes(normalizedSearch)
             );
         }
@@ -1240,7 +1244,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         englishSection.style.display = 'block';
         itSection.style.display = 'block';
         viewContainer.querySelectorAll('.library-custom-section').forEach(sec => sec.remove());
-
+        
         const oldMsg = viewContainer.querySelector('.no-cards-message');
         if (oldMsg) oldMsg.remove();
 
@@ -1334,10 +1338,10 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 : `<span>${totalCount} thẻ học</span>`;
 
             cardDiv.innerHTML = `
-                <button class="deck-delete-btn" title="Xóa bộ thẻ này" aria-label="Xóa bộ thẻ ${subName}"><i class="fas fa-trash-alt"></i></button>
+                <button class="deck-delete-btn" title="Xóa bộ thẻ này" aria-label="Xóa bộ thẻ ${esc(subName)}"><i class="fas fa-trash-alt"></i></button>
                 <span class="deck-feature-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span>
                 <span class="deck-badge ${badgeClass}">${badgeText}</span>
-                <h4 class="deck-title">${subName}</h4>
+                <h4 class="deck-title">${esc(subName)}</h4>
                 <div class="deck-meta">
                     ${cardsInfoText}
                     <span class="suggestion-mastery" style="font-weight: 600; color: var(--primary-color);">Thành thạo ${masteryPercent}%</span>
@@ -1376,7 +1380,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 itDecksGrid.appendChild(cardDiv);
             } else {
                 const catKey = firstCard.category || 'general';
-                let customSec = viewContainer.querySelector(`.library-custom-section[data-category="${catKey}"]`);
+                let customSec = viewContainer.querySelector(`.library-custom-section[data-category="${CSS.escape(catKey)}"]`);
                 if (!customSec) {
                     customSec = document.createElement('div');
                     customSec.className = 'library-section library-custom-section';
@@ -1385,7 +1389,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                     customSec.innerHTML = `
                         <h3 class="library-section-header" style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-step-16); display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: var(--space-step-8); border-radius: var(--border-radius-md); transition: background 0.2s ease;">
                             <span style="display: flex; align-items: center; gap: var(--space-step-8);">
-                                <i class="fas fa-layer-group" style="color: var(--primary-color); font-size: 1.3rem;"></i> ${catName}
+                                <i class="fas fa-layer-group" style="color: var(--primary-color); font-size: 1.3rem;"></i> ${esc(catName)}
                             </span>
                             <i class="fas fa-chevron-down section-toggle-icon" style="transition: transform 0.3s ease; font-size: 1rem; color: var(--text-muted);"></i>
                         </h3>
@@ -1504,7 +1508,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         subs.forEach(sub => {
             const item = document.createElement('li');
             item.className = 'option-item' + (currentSubCategory === sub ? ' selected' : '');
-            item.innerHTML = `<span>${sub}</span> ${currentSubCategory === sub ? '<i class="fas fa-check"></i>' : ''}`;
+            item.innerHTML = `<span>${esc(sub)}</span> ${currentSubCategory === sub ? '<i class="fas fa-check"></i>' : ''}`;
             item.setAttribute('data-value', sub);
             optionsList.appendChild(item);
         });
@@ -1836,7 +1840,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 cardDiv.innerHTML = `
                     <span class="deck-feature-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span>
                     <span class="suggestion-badge ${badgeClass}" style="background: var(--bg-secondary); padding: var(--space-step-4) var(--space-step-8); border-radius: 6px; font-weight: 700; font-size: 0.75rem; align-self: flex-start; letter-spacing: 0.5px;">${badgeText}</span>
-                    <h4 class="suggestion-title" style="font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: var(--space-step-8);">${sub.name}</h4>
+                    <h4 class="suggestion-title" style="font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: var(--space-step-8);">${esc(sub.name)}</h4>
                     <div class="suggestion-meta" style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); margin-top: var(--space-step-8);">
                         <span>${sub.total} thẻ học</span>
                         <span class="suggestion-mastery" style="font-weight: 600; color: var(--primary-color);">Thành thạo ${sub.pct}%</span>
@@ -1919,16 +1923,16 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             actionsEl.hidden = false;
 
             listEl.innerHTML = result.map((area, index) => `
-                <div class="weak-area-card glass-panel" data-category="${area.category}" data-topic="${area.topic}">
+                <div class="weak-area-card glass-panel" data-category="${esc(area.category)}" data-topic="${esc(area.topic)}">
                     <div class="weak-area-header">
-                        <span class="weak-area-category badge-${area.category}">${getCategoryName(area.category)}</span>
+                        <span class="weak-area-category badge-${esc(area.category)}">${esc(getCategoryName(area.category))}</span>
                         <span class="weak-area-accuracy">${Math.round((1 - area.accuracyRate) * 100)}% lỡ</span>
                     </div>
-                    <h4 class="weak-area-topic">${area.topic}</h4>
-                    <p class="weak-area-reason">${area.reason}</p>
-                    <p class="weak-area-action"><i class="fas fa-lightbulb"></i> ${area.suggestedAction}</p>
+                    <h4 class="weak-area-topic">${esc(area.topic)}</h4>
+                    <p class="weak-area-reason">${esc(area.reason)}</p>
+                    <p class="weak-area-action"><i class="fas fa-lightbulb"></i> ${esc(area.suggestedAction)}</p>
                     <div class="weak-area-meta">
-                        <span>${area.wrongCount}/${area.totalAttempts} lần thử</span>
+                        <span>${esc(area.wrongCount)}/${esc(area.totalAttempts)} lần thử</span>
                         <span>${Math.round(area.accuracyRate * 100)}% chính xác</span>
                     </div>
                 </div>
@@ -1967,7 +1971,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 <div class="weak-areas-empty">
                     <i class="fas fa-exclamation-triangle" style="color: var(--danger-color);"></i>
                     <h3>Không thể tải dữ liệu</h3>
-                    <p>${e.message || 'Vui lòng thử lại sau.'}</p>
+                    <p>${esc(e.message || 'Vui lòng thử lại sau.')}</p>
                     <button class="btn btn-secondary" onclick="loadWeakAreas()" style="margin-top: var(--space-step-16);">
                         <i class="fas fa-sync"></i> Thử lại
                     </button>
@@ -1980,7 +1984,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     function startWeakAreaPractice(weakAreas) {
         // Filter flashcards matching weak areas
         const topics = weakAreas.map(w => w.topic.toLowerCase());
-        const practiceCards = flashcards.filter(c =>
+        const practiceCards = flashcards.filter(c => 
             topics.some(t => c.question.toLowerCase().includes(t) || c.answer.toLowerCase().includes(t))
         );
 
@@ -1994,11 +1998,11 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         currentSubCategory = 'all';
         filteredCards = practiceCards;
         currentIndex = 0;
-
+        
         // Switch to quiz tab
         const quizTab = document.querySelector('.sidebar [data-tab="quiz"]');
         if (quizTab) quizTab.click();
-
+        
         renderCard();
         updateStats();
     }
@@ -2009,7 +2013,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         if (confirm('Tính năng này sẽ mở Sổ tay AI để tạo thẻ ôn tập từ các chủ đề điểm yếu. Bạn muốn tiếp tục?')) {
             const notebookTab = document.querySelector('.sidebar [data-tab="notebook"]');
             if (notebookTab) notebookTab.click();
-
+            
             // Pre-fill the chat with a request to generate flashcards
             setTimeout(() => {
                 const chatInput = document.getElementById('nb-q');
@@ -2273,18 +2277,23 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
             html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('app-theme', newTheme);
-
+            localStorage.setItem('app-theme-v2', newTheme);
+            
             const icon = themeToggle.querySelector('i');
             icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         });
 
-        const savedTheme = localStorage.getItem('app-theme');
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            const icon = themeToggle.querySelector('i');
-            icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        // Migrate the earlier dark preference once so everyone sees the refreshed
+        // light palette after this release. New choices can still be saved normally.
+        const lightPaletteMigrationKey = 'app-theme-light-palette-v3';
+        if (localStorage.getItem(lightPaletteMigrationKey) !== 'done') {
+            localStorage.setItem('app-theme-v2', 'light');
+            localStorage.setItem(lightPaletteMigrationKey, 'done');
         }
+        const savedTheme = localStorage.getItem('app-theme-v2') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const themeIcon = themeToggle?.querySelector('i');
+        if (themeIcon) themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
 
         // Sidebar Toggle action listener for Focused Study Mode
         const sidebarToggleBtn = document.getElementById('sidebar-toggle');
@@ -2475,11 +2484,65 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const homeStartQuizBtn = document.getElementById('home-start-quiz-btn');
         const homeCreateDeckBtn = document.getElementById('home-create-deck-btn');
         const homeViewAllDecks = document.getElementById('home-view-all-decks');
+        const homeGoalsStartBtn = document.getElementById('home-goals-start-btn');
+
+        const homeGreetingTime = document.getElementById('home-greeting-time');
+        const homeGreetingName = document.getElementById('home-greeting-name');
+        const homeDateLabel = document.getElementById('home-date-label');
+        const hcmTimeZone = 'Asia/Ho_Chi_Minh';
+        const currentHour = Number(new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit', hourCycle: 'h23', timeZone: hcmTimeZone
+        }).format(new Date()));
+        if (homeGreetingTime) {
+            homeGreetingTime.textContent = currentHour < 11 ? 'Chào buổi sáng' : currentHour < 17 ? 'Chào buổi chiều' : 'Chào buổi tối';
+        }
+        if (homeGreetingName) {
+            homeGreetingName.textContent = document.getElementById('header-user-name')?.textContent?.trim() || 'Khách';
+        }
+        if (homeDateLabel) {
+            const formattedDate = new Intl.DateTimeFormat('vi-VN', {
+                weekday: 'long', day: 'numeric', month: 'long', timeZone: hcmTimeZone
+            }).format(new Date());
+            homeDateLabel.textContent = formattedDate.replace(',', ' · ').replace(/^./, char => char.toLocaleUpperCase('vi-VN'));
+        }
+
+        const dailyGoalInputs = [...document.querySelectorAll('[data-daily-goal]')];
+        const dailyProgressRing = document.getElementById('home-daily-progress-ring');
+        const dailyProgressValue = document.getElementById('home-daily-progress-value');
+        const dailyGoalsCount = document.getElementById('home-goals-count');
+        const todayKey = new Intl.DateTimeFormat('en-CA', {
+            year: 'numeric', month: '2-digit', day: '2-digit', timeZone: hcmTimeZone
+        }).format(new Date());
+        const dailyGoalsStorageKey = () => personalStorage.key(`mindsprint-daily-goals:${todayKey}`);
+        let savedDailyGoals = {};
+        const updateDailyGoals = () => {
+            const completedGoals = dailyGoalInputs.filter(input => input.checked).length;
+            const progressPercent = dailyGoalInputs.length ? Math.round(completedGoals / dailyGoalInputs.length * 100) : 0;
+            if (dailyProgressRing) {
+                dailyProgressRing.style.setProperty('--progress-angle', `${progressPercent * 3.6}deg`);
+                dailyProgressRing.setAttribute('aria-valuenow', String(progressPercent));
+            }
+            if (dailyProgressValue) dailyProgressValue.textContent = `${progressPercent}%`;
+            if (dailyGoalsCount) dailyGoalsCount.textContent = `${completedGoals}/${dailyGoalInputs.length} xong`;
+            savedDailyGoals = Object.fromEntries(dailyGoalInputs.map(input => [input.dataset.dailyGoal, input.checked]));
+            localStorage.setItem(dailyGoalsStorageKey(), JSON.stringify(savedDailyGoals));
+        };
+        restoreDailyGoals = () => {
+            try { savedDailyGoals = JSON.parse(localStorage.getItem(dailyGoalsStorageKey()) || '{}'); }
+            catch { savedDailyGoals = {}; }
+            dailyGoalInputs.forEach(input => { input.checked = Boolean(savedDailyGoals[input.dataset.dailyGoal]); });
+            updateDailyGoals();
+        };
+        dailyGoalInputs.forEach(input => input.addEventListener('change', updateDailyGoals));
+        restoreDailyGoals();
 
         if (homeStartQuizBtn) {
             homeStartQuizBtn.addEventListener('click', () => {
                 switchTab('quiz');
             });
+        }
+        if (homeGoalsStartBtn) {
+            homeGoalsStartBtn.addEventListener('click', () => switchTab('quiz'));
         }
 
         if (homeCreateDeckBtn) {
@@ -3039,7 +3102,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         quizCurrentOptions.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = 'quiz-option-btn';
-            btn.innerHTML = `<span class="option-prefix">${prefixes[idx]}</span><span class="option-text">${opt}</span>`;
+            btn.innerHTML = `<span class="option-prefix">${prefixes[idx]}</span><span class="option-text">${esc(opt)}</span>`;
             btn.addEventListener('click', () => {
                 if (!isQuizAnswered) checkChoiceAnswer(idx, btn);
             });
@@ -3175,9 +3238,9 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             quizWrongAnswers.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong>${item.question}</strong></td>
-                    <td class="text-danger">${item.userAnswer || '(Bỏ trống)'}</td>
-                    <td class="text-success">${item.correctAnswer}</td>
+                    <td><strong>${esc(item.question)}</strong></td>
+                    <td class="text-danger">${esc(item.userAnswer || '(Bỏ trống)')}</td>
+                    <td class="text-success">${esc(item.correctAnswer)}</td>
                 `;
                 wrongAnswersTbody.appendChild(tr);
             });
@@ -3344,11 +3407,11 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             });
 
             const catName = getCategoryName(slot.category);
-            const noteText = slot.note ? `<span class="slot-desc" title="${slot.note}">${slot.note}</span>` : '';
+            const noteText = slot.note ? `<span class="slot-desc" title="${esc(slot.note)}">${esc(slot.note)}</span>` : '';
 
             slotDiv.innerHTML = `
-                <span class="slot-time"><i class="far fa-clock"></i> ${slot.start} - ${slot.end}</span>
-                <span class="slot-title" title="${catName}">${catName}</span>
+                <span class="slot-time"><i class="far fa-clock"></i> ${esc(slot.start)} - ${esc(slot.end)}</span>
+                <span class="slot-title" title="${esc(catName)}">${esc(catName)}</span>
                 ${noteText}
                 <button class="delete-slot-btn" aria-label="Xóa giờ học"><i class="fas fa-trash"></i></button>
             `;
@@ -3927,7 +3990,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             </div>
             <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; margin-bottom: var(--space-step-12); color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">🔔 Lịch Học Bù</h2>
             <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-step-28); font-size: 0.95rem;">
-                Hệ thống phát hiện bạn đã bỏ lỡ giờ học môn <strong>${categoryName}</strong> lúc <strong>${start} - ${end}</strong> hôm nay do thiết bị khóa màn hình. Hãy học bù ngay nhé!
+                Hệ thống phát hiện bạn đã bỏ lỡ giờ học môn <strong>${esc(categoryName)}</strong> lúc <strong>${esc(start)} - ${esc(end)}</strong> hôm nay do thiết bị khóa màn hình. Hãy học bù ngay nhé!
             </p>
             <button class="btn btn-primary btn-large" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: var(--space-step-8);" id="makeup-study-now-btn" type="button">
                 <i class="fas fa-book-reader"></i> Học bù ngay bây giờ
@@ -4377,8 +4440,8 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                     const opt = document.createElement('div');
                     opt.className = 'option-item';
                     opt.style.cssText = 'padding: var(--space-step-8) var(--space-step-16); cursor: pointer; color: var(--text-primary); transition: background 0.2s ease; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem;';
-                    opt.innerHTML = `<span>${optVal}</span><i class="fas fa-check check-icon" style="display: none; color: var(--primary-color); font-size: 0.8rem;"></i>`;
-
+                    opt.innerHTML = `<span>${esc(optVal)}</span><i class="fas fa-check check-icon" style="display: none; color: var(--primary-color); font-size: 0.8rem;"></i>`;
+                    
                     opt.addEventListener('click', () => {
                         optionsContainer.querySelectorAll('.option-item').forEach(el => {
                             el.classList.remove('active');
@@ -4418,6 +4481,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     async function loadAccountData(user) {
         const version = ++accountVersion;
         activeAccountId = user ? String(user.id) : 'guest';
+        restoreDailyGoals();
         flashcards = loadLocalCards();
         timetableSlots = readPersonalJSON('timetable-slots', user ? [] : defaultSlots.map(slot => ({...slot})));
         offlineQueue = readPersonalJSON(OFFLINE_QUEUE_KEY, []);
