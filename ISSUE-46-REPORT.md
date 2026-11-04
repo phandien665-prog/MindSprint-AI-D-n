@@ -31,6 +31,8 @@ node --test tests/frontend-session.test.cjs tests/frontend-text.test.cjs tests/f
 
 Results: `SecurityChecks` 15/15 passed; `TutorChecks` 60/60 passed; frontend tests 22/22 passed. .NET harnesses use SQLite in memory; TutorChecks uses a mocked provider. No check calls Gemini or alters production data. Deployment evidence must be collected separately with synthetic test accounts and redacted HAR/logs.
 
+GitHub Actions run for commit `4bbdcae` initially failed because the `WeakAreaService` EF projection was missing `.ToListAsync()`. The missing materialization call was restored; Release build and all three local test groups passed again before the follow-up commit. Render deployment was skipped for the failed workflow and will depend on the follow-up CI run.
+
 ## Public deployment spot checks
 
 At 2026-11-04 09:00:25 +07:00, the frontend at `https://mindsprint-ai-d-n-frontend.vercel.app` pointed to `https://mindsprint-api-zyur.onrender.com`. API `/healthz` returned `200`; Vercel Origin preflight received the expected allow-origin header; `https://untrusted.example` received none; `/swagger/index.html` returned `404`.
