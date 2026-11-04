@@ -35,3 +35,6 @@ __pycache__/
 test_results.json
 
 .playwright-mcp/
+
+dist/
+release/

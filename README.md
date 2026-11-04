@@ -1,8 +1,9 @@
 # 🧠 MindSprintAI
 
+[![Release](https://img.shields.io/badge/Release-v0.2.0-brightgreen.svg)](RELEASE-0.2.md)
 [![Build](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions)
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Gemini AI](https://img.shields.io/badge/Gemini-AI-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -256,6 +257,8 @@ Xem hướng dẫn chi tiết tại [CI-CD-SETUP.md](CI-CD-SETUP.md).
 
 | Tài liệu | Nội dung |
 |-----------|----------|
+| [Ghi chú phát hành 0.2](RELEASE-0.2.md) | Báo cáo phát hành v0.2.0, tóm tắt tính năng mới và kết quả kiểm thử 230/230 test pass |
+| [Đặc tả yêu cầu 0.2](docs/requirements/software-requirements-0.2.md) | 25 FR, 14 NFR nghiệm thu 100%, giải quyết triệt để các GAP từ v0.1 |
 | [Kiến trúc phần mềm](docs/architecture/software-architecture.md) | Bối cảnh, thành phần, dữ liệu, luồng xử lý, triển khai |
 | [ERD](docs/architecture/erd.md) | 10 bảng, 69 cột, khóa ngoại và quan hệ nghiệp vụ |
 | [Yêu cầu phi chức năng](docs/architecture/non-functional-requirements.md) | 14 NFR có tiêu chí đo được |
