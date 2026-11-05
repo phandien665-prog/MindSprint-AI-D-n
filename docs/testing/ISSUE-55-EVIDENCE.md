@@ -9,7 +9,7 @@ Tài khoản GitHub đang kết nối là `tungtungsahul`. Công việc được
 ## 1. Phạm vi, mã nguồn và truy vết
 
 - Yêu cầu: [issue #55](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/55), [NFR-14](../architecture/non-functional-requirements.md#nfr-14), [kế hoạch Sprint 4](../architecture/sprint-4-test-plan.md).
-- Baseline checkout: `main`, commit `1a9fecb`. Nhánh triển khai: `codex/issue-55-ai-output-safety`. SHA đầy đủ của các bản triển khai được GitHub ghi tại lịch sử nhánh và PR.
+- Baseline checkout: `main`, commit `1a9fecb`. Nhánh triển khai: `codex/issue-55-ai-output-safety`. Đã tích hợp `origin/main` tại `c777123e3c22e0e84c3d98f6803252a5d11fe143` bằng merge `c0acf99d263c9075b7d18a06924a2026f6769c7c`. [PR nháp #81](https://github.com/tungtungsahul/MindSprint-AI-D-n/pull/81) ghi toàn bộ lịch sử triển khai; không merge vào main trong phiên này.
 - Backend được kiểm tra là **C# ASP.NET Core**. Bộ tích hợp mới dùng **PostgreSQL**, không dùng FastAPI hoặc SQLite thay bằng chứng tích hợp NFR-14.
 - Bug P1: [#80 — JSON học liệu sai cấu trúc và đoạn trích bịa](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/80).
 
@@ -54,7 +54,7 @@ Môi trường local: Windows, .NET SDK **10.0.401**, target ứng dụng **net8
 | `dotnet run --project tests/AiOutputChecks -c Release --no-build -- --postgres` | Local: **Blocked** do chưa có `MINDSPRINT_NFR14_DB` | Không tự kết nối DB ứng dụng của người dùng. CI sẽ dùng DB riêng |
 | Gemini thật (`--live`) | **Chưa chạy**, 0 request Gemini thật | Chờ baseline, model/API key, PostgreSQL test và người chấm |
 
-**CI PostgreSQL/Chromium:** đang chờ lần chạy trên GitHub; sẽ cập nhật liên kết và kết quả trước bàn giao cuối. Việc thêm workflow chưa được tính là CI pass.
+**CI PostgreSQL/Chromium đã PASS:** [run 42007247750](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions/runs/42007247750), job `contracts` — bản tích hợp `c0acf99d263c9075b7d18a06924a2026f6769c7c`. Đủ 40 contract checks, **10 kiểm tra controller/cache/ownership trên PostgreSQL 16**, 8 kiểm tra fixture/chấm điểm, browser test Chromium với 5 nhóm luồng. Provider vẫn giả lập. Lần chạy trước [42007063389](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions/runs/42007063389) cũng pass. Đã xác nhận kết quả từ trạng thái từng bước GitHub Actions, không suy ra từ việc workflow tồn tại.
 
 Đã làm kiểm tra nhạy hồi quy: tạm đổi giới hạn quiz từ `correctIndex <= 3` sang `<= 4`; ca **J08 thất bại** với thông báo `unsafe output accepted` và bộ kiểm tra trả lỗi (39 pass / 1 fail). Đã phục hồi mã nguồn rồi chạy lại. Điều này chứng minh test bắt được việc làm yếu kiểm tra chỉ số đáp án.
 
@@ -98,7 +98,7 @@ dotnet run --project tests/AiOutputChecks -c Release -- --live --baseline=<basel
 
 Không chạy lệnh trên như benchmark tải. Collector chạy tuần tự, 30 câu × 3 lượt; không dùng cache để giả tạo lặp model. Model cố định, retry=0, fallback rỗng, token limit=8192; nhiệt độ hiện tại 0.1 khi có responseSchema, 0.3 khi JSON không có schema. Nếu mọi hint đi qua bộ kiểm định, dự kiến **120 lần gọi provider** cho 90 output; số thực tế được ghi riêng mỗi output và không suy ra từ dự kiến.
 
-Collector ghi manifest (phiên bản runtime/PostgreSQL, fixture SHA256, hash 4 tệp prompt/validation, model/config), `outputs.jsonl` (đầu ra, timestamp Asia/Saigon, thời gian, status, từng lần gọi và modelVersion nếu provider trả), và `grades.json` còn trống. Mã thoát 2 sau thu live nghĩa là **chờ chấm**, không có nghĩa Pass. Lỗi dừng bất ngờ giữ những output đã thu; không ghi đè/chắp thêm vào thư mục cũ.
+Collector từ chối tracked changes chưa commit để SHA khớp mã đang chạy. Ghi manifest (phiên bản runtime/PostgreSQL, fixture SHA256, hash 4 tệp prompt/validation, model/config), `outputs.jsonl` (đầu ra, timestamp Asia/Saigon, thời gian, status, từng lần gọi, candidate thô kể cả khi bộ kiểm định chặn, modelVersion nếu provider trả), và `grades.json` còn trống. Candidate chỉ được ghi trong artifact fixture tổng hợp, không đưa vào UI khi bị chặn. Mã thoát 2 sau thu live nghĩa là **chờ chấm**, không có nghĩa Pass. Lỗi dừng bất ngờ giữ những output đã thu; không ghi đè/chắp thêm vào thư mục cũ.
 
 4. Người chấm đọc đầy đủ từng output cùng fixture, điền 90 dòng `grades.json`: `reviewer`, `passed`, `safetyPassed`, `rationale`; ca không đạt thêm `bugUrl` và `severity`. Mọi failure sau sửa phải chạy lại chiến dịch phù hợp, không tự sửa output gốc.
 5. Tạo một file kiểm chứng live tự chứa:

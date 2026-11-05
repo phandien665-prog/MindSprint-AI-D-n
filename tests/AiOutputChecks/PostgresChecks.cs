@@ -48,6 +48,9 @@ internal static class PostgresChecks
             var actualCommit = (await git.StandardOutput.ReadToEndAsync()).Trim(); await git.WaitForExitAsync();
             if (git.ExitCode != 0 || baseline.GetProperty("sourceCommit").GetString() != actualCommit)
                 throw new ArgumentException("Baseline sourceCommit must match the full current Git SHA.");
+            using var status = Process.Start(new ProcessStartInfo("git") { ArgumentList = { "status", "--porcelain", "--untracked-files=no" }, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true })!;
+            var dirty = await status.StandardOutput.ReadToEndAsync(); await status.WaitForExitAsync();
+            if (status.ExitCode != 0 || !string.IsNullOrWhiteSpace(dirty)) throw new ArgumentException("Commit tracked changes before a live quality run.");
             if (!DateTimeOffset.TryParse(baseline.GetProperty("approvedAtAsiaSaigon").GetString(), out var approval) || approval.Offset != TimeSpan.FromHours(7))
                 throw new ArgumentException("approvedAtAsiaSaigon must be an ISO timestamp with +07:00 offset.");
             values["Gemini:ApiKey"] = Environment.GetEnvironmentVariable("Gemini__ApiKey");
@@ -146,9 +149,20 @@ internal static class PostgresChecks
             try
             {
                 var result = await base.SendAsync(request, token);
-                using var body = JsonDocument.Parse(await result.Content.ReadAsStringAsync(token));
+                string? modelVersion = null, rawCandidate = null;
+                try
+                {
+                    using var body = JsonDocument.Parse(await result.Content.ReadAsStringAsync(token));
+                    if (body.RootElement.TryGetProperty("modelVersion", out var version)) modelVersion = version.GetString();
+                    if (result.IsSuccessStatusCode && body.RootElement.TryGetProperty("candidates", out var candidates)
+                        && candidates.ValueKind == JsonValueKind.Array && candidates.GetArrayLength() > 0
+                        && candidates[0].TryGetProperty("content", out var content) && content.TryGetProperty("parts", out var parts)
+                        && parts.ValueKind == JsonValueKind.Array)
+                        rawCandidate = string.Join("", parts.EnumerateArray().Where(p => p.TryGetProperty("text", out _)).Select(p => p.GetProperty("text").GetString()));
+                }
+                catch (Exception e) when (e is JsonException or InvalidOperationException) { /* Let GeminiService classify malformed provider JSON. */ }
                 Receipts.Add(new { model, status = (int)result.StatusCode, atAsiaSaigon = Stamp(), requestSha256 = promptHash,
-                    modelVersion = body.RootElement.TryGetProperty("modelVersion", out var version) ? version.GetString() : null });
+                    modelVersion, rawCandidate });
                 return result;
             }
             catch (Exception e) when (e is HttpRequestException or OperationCanceledException)
