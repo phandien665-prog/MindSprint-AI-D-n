@@ -133,15 +133,51 @@ await Case("safe hint uses independent review", async () => {
     var result = await tutor.SolveAsync(hint, sources);
     Check(result.RevealsAnswer == false && provider.Calls == before + 2, "hint review bypassed");
 });
+await Case("quality editor corrects a mathematical boundary claim before publishing", async () => {
+    provider.Output = "{\"answer\":\"a>=0 luôn có hai nghiệm phân biệt.\",\"needsClarification\":false}";
+    provider.QualityOutput = "{\"answer\":\"Với a<0 không có nghiệm thực; a=0 có một nghiệm phân biệt; a>0 có hai nghiệm phân biệt. Đề x²=9 có nghiệm ±3.\",\"needsClarification\":false}";
+    var before = provider.Calls;
+    var result = await tutor.SolveAsync(new("Giải x²=9 trên tập số thực."));
+    Check(result.Answer.Contains("a=0 có một nghiệm") && !result.Answer.Contains("a>=0 luôn"), "uncorrected mathematical claim published");
+    Check(provider.Calls == before + 2, "independent edit was skipped");
+});
+await Case("quality editor checks all feedback fields for a prematurely supplied answer", async () => {
+    provider.Output = "{\"answer\":\"Bạn bỏ nghiệm âm.\",\"needsClarification\":false,\"feedback\":{\"status\":\"incorrect\",\"errorType\":\"reasoning\",\"firstErrorStep\":\"Chỉ có x=3\",\"reason\":\"Nghiệm còn thiếu x=-3\",\"suggestion\":\"Bổ sung x=-3\"}}";
+    provider.QualityOutput = "{\"answer\":\"Hãy xét thêm nhánh âm.\",\"needsClarification\":false,\"feedback\":{\"status\":\"incorrect\",\"errorType\":\"reasoning\",\"firstErrorStep\":\"Chỉ có x=3\",\"reason\":\"Cần xét cả hai dấu khi tìm nghiệm của phương trình bình phương.\",\"suggestion\":\"Hãy kiểm tra nhánh âm rồi gửi lại bài đã sửa.\"}}";
+    var result = await tutor.SolveAsync(new("Giải x²=9", Action: "check", Submission: "Chỉ có x=3"));
+    Check(!JsonSerializer.Serialize(result).Contains("-3") && result.Feedback?.Status == "incorrect", "draft feedback leaked through");
+});
+await Case("malformed quality edit never falls back to the original draft", async () => {
+    provider.Output = "{\"answer\":\"Unverified draft\",\"needsClarification\":false}";
+    provider.QualityOutput = "not json";
+    await Invalid(async () => { await tutor.SolveAsync(new("Giải bài")); });
+});
+await Case("empty quality edit is rejected", async () => {
+    provider.QualityOutput = "{\"answer\":\"\",\"needsClarification\":false}";
+    await Invalid(async () => { await tutor.SolveAsync(new("Giải bài")); });
+});
+await Case("quality editor outage never publishes the original draft", async () => {
+    provider.QualityStatus = HttpStatusCode.ServiceUnavailable;
+    try { await tutor.SolveAsync(new("Giải bài")); throw new Exception("unverified draft published"); }
+    catch (GeminiUnavailableException e) { Check(e.StatusCode == 503, "editor outage not propagated"); }
+    finally { provider.QualityStatus = HttpStatusCode.OK; }
+});
+await Case("invalid feedback from quality editor is rejected again", async () => {
+    provider.Output = "{\"answer\":\"Đúng\",\"needsClarification\":false,\"feedback\":{\"status\":\"correct\",\"errorType\":\"none\",\"firstErrorStep\":null,\"reason\":\"Bài đúng\",\"suggestion\":\"Tiếp tục\"}}";
+    provider.QualityOutput = provider.Output.Replace("\"errorType\":\"none\"", "\"errorType\":\"calculation\"");
+    await Invalid(async () => { await tutor.SolveAsync(new("Giải bài", Action: "check", Submission: "Bài đã làm")); });
+});
 Console.WriteLine($"Contracts: {passed} passed; {failures.Count} failed. Synthetic HTTP provider, ASP.NET Core services; no model quality or PostgreSQL acceptance claimed.");
 Environment.ExitCode = failures.Count == 0 ? 0 : 1;
 
 sealed class Provider : HttpMessageHandler
 {
     public string Output = "{}", Review = "{\"isSafe\":true}";
+    public string? QualityOutput;
     public int Calls;
     public List<string> Prompts = [];
     public HttpStatusCode ReviewStatus = HttpStatusCode.OK;
+    public HttpStatusCode QualityStatus = HttpStatusCode.OK;
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
     {
         Calls++;
@@ -149,8 +185,9 @@ sealed class Provider : HttpMessageHandler
         var prompt = doc.RootElement.GetProperty("contents")[0].GetProperty("parts")[0].GetProperty("text").GetString()!;
         Prompts.Add(prompt);
         var review = prompt.StartsWith("KIỂM ĐỊNH GỢI Ý");
-        return new HttpResponseMessage(review ? ReviewStatus : HttpStatusCode.OK) {
-            Content = new StringContent(JsonSerializer.Serialize(new { candidates = new[] { new { finishReason = "STOP", content = new { parts = new[] { new { text = review ? Review : Output } } } } } }))
+        var quality = prompt.StartsWith("BIÊN TẬP GIA SƯ");
+        return new HttpResponseMessage(review ? ReviewStatus : quality ? QualityStatus : HttpStatusCode.OK) {
+            Content = new StringContent(JsonSerializer.Serialize(new { candidates = new[] { new { finishReason = "STOP", content = new { parts = new[] { new { text = review ? Review : quality ? QualityOutput ?? Output : Output } } } } } }))
         };
     }
 }

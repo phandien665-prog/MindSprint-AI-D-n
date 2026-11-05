@@ -31,6 +31,7 @@ internal static class PostgresChecks
     public static async Task<int> Run(string[] args)
     {
         var live = args.Contains("--live");
+        const int availabilityAttempts = 5, maxRetryAfterSeconds = 180, interCaseDelayMs = 8000;
         var connectionString = Environment.GetEnvironmentVariable("MINDSPRINT_NFR14_DB");
         if (string.IsNullOrWhiteSpace(connectionString)) { Console.WriteLine("BLOCKED: MINDSPRINT_NFR14_DB must point to a dedicated PostgreSQL test database; no SQLite substitute."); return 2; }
         var conn = new NpgsqlConnectionStringBuilder(connectionString);
@@ -137,7 +138,7 @@ internal static class PostgresChecks
             retries = cfg.GetValue<int>("Gemini:MaxRetries"), fallbackModels = cfg.GetSection("Gemini:FallbackModels").Get<string[]>() ?? [],
             attemptTimeoutSeconds = cfg.GetValue<int>("Gemini:AttemptTimeoutSeconds"), totalTimeoutSeconds = cfg.GetValue<int>("Gemini:TotalTimeoutSeconds"),
             temperatureWithSchema = 0.1, temperatureWithoutSchema = 0.3, maxOutputTokens = 8192,
-            collectorAvailabilityAttempts = 3, collectorMaxRetryAfterSeconds = 60, collectorInterCaseDelayMs = 1000,
+            collectorAvailabilityAttempts = availabilityAttempts, collectorMaxRetryAfterSeconds = maxRetryAfterSeconds, collectorInterCaseDelayMs = interCaseDelayMs,
             selectedGroups = selectedGroup is null ? new[] { "source", "tutor", "hint" } : new[] { selectedGroup }, expectedOutputs = selectedCases.Length * 3 };
         await File.WriteAllTextAsync(Path.Combine(output, "manifest.json"), JsonSerializer.Serialize(manifest, Json));
         var gradeRows = new List<object>();
@@ -160,7 +161,7 @@ internal static class PostgresChecks
                     : await tutor.Solve(10, new(question, Action: item.GetProperty("action").GetString()!, Submission: item.TryGetProperty("submission", out var submission) ? submission.GetString() : null, HintLevel: item.TryGetProperty("hintLevel", out var level) ? level.GetInt32() : null));
                 var retryAfter = RetryAfterSeconds(reply);
                 endpointAttempts.Add(new { attempt, status = Status(reply), atAsiaSaigon = Stamp(), providerCalls = recorder.Receipts.Count - attemptCalls, retryAfterSeconds = Status(reply) is 429 or 503 or 504 ? (int?)retryAfter : null });
-                if (Status(reply) is not (429 or 503 or 504) || attempt >= 3 || retryAfter > 60) break;
+                if (Status(reply) is not (429 or 503 or 504) || attempt >= availabilityAttempts || retryAfter > maxRetryAfterSeconds) break;
                 Console.WriteLine($"WAIT {id} run={run} availability={Status(reply)} retryAfter={Math.Max(1, retryAfter)}s");
                 await Task.Delay(TimeSpan.FromSeconds(Math.Max(1, retryAfter)));
             }
@@ -169,7 +170,7 @@ internal static class PostgresChecks
             await File.AppendAllTextAsync(Path.Combine(output, "outputs.jsonl"), JsonSerializer.Serialize(row, new JsonSerializerOptions(Json) { WriteIndented = false }) + "\n");
             gradeRows.Add(new { id, run, reviewer = "", reviewerKind = "", passed = (bool?)null, safetyPassed = (bool?)null, rationale = "", bugUrl = "", severity = "" });
             Console.WriteLine($"COLLECTED {id} run={run} status={Status(reply)} calls={recorder.Receipts.Count - before}");
-            await Task.Delay(1000);
+            await Task.Delay(interCaseDelayMs);
         }
         await File.WriteAllTextAsync(Path.Combine(output, "grades.json"), JsonSerializer.Serialize(gradeRows, Json));
         Console.WriteLine($"BLOCKED pending human grading: {gradeRows.Count} records collected. Run node tests/AiOutputChecks/report.mjs <output directory> after grading.");
@@ -182,7 +183,11 @@ internal static class PostgresChecks
         public List<object> Receipts = [];
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
-            var promptHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(await request.Content!.ReadAsStringAsync(token))));
+            var requestBody = await request.Content!.ReadAsStringAsync(token);
+            var promptHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(requestBody)));
+            using var requestJson = JsonDocument.Parse(requestBody);
+            var prompt = requestJson.RootElement.GetProperty("contents")[0].GetProperty("parts")[0].GetProperty("text").GetString()!;
+            var purpose = prompt.StartsWith("BIÊN TẬP GIA SƯ") ? "quality_edit" : prompt.StartsWith("KIỂM ĐỊNH GỢI Ý") ? "hint_review" : "generation";
             var model = request.RequestUri!.AbsolutePath.Split('/').Last().Split(':')[0];
             try
             {
@@ -199,12 +204,12 @@ internal static class PostgresChecks
                         rawCandidate = string.Join("", parts.EnumerateArray().Where(p => p.TryGetProperty("text", out _)).Select(p => p.GetProperty("text").GetString()));
                 }
                 catch (Exception e) when (e is JsonException or InvalidOperationException) { /* Let GeminiService classify malformed provider JSON. */ }
-                Receipts.Add(new { model, status = (int)result.StatusCode, atAsiaSaigon = Stamp(), requestSha256 = promptHash,
+                Receipts.Add(new { model, purpose, status = (int)result.StatusCode, atAsiaSaigon = Stamp(), requestSha256 = promptHash,
                     modelVersion, rawCandidate });
                 return result;
             }
             catch (Exception e) when (e is HttpRequestException or OperationCanceledException)
-            { Receipts.Add(new { model, status = 0, atAsiaSaigon = Stamp(), requestSha256 = promptHash, error = e.GetType().Name }); throw; }
+            { Receipts.Add(new { model, purpose, status = 0, atAsiaSaigon = Stamp(), requestSha256 = promptHash, error = e.GetType().Name }); throw; }
         }
     }
 }
