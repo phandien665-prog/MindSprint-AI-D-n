@@ -21,6 +21,12 @@ internal static class PostgresChecks
     private static int Status(IActionResult r) => r is ObjectResult o ? o.StatusCode ?? 200 : ((StatusCodeResult)r).StatusCode;
     private static ControllerContext Caller(int id) => new() { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, id.ToString())], "synthetic-nfr14")) } };
     private static void Check(bool value, string name) { if (!value) throw new Exception("FAIL " + name); Console.WriteLine("PASS " + name); }
+    internal static int RetryAfterSeconds(IActionResult reply)
+    {
+        var body = JsonSerializer.SerializeToElement((reply as ObjectResult)?.Value, Json);
+        return body.ValueKind == JsonValueKind.Object && body.TryGetProperty("retryAfterSeconds", out var retry)
+            && retry.ValueKind == JsonValueKind.Number && retry.TryGetInt32(out var seconds) ? seconds : 15;
+    }
 
     public static async Task<int> Run(string[] args)
     {
@@ -126,7 +132,8 @@ internal static class PostgresChecks
         var manifest = new { mode = "live-controller-postgresql", startedAtAsiaSaigon = Stamp(), baseline, runtime = Environment.Version.ToString(), postgres = connection.PostgreSqlVersion.ToString(), schema = conn.SearchPath, fixtureSha256 = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(fixturePath))), promptFiles,
             retries = cfg.GetValue<int>("Gemini:MaxRetries"), fallbackModels = cfg.GetSection("Gemini:FallbackModels").Get<string[]>() ?? [],
             attemptTimeoutSeconds = cfg.GetValue<int>("Gemini:AttemptTimeoutSeconds"), totalTimeoutSeconds = cfg.GetValue<int>("Gemini:TotalTimeoutSeconds"),
-            temperatureWithSchema = 0.1, temperatureWithoutSchema = 0.3, maxOutputTokens = 8192 };
+            temperatureWithSchema = 0.1, temperatureWithoutSchema = 0.3, maxOutputTokens = 8192,
+            collectorAvailabilityAttempts = 3, collectorMaxRetryAfterSeconds = 60, collectorInterCaseDelayMs = 1000 };
         await File.WriteAllTextAsync(Path.Combine(output, "manifest.json"), JsonSerializer.Serialize(manifest, Json));
         var gradeRows = new List<object>();
         for (var run = 1; run <= 3; run++)
@@ -139,13 +146,25 @@ internal static class PostgresChecks
             var question = item.GetProperty("question").GetString()!;
             var before = recorder.Receipts.Count;
             var watch = Stopwatch.StartNew();
-            var reply = group == "source" ? await controller.Chat(10, new(question, []))
-                : await tutor.Solve(10, new(question, Action: item.GetProperty("action").GetString()!, Submission: item.TryGetProperty("submission", out var submission) ? submission.GetString() : null, HintLevel: item.TryGetProperty("hintLevel", out var level) ? level.GetInt32() : null));
+            var endpointAttempts = new List<object>();
+            IActionResult reply;
+            for (var attempt = 1; ; attempt++)
+            {
+                var attemptCalls = recorder.Receipts.Count;
+                reply = group == "source" ? await controller.Chat(10, new(question, []))
+                    : await tutor.Solve(10, new(question, Action: item.GetProperty("action").GetString()!, Submission: item.TryGetProperty("submission", out var submission) ? submission.GetString() : null, HintLevel: item.TryGetProperty("hintLevel", out var level) ? level.GetInt32() : null));
+                var retryAfter = RetryAfterSeconds(reply);
+                endpointAttempts.Add(new { attempt, status = Status(reply), atAsiaSaigon = Stamp(), providerCalls = recorder.Receipts.Count - attemptCalls, retryAfterSeconds = Status(reply) is 429 or 503 or 504 ? (int?)retryAfter : null });
+                if (Status(reply) is not (429 or 503 or 504) || attempt >= 3 || retryAfter > 60) break;
+                Console.WriteLine($"WAIT {id} run={run} availability={Status(reply)} retryAfter={Math.Max(1, retryAfter)}s");
+                await Task.Delay(TimeSpan.FromSeconds(Math.Max(1, retryAfter)));
+            }
             watch.Stop();
-            var row = new { id, group, run, atAsiaSaigon = Stamp(), elapsedMs = watch.ElapsedMilliseconds, status = Status(reply), output = (reply as ObjectResult)?.Value, providerCalls = recorder.Receipts.Skip(before).ToArray() };
+            var row = new { id, group, run, atAsiaSaigon = Stamp(), elapsedMs = watch.ElapsedMilliseconds, status = Status(reply), output = (reply as ObjectResult)?.Value, endpointAttempts, providerCalls = recorder.Receipts.Skip(before).ToArray() };
             await File.AppendAllTextAsync(Path.Combine(output, "outputs.jsonl"), JsonSerializer.Serialize(row, new JsonSerializerOptions(Json) { WriteIndented = false }) + "\n");
             gradeRows.Add(new { id, run, reviewer = "", reviewerKind = "", passed = (bool?)null, safetyPassed = (bool?)null, rationale = "", bugUrl = "", severity = "" });
             Console.WriteLine($"COLLECTED {id} run={run} status={Status(reply)} calls={recorder.Receipts.Count - before}");
+            await Task.Delay(1000);
         }
         await File.WriteAllTextAsync(Path.Combine(output, "grades.json"), JsonSerializer.Serialize(gradeRows, Json));
         Console.WriteLine("BLOCKED pending human grading: 90 outputs collected. Run node tests/AiOutputChecks/report.mjs <output directory> after grading.");

@@ -32,6 +32,12 @@ var gemini = new GeminiService(new HttpClient(provider), cfg, new GeminiAvailabi
 // No database access in contract mode. Integration is a separate PostgreSQL run.
 await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql("Host=localhost;Database=unused_contract_mode").Options);
 var ai = new NotebookAi(db, gemini);
+await Case("collector Retry-After handles cooldown, null and long pauses", () => {
+    Check(PostgresChecks.RetryAfterSeconds(new Microsoft.AspNetCore.Mvc.ObjectResult(new { retryAfterSeconds = 6 })) == 6, "cooldown ignored");
+    Check(PostgresChecks.RetryAfterSeconds(new Microsoft.AspNetCore.Mvc.ObjectResult(new { retryAfterSeconds = (int?)null })) == 15, "nullable retry metadata broke collection");
+    Check(PostgresChecks.RetryAfterSeconds(new Microsoft.AspNetCore.Mvc.ObjectResult(new { retryAfterSeconds = 86400 })) == 86400, "long pause was silently shortened");
+    return Task.CompletedTask;
+});
 var sources = new[] { new NotebookSource { NotebookId = 1, Title = "Synthetic lesson", Type = "text", Content = "Nước sôi ở 100 °C tại áp suất 1 atm. Diện tích hình chữ nhật bằng chiều dài nhân chiều rộng." } };
 var card = new { question = "Nước sôi ở nhiệt độ nào?", answer = "100 °C", example = "Ở áp suất 1 atm." };
 var quiz = new { question = "Nước sôi ở nhiệt độ nào?", options = new[] { "100 °C", "20 °C", "0 °C", "50 °C" }, correctIndex = 0, explanation = "Nguồn nêu 100 °C tại 1 atm." };

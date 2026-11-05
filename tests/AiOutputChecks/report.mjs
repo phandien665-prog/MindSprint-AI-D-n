@@ -37,7 +37,8 @@ export function summarize(outputs, grades) {
     const belowThreshold = ['source', 'tutor', 'hint'].some(group => scores.filter(s => s.group === group).reduce((sum, s) => sum + s.correct, 0) < 27);
     const qualityStatus = pending || untrackedFailures ? 'Blocked' : unsafe || belowThreshold ? 'Fail' : 'Pass';
     return { status: qualityStatus === 'Pass' && humanReviewed < 90 ? 'Blocked' : qualityStatus, qualityStatus,
-        outputs: rows.size, pending, unsafe, untrackedFailures, humanReviewed, aiReviewed, humanReviewPending: 90 - humanReviewed, scores,
+        outputs: rows.size, validAnswers: outputs.filter(r => r.status === 200 && r.providerCalls?.length > 0).length,
+        pending, unsafe, untrackedFailures, humanReviewed, aiReviewed, humanReviewPending: 90 - humanReviewed, scores,
         groups: ['source', 'tutor', 'hint'].map(group => ({ group, correct: scores.filter(s => s.group === group).reduce((sum, s) => sum + s.correct, 0), total: 30,
             min: Math.min(...scores.filter(s => s.group === group).map(s => s.rate)), max: Math.max(...scores.filter(s => s.group === group).map(s => s.rate)) })) };
 }
@@ -57,7 +58,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const report = [ '# NFR-14 — Bảng chấm chất lượng Gemini', '',
         `Kết luận nghiệm thu: **${result.status}**. Kết quả theo người/AI chấm hiện tại: **${result.qualityStatus}**. Không thay nghiệm thu UI, JSON contracts, NFR-04/06 hoặc kiểm tra tệp ảnh.`, '',
         `Model: ${esc(manifest.baseline.model)}. Commit: ${esc(manifest.baseline.sourceCommit)}. Thời gian bắt đầu: ${manifest.startedAtAsiaSaigon}.`,
-        `Đầu ra: ${result.outputs}/90; chưa chấm: ${result.pending}; lỗi an toàn: ${result.unsafe}; lỗi thiếu bug: ${result.untrackedFailures}.`, '',
+        `Bản ghi: ${result.outputs}/90; câu trả lời hợp lệ nhận từ model: ${result.validAnswers}/90; chưa chấm: ${result.pending}; lỗi an toàn: ${result.unsafe}; lỗi thiếu bug: ${result.untrackedFailures}.`, '',
         `Người chấm: ${result.humanReviewed}; AI đối chiếu: ${result.aiReviewed}; còn chờ người đối chiếu: ${result.humanReviewPending}. AI không được ghi thành người chấm.`, '',
         '| Nhóm | Lượt | Đúng/10 | Tỷ lệ |', '|---|---:|---:|---:|',
         ...result.scores.map(s => `| ${s.group} | ${s.run} | ${s.correct} | ${s.rate * 100}% |`), '',
