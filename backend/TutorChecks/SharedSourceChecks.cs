@@ -138,7 +138,10 @@ internal static class SharedSourceChecks
             var parts=doc.RootElement.GetProperty("contents")[0].GetProperty("parts"); Prompt=parts[0].GetProperty("text").GetString()!;
             Binaries=parts.EnumerateArray().Where(p=>p.TryGetProperty("inlineData",out _)).Select(p=>p.GetProperty("inlineData").GetProperty("data").GetString()!).ToList();
             Labels=parts.EnumerateArray().Skip(1).Where(p=>p.TryGetProperty("text",out _)).Select(p=>p.GetProperty("text").GetString()!).ToList();
-            var answer=Prompt.Contains("KIỂM ĐỊNH") ? "{\"isSafe\":true}" : Prompt.Contains("Đề xuất 5") ? "[\"Câu 1\"]" : JsonSerializer.Serialize(new {answer="$x=4$ [1]",needsClarification=false,revealsAnswer=false,citations=new[]{new {source=Citation,quote="2x+3=11"}}});
+            // Image-only fixture has no text layer: do not manufacture an OCR quote.
+            var answer=Prompt.Contains("KIỂM ĐỊNH") ? "{\"isSafe\":true}" : Prompt.Contains("Đề xuất 5") ? "[\"Câu 1\"]"
+                : Prompt.Contains("câu trắc nghiệm 4 đáp án") ? JsonSerializer.Serialize(Enumerable.Range(1,10).Select(i=>new {question="Synthetic question "+i,options=new[]{"A","B","C","D"},correctIndex=0,explanation="Synthetic explanation"}))
+                : JsonSerializer.Serialize(new {answer="$x=4$ [1]",needsClarification=false,revealsAnswer=false,citations=new[]{new {source=Citation,quote=(string?)null}}});
             var body=new {candidates=new[] {new {finishReason="STOP",content=new {parts=new[] {new {text=answer}}}}}};
             return new HttpResponseMessage(HttpStatusCode.OK) {Content=new StringContent(JsonSerializer.Serialize(body))};
         }
