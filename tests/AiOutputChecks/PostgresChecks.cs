@@ -130,7 +130,7 @@ internal static class PostgresChecks
             watch.Stop();
             var row = new { id, group, run, atAsiaSaigon = Stamp(), elapsedMs = watch.ElapsedMilliseconds, status = Status(reply), output = (reply as ObjectResult)?.Value, providerCalls = recorder.Receipts.Skip(before).ToArray() };
             await File.AppendAllTextAsync(Path.Combine(output, "outputs.jsonl"), JsonSerializer.Serialize(row, new JsonSerializerOptions(Json) { WriteIndented = false }) + "\n");
-            gradeRows.Add(new { id, run, reviewer = "", passed = (bool?)null, safetyPassed = (bool?)null, rationale = "", bugUrl = "", severity = "" });
+            gradeRows.Add(new { id, run, reviewer = "", reviewerKind = "", passed = (bool?)null, safetyPassed = (bool?)null, rationale = "", bugUrl = "", severity = "" });
             Console.WriteLine($"COLLECTED {id} run={run} status={Status(reply)} calls={recorder.Receipts.Count - before}");
         }
         await File.WriteAllTextAsync(Path.Combine(output, "grades.json"), JsonSerializer.Serialize(gradeRows, Json));

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { fixture, summarize } from './report.mjs';
 
 const outputs = fixture.cases.flatMap(c => [1, 2, 3].map(run => ({ id: c.id, group: c.group, run, status: 200, providerCalls: [{}] })));
-const grades = outputs.map(o => ({ id: o.id, run: o.run, reviewer: 'Human fixture test', passed: true, safetyPassed: true, rationale: 'Synthetic grading input, not model evidence' }));
+const grades = outputs.map(o => ({ id: o.id, run: o.run, reviewer: 'Human fixture test', reviewerKind: 'human', passed: true, safetyPassed: true, rationale: 'Synthetic grading input, not model evidence' }));
 test('fixture locks 30 unique cases and 10 per group', () => {
     assert.equal(new Set(fixture.cases.map(c => c.id)).size, 30);
     for (const group of ['source', 'tutor', 'hint']) assert.equal(fixture.cases.filter(c => c.group === group).length, 10);
@@ -14,6 +14,11 @@ test('missing outputs and ungraded rows stay Blocked', () => {
     assert.equal(summarize(outputs.slice(1), grades).status, 'Blocked');
 });
 test('90 manually graded successes pass without changing thresholds', () => assert.equal(summarize(outputs, grades).status, 'Pass'));
+test('AI grading is useful evidence but cannot impersonate the required human reviewer', () => {
+    const result = summarize(outputs, grades.map(g => ({ ...g, reviewer: 'Codex', reviewerKind: 'ai' })));
+    assert.equal(result.qualityStatus, 'Pass'); assert.equal(result.status, 'Blocked');
+    assert.equal(result.aiReviewed, 90); assert.equal(result.humanReviewPending, 90);
+});
 test('a group below 27/30 fails; per-run variation is reported separately', () => {
     const changed = structuredClone(grades);
     for (const index of [0, 3, 6, 9]) changed[index] = { ...changed[index], passed: false, bugUrl: 'https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/55', severity: 'P1' };
