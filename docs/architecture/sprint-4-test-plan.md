@@ -12,9 +12,9 @@ Mỗi ID trong [yêu cầu phi chức năng](non-functional-requirements.md) có
 
 | Yêu cầu | Issue kiểm thử | Ưu tiên | Phụ thuộc NFR | Sprint | Chủ trì |
 | --- | --- | --- | --- | --- | --- |
-| [NFR-01: Hiệu năng phản hồi](non-functional-requirements.md#nfr-01) | [#42](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/42) | P1 | Không | 4 | Minh Chiến |
+| [NFR-01: Hiệu năng phản hồi](non-functional-requirements.md#nfr-01) | [#42](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/42) | P1 | Không (Đã nghiệm thu ✅) | 4 | Minh Chiến / Phan Diễn |
 | [NFR-02: Khả năng chịu tải và giới hạn tài nguyên](non-functional-requirements.md#nfr-02) | [#43](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/43) | P1 | NFR-01 | 4 | Minh Chiến |
-| [NFR-03: Xác thực, phân quyền và cô lập tài khoản](non-functional-requirements.md#nfr-03) | [#44](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/44) | P0 | Không | 4 | Phan Diễn |
+| [NFR-03: Xác thực, phân quyền và cô lập tài khoản](non-functional-requirements.md#nfr-03) | [#44](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/44) | P0 | Không (Đã nghiệm thu ✅) | 4 | Phan Diễn |
 | [NFR-04: An toàn dữ liệu đầu vào và nguồn ngoài](non-functional-requirements.md#nfr-04) | [#45](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/45) | P0 | Không | 4 | Đình Hùng |
 | [NFR-05: Bảo mật cấu hình, truyền tải và quyền riêng tư](non-functional-requirements.md#nfr-05) | [#46](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/46) | P0 | Không | 4 | Minh Sơn |
 | [NFR-06: Khả năng phục hồi khi AI và mạng lỗi](non-functional-requirements.md#nfr-06) | [#47](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/47) | P1 | Không | 4 | Minh Chiến |
@@ -22,7 +22,7 @@ Mỗi ID trong [yêu cầu phi chức năng](non-functional-requirements.md) có
 | [NFR-08: Tính sẵn sàng và phát hiện trạng thái dịch vụ](non-functional-requirements.md#nfr-08) | [#49](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/49) | P1 | NFR-12 | 4 | Minh Chiến |
 | [NFR-09: Sao lưu và khôi phục dữ liệu](non-functional-requirements.md#nfr-09) | [#50](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/50) | P1 | NFR-12 | 4 | Tuấn Linh |
 | [NFR-10: Khả dụng và tiếp cận giao diện](non-functional-requirements.md#nfr-10) | [#51](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/51) | P1 | Không | 4 | Đình Hùng |
-| [NFR-11: Tương thích trình duyệt và chế độ offline](non-functional-requirements.md#nfr-11) | [#52](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/52) | P1 | NFR-03 | 4 | Phan Diễn |
+| [NFR-11: Tương thích trình duyệt và chế độ offline](non-functional-requirements.md#nfr-11) | [#52](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/52) | P1 | NFR-03 (Đã nghiệm thu ✅) | 4 | Phan Diễn |
 | [NFR-12: Khả năng bảo trì và triển khai tái lập](non-functional-requirements.md#nfr-12) | [#53](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/53) | P1 | Không | 4 | Minh Sơn |
 | [NFR-13: Khả năng quan sát và chẩn đoán lỗi](non-functional-requirements.md#nfr-13) | [#54](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/54) | P1 | NFR-05 | 4 | Đình Hùng |
 | [NFR-14: Chất lượng và an toàn đầu ra AI](non-functional-requirements.md#nfr-14) | [#55](https://github.com/tungtungsahul/MindSprint-AI-D-n/issues/55) | P1 | NFR-04, NFR-06 | 4 | Bảo Duy |
@@ -63,6 +63,17 @@ Các nhóm kiểm thử độc lập có thể chạy cùng thời gian nếu kh
 | HTTP Kanban | Đặt `MINDSPRINT_TEST_API` trỏ API test rồi `node --test tests/kanban-integration.test.cjs` | Tạo dữ liệu test riêng; không tự chứng minh mọi NFR |
 
 Race/ownership/migrations/restore cần PostgreSQL thật của staging. Các test Python tier1…tier4 dành cho FastAPI/SQLite, không dùng để kết luận API C# pass.
+
+## CI tự động
+
+Workflow [Build, test and deploy MindSprint](../../.github/workflows/ci-cd.yml) chạy khi push lên nhánh và khi mở/cập nhật PR vào `main`. CI thực hiện:
+
+- Build backend ASP.NET Core và frontend.
+- Chạy các harness `ConcurrencyChecks`, `GoogleAuthChecks`, `KanbanChecks`, `SeedChecks`, `TutorChecks`, `UrlImportChecks` và `GeminiReliability`; log của mỗi harness được lưu thành artifact của workflow.
+- Cài Chromium rồi chạy tuần tự các bài Node.js frontend/browser để hạn chế tranh chấp tài nguyên; log TAP được lưu thành artifact. Bài `kanban-integration.test.cjs` chỉ chạy khi có `MINDSPRINT_TEST_API`, nếu không sẽ được đánh dấu skip. Có thể đặt `TUTOR_BROWSER` để chọn browser khác khi chạy thủ công.
+- Chỉ kích hoạt deploy Render khi push trực tiếp lên `main` và các job build/kiểm tra đều pass.
+
+Các harness backend hiện dùng SQLite cô lập hoặc provider giả lập; các bài browser dùng API mock. Vì vậy CI là cổng hồi quy tự động cho những hành vi đã được bao phủ, không phải bằng chứng cho PostgreSQL staging, traffic thật, cấu hình production hay bất kỳ NFR nào. Bộ Python tier1…tier4 nhắm FastAPI/SQLite lịch sử nên không chạy trong workflow hiện tại. Vẫn cần chạy và ghi kết quả live riêng cho #42–#55 theo điều kiện nghiệm thu ở dưới.
 
 ## Cách ghi kết quả
 

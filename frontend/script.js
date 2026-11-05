@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const esc = window.MindSprintText.escapeHTML;
     let activeAccountId = auth?.isLoggedIn() ? String(auth.getCurrentUser().id) : 'guest';
     let accountVersion = 0;
+    let restoreDailyGoals = () => {};
     const personalStorage = {
         key: (key) => activeAccountId === 'guest' ? key : `ms-account:${activeAccountId}:${key}`,
         getItem(key) { return localStorage.getItem(this.key(key)); },
@@ -21,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.MindSprintAuth.onAuthChange((user) => {
             const nameEl = document.getElementById('sidebar-user-name');
             if (nameEl) nameEl.textContent = user ? user.displayName : 'Khách';
+            const greetingName = document.getElementById('home-greeting-name');
+            if (greetingName) greetingName.textContent = user ? user.displayName : 'Khách';
         });
     }
 
@@ -191,17 +194,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return normalizeCards(cards);
     }
     let flashcards = loadLocalCards();
-    
+
     // #9 – Offline queue for flashcard operations
     const OFFLINE_QUEUE_KEY = 'ms-offline-queue';
     let offlineQueue = readPersonalJSON(OFFLINE_QUEUE_KEY, []);
     let processingQueue = false;
     let studyDays = readPersonalJSON('study-days', []);
-    
+
     function saveOfflineQueue() {
         personalStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(offlineQueue));
     }
-    
+
     async function processOfflineQueue() {
         if (!api?.isLoggedIn() || processingQueue || offlineQueue.length === 0) return;
         const version = accountVersion;
@@ -229,10 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (version === accountVersion) processingQueue = false;
         }
     }
-    
+
     // Process queue when online
     window.addEventListener('online', processOfflineQueue);
-    
+
     // Variables for App State
     let currentCategory = 'all';
     let currentSubCategory = 'all';
@@ -296,22 +299,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const exampleEl = document.getElementById('card-example');
     const frontCatEl = document.getElementById('card-front-cat');
     const backCatEl = document.getElementById('card-back-cat');
-    
+
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
     const progressText = document.getElementById('progress-text');
     const progressBar = document.getElementById('progress-bar');
-    
+
     const statTotal = document.getElementById('stat-total');
     const statKnown = document.getElementById('stat-known');
     const statReview = document.getElementById('stat-review');
-    
+
     const categoryItems = document.querySelectorAll('.category-item');
     const subFilterContainer = document.getElementById('sub-filter-container');
     const subCategorySelect = document.getElementById('topic-options-list');
     const srsToggle = document.getElementById('srs-toggle');
     const srsStatusText = document.getElementById('srs-status-text');
-    
+
     const btnRemember = document.getElementById('btn-remember');
     const btnForget = document.getElementById('btn-forget');
 
@@ -1007,10 +1010,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const quizSubcategorySelect = document.getElementById('quiz-subcategory');
     const quizModeSelect = document.getElementById('quiz-mode');
     const quizLimitSelect = document.getElementById('quiz-limit');
-    
+
     let quizSubDropdownController = null;
     let gameSubDropdownController = null;
-    
+
     const quizQNum = document.getElementById('quiz-q-num');
     const quizQBar = document.getElementById('quiz-q-bar');
     const quizScoreText = document.getElementById('quiz-score');
@@ -1019,16 +1022,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const quizCardCat = document.getElementById('quiz-card-cat');
     const quizQuestionLabel = document.getElementById('quiz-question-label');
     const quizExitOngoingBtn = document.getElementById('quiz-exit-ongoing-btn');
-    
+
     const quizOptionsGrid = document.getElementById('quiz-options-grid');
     const quizWritePanel = document.getElementById('quiz-write-panel');
     const quizWriteInput = document.getElementById('quiz-write-input');
     const quizWriteSubmitBtn = document.getElementById('quiz-write-submit-btn');
-    
+
     const quizFeedbackBanner = document.getElementById('quiz-feedback-banner');
     const quizFeedbackText = document.getElementById('quiz-feedback-text');
     const quizNextQBtn = document.getElementById('quiz-next-q-btn');
-    
+
     const resScore = document.getElementById('res-score');
     const resPercent = document.getElementById('res-percent');
     const wrongAnswersSection = document.getElementById('wrong-answers-section');
@@ -1104,7 +1107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
         renderTimetable();
         updateTodayWidget();
-        
+
         // Handle action parameters from notifications
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'disable-notifications') {
@@ -1136,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
     function switchTab(tabId) {
         activeTab = tabId;
-        
+
         navTabs.forEach(tab => {
             if (tab.getAttribute('data-tab') === tabId) {
                 tab.classList.add('active');
@@ -1246,8 +1249,8 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         if (oldMsg) oldMsg.remove();
 
         // Lọc các thẻ học dựa trên danh mục chính đang hoạt động (english, programming, general, all)
-        let activeCategoryCards = currentCategory === 'all' 
-            ? flashcards 
+        let activeCategoryCards = currentCategory === 'all'
+            ? flashcards
             : flashcards.filter(c => c.category === currentCategory);
 
         // Lọc theo chủ đề chi tiết (subCategory) nếu người dùng chọn cụ thể
@@ -1270,7 +1273,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const dueSubCategoryGroups = {};
         let newCardsLimit = 20;
         let newCardsSeen = 0;
-        
+
         Object.keys(subCategoryGroups).forEach(subName => {
             const allCardsInSub = subCategoryGroups[subName];
             if (srsToggle.checked) {
@@ -1286,7 +1289,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                         return false;
                     }
                 });
-                
+
                 if (dueCards.length > 0) {
                     dueSubCategoryGroups[subName] = {
                         all: allCardsInSub,
@@ -1308,16 +1311,16 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const groupData = dueSubCategoryGroups[subName];
             const totalCount = groupData.all.length;
             const dueCount = groupData.due.length;
-            
+
             // Tính toán mức độ thành thạo trung bình của chủ đề đó (số thẻ đã thuộc / tổng số thẻ)
             const knownCnt = groupData.all.filter(c => c.status === 'known').length;
             const masteryPercent = totalCount > 0 ? Math.round((knownCnt / totalCount) * 100) : 0;
-            
+
             // Xác định màu huy hiệu
             const firstCard = groupData.all[0];
             let badgeClass = 'badge-general';
             let badgeText = 'KIẾN THỨC CHUNG';
-            
+
             if (firstCard.category === 'english') {
                 badgeClass = 'badge-english';
                 badgeText = 'TIẾNG ANH';
@@ -1328,9 +1331,9 @@ sidebarCategories.hidden = tabId !== 'flashcards';
 
             const cardDiv = document.createElement('div');
             cardDiv.className = 'deck-card glass-panel' + (masteryPercent >= 80 ? ' ai-glow-border' : '');
-            
+
             // Nội dung mô tả số thẻ học tùy thuộc vào chế độ SRS có đang được bật hay không
-            const cardsInfoText = srsToggle.checked 
+            const cardsInfoText = srsToggle.checked
                 ? `<span style="color: var(--warning-color); font-weight: bold;">${dueCount} thẻ cần ôn lại</span> / ${totalCount} thẻ`
                 : `<span>${totalCount} thẻ học</span>`;
 
@@ -1428,7 +1431,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const emptyMsgDiv = document.createElement('div');
             emptyMsgDiv.className = 'no-cards-message glass-panel text-center';
             emptyMsgDiv.style.cssText = 'padding: var(--space-step-48); border-radius: var(--border-radius-lg); width: 100%;';
-            
+
             if (srsToggle.checked) {
                 emptyMsgDiv.innerHTML = `
                     <i class="fas fa-check-circle" style="font-size: 3.5rem; color: var(--success-color); margin-bottom: var(--space-step-20); display: block;"></i>
@@ -1448,10 +1451,10 @@ sidebarCategories.hidden = tabId !== 'flashcards';
 
     function openStudyModal(subName) {
         currentSubCategory = subName;
-        
+
         // Gọi lại hàm lọc thẻ học theo chủ đề này
         filterDeck();
-        
+
         const modal = document.getElementById('study-overlay-modal');
         const title = document.getElementById('study-modal-title');
         if (title) title.innerText = `Ôn tập bộ thẻ: ${subName}`;
@@ -1460,14 +1463,14 @@ sidebarCategories.hidden = tabId !== 'flashcards';
 
     function startQuizForTopic(subName) {
         switchTab('quiz');
-        
+
         // Chọn danh mục tương ứng
         if (quizCategorySelect) {
             quizCategorySelect.value = currentCategory;
             // Kích hoạt sự kiện thay đổi để cập nhật dropdown chủ đề chi tiết
             quizCategorySelect.dispatchEvent(new Event('change'));
         }
-        
+
         // Gán chủ đề chi tiết tương ứng sau khi DOM nạp các tùy chọn
         setTimeout(() => {
             if (quizSubcategorySelect) {
@@ -1480,10 +1483,10 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     // FLASHCARD VIEW - FILTER & RENDER (WITH SPACED REPETITION SRS)
     // ==========================================================================
     function populateSubCategoryDropdown() {
-        const activeCategoryCards = currentCategory === 'all' 
-            ? flashcards 
+        const activeCategoryCards = currentCategory === 'all'
+            ? flashcards
             : flashcards.filter(c => c.category === currentCategory);
-            
+
         const subs = [...new Set(activeCategoryCards
             .map(c => c.subCategory)
             .filter(sub => sub))]
@@ -1526,10 +1529,10 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             item.addEventListener('click', () => {
                 const val = item.getAttribute('data-value');
                 currentSubCategory = val;
-                
+
                 // Ẩn menu dropdown
                 document.getElementById('topic-searchable-select').classList.remove('active');
-                
+
                 // Lọc lại thẻ học
                 filterDeck();
             });
@@ -1561,7 +1564,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const now = Date.now();
             let newCardsLimit = 20;
             let newCardsSeen = 0;
-            
+
             tempCards = tempCards.filter(card => {
                 if (card.nextReviewDate > 0) {
                     // Thẻ đã được học và đã đến hạn ôn tập
@@ -1576,7 +1579,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 }
             });
         }
-        
+
         filteredCards = tempCards;
         currentIndex = 0;
         renderCard();
@@ -1600,7 +1603,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             backCatEl.innerText = "-";
             progressText.innerText = "Thẻ 0 / 0";
             progressBar.style.width = "0%";
-            
+
             btnRemember.style.display = 'none';
             btnForget.style.display = 'none';
             return;
@@ -1610,7 +1613,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         btnForget.style.display = 'inline-flex';
 
         const currentCard = filteredCards[currentIndex];
-        
+
         // Tự động điều chỉnh cỡ chữ nếu text quá dài
         if (currentCard.question.length > 50) {
             questionEl.classList.add('text-long');
@@ -1658,29 +1661,29 @@ sidebarCategories.hidden = tabId !== 'flashcards';
 
     function updateStats() {
         if (statTotal) statTotal.innerText = flashcards.length;
-        
+
         // Count cards memorized (nextReviewDate > now)
         const now = Date.now();
         const memorized = flashcards.filter(c => c.nextReviewDate > now).length;
         if (statKnown) statKnown.innerText = memorized;
-        
+
         // Cần ôn lại is cards marked as 'review'
         const reviewCount = flashcards.filter(c => c.status === 'review').length;
         if (statReview) statReview.innerText = reviewCount;
-        
+
         // Cập nhật các ô thống kê trực quan trên Trang chủ (Home Tab)
         const homeStreakVal = document.getElementById('home-streak-val');
         const homeAnsweredVal = document.getElementById('home-answered-val');
         const homeAccuracyVal = document.getElementById('home-accuracy-val');
         const homeFavoriteVal = document.getElementById('home-favorite-val');
         const streakStatBox = document.getElementById('streak-stat-box');
-        
+
         const streakCount = parseInt(personalStorage.getItem('study-streak') || '0', 10);
 
         if (homeStreakVal) {
             homeStreakVal.innerText = streakCount + ' Ngày';
         }
-        
+
         // Cập nhật màu sắc và hiệu ứng viền cho ô Streak theo các cột mốc
         if (streakStatBox) {
             streakStatBox.classList.remove('streak-bronze', 'streak-silver', 'streak-gold', 'streak-platinum', 'streak-diamond', 'streak-legendary');
@@ -1716,7 +1719,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const subCategories = [...new Set(flashcards.map(c => c.subCategory).filter(s => s))];
             homeFavoriteVal.innerText = subCategories.length + ' Bộ thẻ';
         }
-        
+
         // Đồng bộ hóa với số từ đã ôn tập hôm nay trên tab Tổng quan
         const overviewStudiedToday = document.getElementById('overview-studied-today');
         if (overviewStudiedToday) {
@@ -1724,9 +1727,9 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const reviewed = studyDays.find(day => day.studyDate === today)?.cardsReviewed || 0;
             overviewStudiedToday.innerText = Math.max(studiedToday.size, reviewed) + ' từ';
         }
-        
+
         personalStorage.setItem('flashcards', JSON.stringify(flashcards));
-        
+
         // Cập nhật thống kê Trang chủ và Tổng quan thực tế
         updateOverviewAndSuggestions();
     }
@@ -1757,7 +1760,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const now = Date.now();
         const known = flashcards.filter(c => c.nextReviewDate > now).length;
         const overallMastery = total > 0 ? Math.round((known / total) * 100) : 0;
-        
+
         const overviewScoreEl = document.getElementById('overview-mastery-score');
         if (overviewScoreEl) {
             overviewScoreEl.innerText = `${overallMastery}/100`;
@@ -1767,7 +1770,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const needsImprovement = subCategoryList
             .filter(sub => sub.pct < 100)
             .sort((a, b) => a.pct - b.pct)[0];
-        
+
         const improveSubEl = document.getElementById('overview-improve-subject');
         if (improveSubEl) {
             if (needsImprovement) {
@@ -1781,7 +1784,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const masteryListEl = document.querySelector('.mastery-list');
         if (masteryListEl) {
             masteryListEl.innerHTML = '';
-            
+
             const catStats = {
                 'english': { total: 0, known: 0, name: 'Tiếng Anh Oxford' },
                 'programming': { total: 0, known: 0, name: 'Lập trình Frontend' },
@@ -1822,7 +1825,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const homeSuggestionsGrid = document.querySelector('.home-suggestions-grid');
         if (homeSuggestionsGrid) {
             homeSuggestionsGrid.innerHTML = '';
-            
+
             const topSubCategories = subCategoryList
                 .sort((a, b) => b.total - a.total)
                 .slice(0, 3);
@@ -1830,10 +1833,10 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             topSubCategories.forEach(sub => {
                 const badgeClass = sub.category === 'english' ? 'badge-english' : (sub.category === 'programming' ? 'badge-cntt' : 'badge-general');
                 const badgeText = sub.category === 'english' ? 'TIẾNG ANH' : (sub.category === 'programming' ? 'LẬP TRÌNH' : 'CHUNG');
-                
+
                 const cardDiv = document.createElement('div');
                 cardDiv.className = 'suggestion-card glass-panel' + (sub.pct >= 80 ? ' ai-glow-border' : '');
-                
+
                 cardDiv.innerHTML = `
                     <span class="deck-feature-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span>
                     <span class="suggestion-badge ${badgeClass}" style="background: var(--bg-secondary); padding: var(--space-step-4) var(--space-step-8); border-radius: 6px; font-weight: 700; font-size: 0.75rem; align-self: flex-start; letter-spacing: 0.5px;">${badgeText}</span>
@@ -2040,7 +2043,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         btnForget.style.boxShadow = 'none';
         btnRemember.dataset.selected = 'false';
         btnForget.dataset.selected = 'false';
-        
+
         if (status === 'known') {
             btnRemember.dataset.selected = 'true';
         } else if (status === 'review') {
@@ -2117,7 +2120,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
 
         document.addEventListener('keydown', (e) => {
             if (activeTab === 'quiz' && quizOngoingContainer.style.display !== 'none' && quizMode === 'write') {
-                return; 
+                return;
             }
             if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') {
                 return;
@@ -2141,14 +2144,14 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             if (currentCard) {
                 applySpacedRepetition(currentCard.id, 5);
                 updateCardFeedbackUI('known');
-                
+
                 // Ghi nhận số từ đã ôn trong ngày
                 studiedToday.add(currentCard.id);
                 personalStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
                 checkAndUpdateStreak(true); // Tự động cập nhật chuỗi streak
                 updateStats();
             }
-            
+
             setTimeout(() => {
                 // If in SRS mode, card might disappear on filter deck update
                 if (srsToggle.checked) {
@@ -2165,14 +2168,14 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             if (currentCard) {
                 applySpacedRepetition(currentCard.id, 0);
                 updateCardFeedbackUI('review');
-                
+
                 // Ghi nhận số từ đã ôn trong ngày
                 studiedToday.add(currentCard.id);
                 personalStorage.setItem('studied-today', JSON.stringify([...studiedToday]));
                 checkAndUpdateStreak(true); // Tự động cập nhật chuỗi streak
                 updateStats();
             }
-            
+
             setTimeout(() => {
                 if (srsToggle.checked) {
                     filterDeck();
@@ -2231,12 +2234,12 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             // Tìm kiếm chủ đề thời gian thực (Real-time search)
             if (topicSearchInput) {
                 const removeVietnameseTones = (str) => {
-                    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a"); 
-                    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e"); 
-                    str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i"); 
-                    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o"); 
-                    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u"); 
-                    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y"); 
+                    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a");
+                    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e");
+                    str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i");
+                    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o");
+                    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u");
+                    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y");
                     str = str.replace(/đ/g,"d");
                     str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
                     str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
@@ -2245,8 +2248,8 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                     str = str.replace(/Ù|Ý|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
                     str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
                     str = str.replace(/Đ/g, "D");
-                    str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, ""); 
-                    str = str.replace(/\u02C6|\u0306|\u031B/g, ""); 
+                    str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, "");
+                    str = str.replace(/\u02C6|\u0306|\u031B/g, "");
                     return str;
                 };
 
@@ -2272,20 +2275,25 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
+
             html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('app-theme', newTheme);
+            localStorage.setItem('app-theme-v2', newTheme);
             
             const icon = themeToggle.querySelector('i');
             icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         });
 
-        const savedTheme = localStorage.getItem('app-theme');
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            const icon = themeToggle.querySelector('i');
-            icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        // Migrate the earlier dark preference once so everyone sees the refreshed
+        // light palette after this release. New choices can still be saved normally.
+        const lightPaletteMigrationKey = 'app-theme-light-palette-v3';
+        if (localStorage.getItem(lightPaletteMigrationKey) !== 'done') {
+            localStorage.setItem('app-theme-v2', 'light');
+            localStorage.setItem(lightPaletteMigrationKey, 'done');
         }
+        const savedTheme = localStorage.getItem('app-theme-v2') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const themeIcon = themeToggle?.querySelector('i');
+        if (themeIcon) themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
 
         // Sidebar Toggle action listener for Focused Study Mode
         const sidebarToggleBtn = document.getElementById('sidebar-toggle');
@@ -2304,7 +2312,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 appContainer.classList.toggle('sidebar-hidden');
                 const isHidden = appContainer.classList.contains('sidebar-hidden');
                 localStorage.setItem('sidebar-hidden', isHidden ? 'true' : 'false');
-                
+
                 const icon = sidebarToggleBtn.querySelector('i');
                 if (icon) {
                     icon.className = isHidden ? 'fas fa-outdent' : 'fas fa-indent';
@@ -2344,7 +2352,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         addCardForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const version = accountVersion;
-            
+
             const category = document.getElementById('new-category').value;
             const question = document.getElementById('new-question').value;
             const answer = document.getElementById('new-answer').value;
@@ -2388,7 +2396,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 addCardForm.reset();
                 addModal.classList.remove('active');
                 updateStats();
-                
+
                 if (currentCategory === 'all' || currentCategory === category) {
                     filterDeck();
                     currentIndex = filteredCards.length - 1;
@@ -2396,7 +2404,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 } else {
                     window.MindSprintDialogs.alert("Đã thêm thẻ mới thành công! Bạn có thể xem trong mục danh mục tương ứng.");
                 }
-                
+
                 // Sync to server if logged in
                 if (MindSprintApi.isLoggedIn()) {
                     try {
@@ -2414,7 +2422,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                     }
                 }
             };
-            
+
             await doAdd();
         });
 
@@ -2476,11 +2484,65 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const homeStartQuizBtn = document.getElementById('home-start-quiz-btn');
         const homeCreateDeckBtn = document.getElementById('home-create-deck-btn');
         const homeViewAllDecks = document.getElementById('home-view-all-decks');
+        const homeGoalsStartBtn = document.getElementById('home-goals-start-btn');
+
+        const homeGreetingTime = document.getElementById('home-greeting-time');
+        const homeGreetingName = document.getElementById('home-greeting-name');
+        const homeDateLabel = document.getElementById('home-date-label');
+        const hcmTimeZone = 'Asia/Ho_Chi_Minh';
+        const currentHour = Number(new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit', hourCycle: 'h23', timeZone: hcmTimeZone
+        }).format(new Date()));
+        if (homeGreetingTime) {
+            homeGreetingTime.textContent = currentHour < 11 ? 'Chào buổi sáng' : currentHour < 17 ? 'Chào buổi chiều' : 'Chào buổi tối';
+        }
+        if (homeGreetingName) {
+            homeGreetingName.textContent = document.getElementById('header-user-name')?.textContent?.trim() || 'Khách';
+        }
+        if (homeDateLabel) {
+            const formattedDate = new Intl.DateTimeFormat('vi-VN', {
+                weekday: 'long', day: 'numeric', month: 'long', timeZone: hcmTimeZone
+            }).format(new Date());
+            homeDateLabel.textContent = formattedDate.replace(',', ' · ').replace(/^./, char => char.toLocaleUpperCase('vi-VN'));
+        }
+
+        const dailyGoalInputs = [...document.querySelectorAll('[data-daily-goal]')];
+        const dailyProgressRing = document.getElementById('home-daily-progress-ring');
+        const dailyProgressValue = document.getElementById('home-daily-progress-value');
+        const dailyGoalsCount = document.getElementById('home-goals-count');
+        const todayKey = new Intl.DateTimeFormat('en-CA', {
+            year: 'numeric', month: '2-digit', day: '2-digit', timeZone: hcmTimeZone
+        }).format(new Date());
+        const dailyGoalsStorageKey = () => personalStorage.key(`mindsprint-daily-goals:${todayKey}`);
+        let savedDailyGoals = {};
+        const updateDailyGoals = () => {
+            const completedGoals = dailyGoalInputs.filter(input => input.checked).length;
+            const progressPercent = dailyGoalInputs.length ? Math.round(completedGoals / dailyGoalInputs.length * 100) : 0;
+            if (dailyProgressRing) {
+                dailyProgressRing.style.setProperty('--progress-angle', `${progressPercent * 3.6}deg`);
+                dailyProgressRing.setAttribute('aria-valuenow', String(progressPercent));
+            }
+            if (dailyProgressValue) dailyProgressValue.textContent = `${progressPercent}%`;
+            if (dailyGoalsCount) dailyGoalsCount.textContent = `${completedGoals}/${dailyGoalInputs.length} xong`;
+            savedDailyGoals = Object.fromEntries(dailyGoalInputs.map(input => [input.dataset.dailyGoal, input.checked]));
+            localStorage.setItem(dailyGoalsStorageKey(), JSON.stringify(savedDailyGoals));
+        };
+        restoreDailyGoals = () => {
+            try { savedDailyGoals = JSON.parse(localStorage.getItem(dailyGoalsStorageKey()) || '{}'); }
+            catch { savedDailyGoals = {}; }
+            dailyGoalInputs.forEach(input => { input.checked = Boolean(savedDailyGoals[input.dataset.dailyGoal]); });
+            updateDailyGoals();
+        };
+        dailyGoalInputs.forEach(input => input.addEventListener('change', updateDailyGoals));
+        restoreDailyGoals();
 
         if (homeStartQuizBtn) {
             homeStartQuizBtn.addEventListener('click', () => {
                 switchTab('quiz');
             });
+        }
+        if (homeGoalsStartBtn) {
+            homeGoalsStartBtn.addEventListener('click', () => switchTab('quiz'));
         }
 
         if (homeCreateDeckBtn) {
@@ -2507,7 +2569,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 } else if (title.includes('Cơ sở dữ liệu')) {
                     topicName = 'Cơ sở dữ liệu';
                 }
-                
+
                 // Mở học tập bộ thẻ này
                 openStudyModal(topicName);
             });
@@ -2527,11 +2589,11 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                     card.style.background = 'var(--primary-glow)';
                 }
             }
-            
+
             radio.addEventListener('change', (e) => {
                 alarmStyle = e.target.value;
                 localStorage.setItem('alarm-style', alarmStyle);
-                
+
                 // Cập nhật giao diện lựa chọn
                 alarmRadios.forEach(r => {
                     const card = r.closest('.alarm-option-card');
@@ -2572,19 +2634,19 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     function openEditCardModal() {
         if (filteredCards.length === 0) return;
         const currentCard = filteredCards[currentIndex];
-        
+
         document.getElementById('edit-category').value = currentCard.category;
         document.getElementById('edit-question').value = currentCard.question;
         document.getElementById('edit-answer').value = currentCard.answer;
         document.getElementById('edit-example').value = currentCard.example || '';
-        
+
         editModal.classList.add('active');
     }
 
     function submitEditCard() {
         if (filteredCards.length === 0) return;
         const currentCard = filteredCards[currentIndex];
-        
+
         const cardIndex = flashcards.findIndex(c => c.id == currentCard.id);
         if (cardIndex === -1) return;
         const version = accountVersion;
@@ -2613,10 +2675,10 @@ sidebarCategories.hidden = tabId !== 'flashcards';
 
         updateStats();
         editModal.classList.remove('active');
-        
+
         let prevIndex = currentIndex;
         filterDeck();
-        
+
         currentIndex = Math.min(prevIndex, filteredCards.length - 1);
         renderCard();
 
@@ -2644,7 +2706,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                             {title: 'Thẻ có phiên bản mới', confirmText: 'Giữ bản server', cancelText: 'Ghi đè bản cục bộ', dismissValue: null}
                         );
                         if (version !== accountVersion || userChoice === null) return;
-                        
+
                         if (userChoice) {
                             // Use server version
                             card.category = serverCard.category;
@@ -2689,7 +2751,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                     }
                 }
             };
-            
+
             syncToServer();
         }
 
@@ -2706,13 +2768,13 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             // Store for rollback
             const deletedCard = { ...currentCard };
             const deletedIndex = flashcards.findIndex(c => c.id == currentCard.id);
-            
+
             flashcards = flashcards.filter(c => c.id != currentCard.id);
             updateStats();
-            
+
             let prevIndex = currentIndex;
             filterDeck();
-            
+
             if (filteredCards.length > 0) {
                 currentIndex = Math.min(prevIndex, filteredCards.length - 1);
                 renderCard();
@@ -2766,7 +2828,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                         }
                     }
                 };
-                
+
                 syncToServer();
             }
         }
@@ -2867,11 +2929,11 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 } else if (targetMode === 'game') {
                     quizPracticeSection.style.display = 'none';
                     gamePracticeSection.style.display = 'block';
-                    
+
                     quizOngoingContainer.style.display = 'none';
                     quizResultsContainer.style.display = 'none';
                     quizSetupContainer.style.display = 'block';
-                    
+
                     resetGameSetup();
                 }
             });
@@ -2963,7 +3025,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         quizCurrentIndex = 0;
         quizScore = 0;
         quizWrongAnswers = [];
-        
+
         quizSetupContainer.style.display = 'none';
         quizResultsContainer.style.display = 'none';
         quizOngoingContainer.style.display = 'block';
@@ -2978,7 +3040,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         quizWriteInput.value = '';
 
         const currentCard = quizDeck[quizCurrentIndex];
-        
+
         quizQNum.innerText = `Câu hỏi ${quizCurrentIndex + 1} / ${quizDeck.length}`;
         quizQBar.style.width = `${((quizCurrentIndex) / quizDeck.length) * 100}%`;
         quizScoreText.innerText = quizScore;
@@ -2990,7 +3052,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             quizQuestionLabel.innerText = "Chọn nghĩa phù hợp cho từ:";
             quizQuestionText.innerText = currentCard.question;
             quizHintText.innerText = currentCard.example ? `Gợi ý: ${currentCard.example}` : '';
-            
+
             quizOptionsGrid.style.display = 'grid';
             quizWritePanel.style.display = 'none';
 
@@ -2998,7 +3060,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         } else {
             quizQuestionLabel.innerText = "Gõ từ vựng tiếng Anh tương ứng với nghĩa:";
             quizQuestionText.innerText = currentCard.answer;
-            
+
             let hint = '';
             if (currentCard.example) {
                 hint += currentCard.example;
@@ -3067,7 +3129,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             quizScore++;
             quizScoreText.innerText = quizScore;
             showQuizFeedback(true, "Chính xác! Làm tốt lắm.");
-            
+
             if (dbCard) {
                 dbCard.status = 'known';
                 dbCard.repetition = (dbCard.repetition || 0) + 1;
@@ -3082,7 +3144,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 correctAnswer: correctVal
             });
             showQuizFeedback(false, `Sai rồi! Đáp án đúng là: ${correctVal}`);
-            
+
             if (dbCard) {
                 dbCard.status = 'review';
                 dbCard.repetition = 0;
@@ -3116,7 +3178,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             quizScore++;
             quizScoreText.innerText = quizScore;
             showQuizFeedback(true, "Chính xác! Bạn viết chuẩn rồi.");
-            
+
             if (dbCard) {
                 dbCard.status = 'known';
                 dbCard.repetition = (dbCard.repetition || 0) + 1;
@@ -3130,7 +3192,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 correctAnswer: correctVal
             });
             showQuizFeedback(false, `Sai rồi! Từ đúng phải viết là: ${correctVal}`);
-            
+
             if (dbCard) {
                 dbCard.status = 'review';
                 dbCard.repetition = 0;
@@ -3247,10 +3309,10 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             }
 
             personalStorage.setItem('timetable-slots', JSON.stringify(timetableSlots));
-            
+
             timetableForm.reset();
             timetableModal.classList.remove('active');
-            
+
             renderTimetable();
             updateTodayWidget();
             editingSlotId = null;
@@ -3280,7 +3342,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                     // Queue for offline sync if needed
                 }
             }
-            
+
         });
 
         // Toggle browser notifications settings
@@ -3385,19 +3447,19 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     function openEditTimetableModal(slot) {
         editingSlotId = slot.id;
         timetableModalTitle.innerText = "Chỉnh Sửa Giờ Học";
-        
+
         document.getElementById('slot-day').value = slot.day;
         document.getElementById('slot-start').value = slot.start;
         document.getElementById('slot-end').value = slot.end;
         document.getElementById('slot-category').value = slot.category;
         document.getElementById('slot-note').value = slot.note || '';
-        
+
         timetableModal.classList.add('active');
     }
 
     function updateTodayWidget() {
         const now = new Date();
-        const jsDay = now.getDay(); 
+        const jsDay = now.getDay();
         const currentDay = jsDay === 0 ? 8 : jsDay + 1; // Map Sunday to 8
 
         const hours = String(now.getHours()).padStart(2, '0');
@@ -3459,15 +3521,15 @@ sidebarCategories.hidden = tabId !== 'flashcards';
 
     function playSyntheticAlarm() {
         if (alarmIntervalId) return; // already ringing
-        
+
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
+
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
-        
+
         // Ring sound: double beeps every 1 second
         alarmIntervalId = setInterval(() => {
             playBeep(880, 0.12);
@@ -3480,16 +3542,16 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         try {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            
+
             osc.type = 'sine';
             osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-            
+
             gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-            
+
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            
+
             osc.start();
             osc.stop(audioCtx.currentTime + duration);
         } catch (e) {
@@ -3509,7 +3571,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             window.MindSprintDialogs.alert('Trình duyệt của bạn không hỗ trợ tính năng thông báo!');
             return;
         }
-        
+
         if (notificationsEnabled) {
             notificationsEnabled = false;
             localStorage.setItem('notifications-enabled', 'false');
@@ -3542,11 +3604,11 @@ sidebarCategories.hidden = tabId !== 'flashcards';
 
     function updateNotificationButtonState() {
         if (!('Notification' in window)) return;
-        
+
         const btn = document.getElementById('notification-toggle-btn');
         const span = btn.querySelector('span');
         const icon = btn.querySelector('i');
-        
+
         if (notificationsEnabled && Notification.permission === 'granted') {
             btn.classList.remove('btn-secondary');
             btn.classList.add('btn-primary');
@@ -3566,34 +3628,34 @@ sidebarCategories.hidden = tabId !== 'flashcards';
 
     function checkScheduleReminders() {
         if (!notificationsEnabled) return;
-        
+
         const now = new Date();
         const date = now.getDate();
-        
+
         // Reset notified list at start of new day
         if (date !== lastNotificationDay) {
             notifiedSlotsToday.clear();
             lastNotificationDay = date;
         }
-        
+
         const jsDay = now.getDay();
         const currentDay = jsDay === 0 ? 8 : jsDay + 1;
-        
+
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const currentTime = `${hours}:${minutes}`;
-        
+
         const todaySlots = timetableSlots.filter(s => s.day === currentDay);
-        
+
         todaySlots.forEach(slot => {
             // So sánh khoảng thời gian (lớn hơn hoặc bằng giờ bắt đầu và nhỏ hơn giờ kết thúc)
             // Việc này giúp tránh bị hụt thông báo khi điện thoại bị delay/sleep trình duyệt
             if (currentTime >= slot.start && currentTime < slot.end && !notifiedSlotsToday.has(slot.id)) {
                 notifiedSlotsToday.add(slot.id);
-                
+
                 const catName = getCategoryName(slot.category);
                 const noteText = slot.note ? ` - Ghi chú: ${slot.note}` : '';
-                
+
                 // 1. Text Notification
                 if (alarmStyle === 'text' || alarmStyle === 'both') {
                     showNotification('Đến giờ học MindSprintAI rồi!', {
@@ -3606,13 +3668,13 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                         ]
                     });
                 }
-                
+
                 // 2. Sound Alarm Overlay
                 if (alarmStyle === 'sound' || alarmStyle === 'both') {
                     alarmTimeText.innerText = `${slot.start} - ${slot.end}`;
                     alarmTitleText.innerText = catName;
                     alarmNoteText.innerText = slot.note || 'Không có ghi chú';
-                    
+
                     alarmRingOverlay.style.display = 'flex';
                     playSyntheticAlarm();
                 }
@@ -3627,21 +3689,21 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     function checkAndUpdateStreak(actionTaken) {
         const today = new Date();
         const todayStr = today.toLocaleDateString('en-CA'); // Định dạng YYYY-MM-DD
-        
+
         let lastActiveDate = personalStorage.getItem('last-active-date');
         let streak = parseInt(personalStorage.getItem('study-streak') || '0', 10);
-        
+
         if (!actionTaken) {
             // Kiểm tra khi tải trang xem chuỗi streak có bị đứt hay không
             if (lastActiveDate) {
                 const lastDate = new Date(lastActiveDate);
                 const diffTime = Math.abs(today - lastDate);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
+
                 const yesterday = new Date(today);
                 yesterday.setDate(today.getDate() - 1);
                 const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-                
+
                 // Nếu ngày hoạt động cuối cùng không phải hôm nay và không phải hôm qua -> mất streak
                 if (lastActiveDate !== todayStr && lastActiveDate !== yesterdayStr) {
                     streak = 0;
@@ -3653,17 +3715,17 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             }
             return streak;
         }
-        
+
         // Khi người dùng thực hiện học bài hoặc trả lời quiz:
         if (lastActiveDate === todayStr) {
             // Đã hoạt động hôm nay rồi, không tăng thêm nữa
             return streak;
         }
-        
+
         const yesterday = new Date(today);
         yesterday.setDate(today.getDate() - 1);
         const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-        
+
         if (lastActiveDate === yesterdayStr) {
             // Học liên tục -> Tăng streak
             streak += 1;
@@ -3671,20 +3733,20 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             // Đứt streak hoặc lần đầu học -> Bắt đầu lại mốc 1
             streak = 1;
         }
-        
+
         personalStorage.setItem('study-streak', streak.toString());
         personalStorage.setItem('last-active-date', todayStr);
-        
+
         // Kiểm tra xem có trúng mốc cột mốc nào để chúc mừng không
         checkStreakMilestones(streak);
-        
+
         return streak;
     }
 
     function checkStreakMilestones(streak) {
         // Các cột mốc chúc mừng nổi bật
         const milestones = [30, 50, 100, 200, 300, 365, 400, 500, 600, 700, 800, 900, 1000];
-        
+
         if (milestones.includes(streak)) {
             const celebratedMilestones = JSON.parse(personalStorage.getItem('celebrated-milestones') || '[]');
             if (!celebratedMilestones.includes(streak)) {
@@ -3700,14 +3762,14 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const titleEl = document.getElementById('streak-milestone-title');
         const descEl = document.getElementById('streak-milestone-desc');
         const iconEl = document.querySelector('.streak-celebration-icon');
-        
+
         if (!modal) return;
-        
+
         let title = `Mốc Chuỗi ${streak} Ngày!`;
         let desc = `Bạn đã kiên trì học tập liên tiếp ${streak} ngày. MindSprintAI tự hào về sự bền bỉ của bạn!`;
         let color = 'var(--primary-color)'; // Màu mặc định: Tím
         let iconClass = 'fa-fire';
-        
+
         if (streak >= 365) {
             title = `👑 HUYỀN THOẠI 365 NGÀY! 👑`;
             desc = `Không thể tin được! Bạn đã duy trì thói quen học tập ròng rã suốt 1 năm (${streak} ngày) liên tục! Bạn đã trở thành BẬC THẦY VÔ SONG của MindSprintAI!`;
@@ -3739,7 +3801,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             color = 'var(--text-secondary)'; // Đồng
             iconClass = 'fa-certificate';
         }
-        
+
         if (titleEl) titleEl.innerText = title;
         if (descEl) descEl.innerText = desc;
         if (iconEl) {
@@ -3747,9 +3809,9 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             iconEl.style.color = color;
             iconEl.style.filter = 'none';
         }
-        
+
         modal.style.display = 'flex';
-        
+
         // Tạo pháo hoa hoa giấy giấy confetti
         triggerConfetti();
     }
@@ -3760,23 +3822,23 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             const confetti = document.createElement('div');
             confetti.className = 'confetti-piece';
             confetti.setAttribute('aria-hidden', 'true');
-            
+
             confetti.style.left = Math.random() * 100 + 'vw';
             confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
             confetti.style.width = Math.random() * 8 + 6 + 'px';
             confetti.style.height = confetti.style.width;
-            
+
             const delay = Math.random() * 1.5;
             const duration = Math.random() * 2 + 1.5;
             confetti.style.animationDelay = delay + 's';
             confetti.style.animationDuration = duration + 's';
-            
+
             if (Math.random() > 0.5) {
                 confetti.style.borderRadius = '50%';
             }
-            
+
             document.body.appendChild(confetti);
-            
+
             setTimeout(() => {
                 confetti.remove();
             }, (delay + duration) * 1000);
@@ -3788,11 +3850,11 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const closeStreakModalBtn = document.getElementById('close-streak-modal');
         const streakMilestoneModal = document.getElementById('streak-milestone-modal');
         const streakMilestoneClaimBtn = document.getElementById('streak-milestone-claim-btn');
-        
+
         const closeModal = () => {
             if (streakMilestoneModal) streakMilestoneModal.style.display = 'none';
         };
-        
+
         if (closeStreakModalBtn) {
             closeStreakModalBtn.addEventListener('click', closeModal);
         }
@@ -3835,7 +3897,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         // Trình giả lập Streak (Dành cho việc kiểm tra cột mốc lập tức)
         const testStreakInput = document.getElementById('test-streak-input');
         const testStreakBtn = document.getElementById('test-streak-btn');
-        
+
         if (testStreakBtn && testStreakInput) {
             testStreakBtn.addEventListener('click', () => {
                 const targetDays = parseInt(testStreakInput.value, 10);
@@ -3843,14 +3905,14 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                     window.MindSprintDialogs.alert("Vui lòng nhập số ngày hợp lệ!");
                     return;
                 }
-                
+
                 // Cập nhật chuỗi giả lập vào LocalStorage
                 personalStorage.setItem('study-streak', targetDays.toString());
                 personalStorage.setItem('last-active-date', new Date().toLocaleDateString('en-CA'));
-                
+
                 // Đồng bộ và tải lại giao diện
                 updateStats();
-                
+
                 // Bỏ qua điều kiện chặn để kích hoạt modal chúc mừng ngay lập tức
                 celebrateMilestone(targetDays);
             });
@@ -3860,50 +3922,50 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     // ==========================================================================
     // TÍNH NĂNG NHẮC NHỞ HỌC BÙ (MAKEUP STUDY ALERT) CHO IOS & ANDROID
     // ==========================================================================
-    
+
     function checkMakeupStudyAlert() {
         const now = new Date();
         const jsDay = now.getDay();
         const currentDay = jsDay === 0 ? 8 : jsDay + 1; // 2 đến 8 (Thứ 2 đến Chủ nhật)
-        
+
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const currentTime = `${hours}:${minutes}`;
-        
+
         const todayStr = now.toLocaleDateString('en-CA'); // Định dạng YYYY-MM-DD
         const lastCheckedStr = personalStorage.getItem('last-makeup-check-time');
-        
+
         // Lưu thời điểm kiểm tra hiện tại vào localStorage
         personalStorage.setItem('last-makeup-check-time', `${todayStr} ${currentTime}`);
-        
+
         if (!lastCheckedStr) {
             // Lần đầu chạy app hoặc đã bị xóa cache, không kiểm tra học bù
             return;
         }
-        
+
         const parts = lastCheckedStr.split(' ');
         const lastDate = parts[0];
         const lastTime = parts[1];
-        
+
         // Chỉ kiểm tra học bù trong cùng ngày để tránh bị spam dồn lịch cũ
         if (lastDate !== todayStr) {
             return;
         }
-        
+
         // Lấy tất cả lịch học của ngày hôm nay
         const todaySlots = timetableSlots.filter(s => s.day === currentDay);
-        
+
         // Tìm các slot học đã trôi qua trong khoảng thời gian từ lúc tắt app đến lúc mở app
         const missedSlots = todaySlots.filter(slot => {
             // Lịch học đã bắt đầu sau thời điểm kiểm tra cuối và đã kết thúc trước/bằng thời điểm hiện tại
             return slot.end > lastTime && slot.end <= currentTime;
         });
-        
+
         if (missedSlots.length > 0) {
             // Lấy slot học bị lỡ gần nhất để thông báo
             const slot = missedSlots[0];
             const catName = getCategoryName(slot.category);
-            
+
             // Hiện hộp thoại vinh danh học bù sau 1.5 giây để tránh giật lag khi tải trang
             setTimeout(() => {
                 showMakeupModal(catName, slot.start, slot.end);
@@ -3916,11 +3978,11 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.style.cssText = 'display: flex; z-index: 3500; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--overlay-color); justify-content: center; align-items: center;';
-        
+
         const content = document.createElement('div');
         content.className = 'modal-content glass-panel text-center';
         content.style.cssText = 'max-width: 420px; padding: var(--space-step-36); border-radius: var(--border-radius-lg); position: relative; margin: auto; border: 1px solid var(--border-color); animation: fadeIn 0.3s ease, slideUp 0.3s ease;';
-        
+
         content.innerHTML = `
             <button class="close-btn" style="position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; font-size: 1.4rem; color: var(--text-muted); cursor: pointer;" type="button"><i class="fas fa-times"></i></button>
             <div style="margin-bottom: var(--space-step-20); display: inline-block;">
@@ -3934,14 +3996,14 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 <i class="fas fa-book-reader"></i> Học bù ngay bây giờ
             </button>
         `;
-        
+
         overlay.appendChild(content);
         document.body.appendChild(overlay);
-        
+
         // Đóng nút
         const closeBtn = content.querySelector('.close-btn');
         closeBtn.addEventListener('click', () => overlay.remove());
-        
+
         // Vào học ngay
         const studyBtn = content.querySelector('#makeup-study-now-btn');
         studyBtn.addEventListener('click', () => {
@@ -3970,14 +4032,14 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             if (audioCtxGame.state === 'suspended') {
                 audioCtxGame.resume();
             }
-            
+
             const osc = audioCtxGame.createOscillator();
             const gain = audioCtxGame.createGain();
             osc.connect(gain);
             gain.connect(audioCtxGame.destination);
-            
+
             const now = audioCtxGame.currentTime;
-            
+
             if (type === 'click') {
                 osc.frequency.setValueAtTime(600, now);
                 gain.gain.setValueAtTime(0.08, now);
@@ -4026,7 +4088,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         if (gameSetupContainer) gameSetupContainer.style.display = 'block';
         if (gameBoardContainer) gameBoardContainer.style.display = 'none';
         if (gameVictoryContainer) gameVictoryContainer.style.display = 'none';
-        
+
         clearInterval(gameTimerInterval);
         gameTimerInterval = null;
         selectedCards = [];
@@ -4039,17 +4101,17 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     function startGame() {
         const category = document.getElementById('game-category').value;
         const subcategory = document.getElementById('game-subcategory').value;
-        
+
         // Lọc thẻ theo Danh mục chính
-        let filtered = category === 'all' 
-            ? [...flashcards] 
+        let filtered = category === 'all'
+            ? [...flashcards]
             : flashcards.filter(c => c.category === category);
-            
+
         // Lọc thêm theo Chủ đề chi tiết (nếu có chọn chủ đề cụ thể)
         if (category !== 'all' && subcategory !== 'all') {
             filtered = filtered.filter(c => c.subCategory === subcategory);
         }
-            
+
         if (filtered.length < 3) {
             window.MindSprintDialogs.alert("Số từ vựng trong chủ đề này quá ít (yêu cầu tối thiểu 3 từ). Vui lòng chọn danh mục/chủ đề khác hoặc thêm thẻ học!");
             return;
@@ -4063,7 +4125,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         // Tạo mảnh ghép 2 bên (Trái: Từ vựng, Phải: Ý nghĩa)
         let leftItems = [];
         let rightItems = [];
-        
+
         gameDeck.forEach(card => {
             leftItems.push({ id: card.id, text: card.question, type: 'term' });
             rightItems.push({ id: card.id, text: card.answer, type: 'meaning' });
@@ -4076,7 +4138,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         // Lấy hai cột hiển thị
         const leftGrid = document.getElementById('game-left-grid');
         const rightGrid = document.getElementById('game-right-grid');
-        
+
         leftGrid.innerHTML = '';
         rightGrid.innerHTML = '';
 
@@ -4145,7 +4207,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         gameTime = 0;
         gameMatchesCount = 0;
         selectedCards = [];
-        
+
         const timerVal = document.getElementById('game-timer-val');
         if (timerVal) timerVal.innerText = '0.0';
 
@@ -4181,7 +4243,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             if (card1.item.id === card2.item.id && card1.item.type !== card2.item.type) {
                 // Khớp chính xác!
                 gameMatchesCount++;
-                
+
                 // Gỡ class selected ngay lập tức để không thể nhấp lại
                 card1.element.classList.remove('selected');
                 card2.element.classList.remove('selected');
@@ -4218,12 +4280,12 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     function endGame(isVictory) {
         try {
             clearInterval(gameTimerInterval);
-            
+
             if (isVictory) {
                 try {
                     playSound('victory');
                 } catch(e) {}
-                
+
                 let category = 'all';
                 let subcategory = 'all';
                 try {
@@ -4290,7 +4352,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
             document.querySelectorAll('.searchable-select').forEach(el => {
                 if (el !== container) el.classList.remove('active');
             });
-            
+
             container.classList.toggle('active');
             if (container.classList.contains('active')) {
                 dropdown.style.display = 'block';
@@ -4316,12 +4378,12 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         // Search options
         if (searchInput) {
             const removeTones = (str) => {
-                str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a"); 
-                str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e"); 
-                str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i"); 
-                str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o"); 
-                str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u"); 
-                str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y"); 
+                str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a");
+                str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e");
+                str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i");
+                str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o");
+                str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u");
+                str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y");
                 str = str.replace(/đ/g,"d");
                 str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
                 str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
@@ -4330,8 +4392,8 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                 str = str.replace(/Ù|Ý|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
                 str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
                 str = str.replace(/Đ/g, "D");
-                str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, ""); 
-                str = str.replace(/\u02C6|\u0306|\u031B/g, ""); 
+                str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, "");
+                str = str.replace(/\u02C6|\u0306|\u031B/g, "");
                 return str;
             };
 
@@ -4353,20 +4415,20 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         return {
             updateOptions: (optionsList) => {
                 optionsContainer.innerHTML = '';
-                
+
                 // Add "Tất cả chủ đề"
                 const allOpt = document.createElement('div');
                 allOpt.className = 'option-item active';
                 allOpt.style.cssText = 'padding: var(--space-step-8) var(--space-step-16); cursor: pointer; color: var(--text-primary); transition: background 0.2s ease; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem;';
                 allOpt.innerHTML = `<span>Tất cả chủ đề</span><i class="fas fa-check check-icon" style="color: var(--primary-color); font-size: 0.8rem;"></i>`;
-                
+
                 allOpt.addEventListener('click', () => {
                     optionsContainer.querySelectorAll('.option-item').forEach(el => el.classList.remove('active'));
                     allOpt.classList.add('active');
-                    
+
                     hiddenInput.value = 'all';
                     if (textEl) textEl.innerText = 'Tất cả chủ đề';
-                    
+
                     container.classList.remove('active');
                     dropdown.style.display = 'none';
                     if (onSelectCallback) onSelectCallback('all');
@@ -4389,10 +4451,10 @@ sidebarCategories.hidden = tabId !== 'flashcards';
                         opt.classList.add('active');
                         const chk = opt.querySelector('.check-icon');
                         if (chk) chk.style.display = 'inline-block';
-                        
+
                         hiddenInput.value = optVal;
                         if (textEl) textEl.innerText = optVal;
-                        
+
                         container.classList.remove('active');
                         dropdown.style.display = 'none';
                         if (onSelectCallback) onSelectCallback(optVal);
@@ -4419,6 +4481,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
     async function loadAccountData(user) {
         const version = ++accountVersion;
         activeAccountId = user ? String(user.id) : 'guest';
+        restoreDailyGoals();
         flashcards = loadLocalCards();
         timetableSlots = readPersonalJSON('timetable-slots', user ? [] : defaultSlots.map(slot => ({...slot})));
         offlineQueue = readPersonalJSON(OFFLINE_QUEUE_KEY, []);
@@ -4526,7 +4589,7 @@ sidebarCategories.hidden = tabId !== 'flashcards';
         setupStreakEventListeners(); // Lắng nghe sự kiện chúc mừng & giả lập
         checkMakeupStudyAlert(); // Kiểm tra lịch học bù khi mở ứng dụng
     }
-    
+
     launchApp();
     auth?.onAuthChange(user => loadAccountData(user));
 });

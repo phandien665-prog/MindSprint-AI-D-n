@@ -28,7 +28,16 @@ node_modules/
 frontend/dist/
 frontend/.vercel/
 frontend/.env*
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+test_results.json
+
 .playwright-mcp/
+
+dist/
+release/
 
 # Local worktrees and design exploration
 .worktrees/

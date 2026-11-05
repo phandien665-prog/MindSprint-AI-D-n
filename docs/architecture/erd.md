@@ -1,8 +1,8 @@
 # ERD — MindSprintAI
 
-**Ngày:** 16/10/2026. **Nguồn:** PostgreSQL model snapshot và migrations hiện có trên `main`, gồm `AddNotebookGenerationCache`, `AddNotebookSourceFiles` và `AddWeakArea`. ERD mô tả schema trong mã nguồn; chưa đối chiếu database đang chạy. Bản FastAPI/SQLite độc lập không thuộc sơ đồ này.
+**Ngày:** 26/10/2026. **Baseline:** `1a9fecb807e7232a898a27c826615aac657fd798`. **Nguồn:** PostgreSQL model snapshot và migrations trên `main`, gồm `AddNotebookGenerationCache`, `AddNotebookSourceFiles` và `AddWeakArea`. ERD mô tả schema trong mã nguồn; chưa đối chiếu database đang chạy. Bản FastAPI/SQLite độc lập không thuộc sơ đồ này.
 
-**Mermaid source:** [erd.mmd](erd.mmd). GitHub hiển thị sơ đồ đầy đủ bên dưới. PNG/SVG hiện có là bản xuất cũ theo mốc 10 bảng và chưa được tái sinh trong lần rà này; không dùng chúng để xác nhận schema hiện tại.
+**Mermaid source:** [erd.mmd](erd.mmd). GitHub hiển thị sơ đồ đầy đủ bên dưới. [SVG](erd.svg) và [PNG](erd.png) được xuất lại từ cùng nguồn bằng Mermaid 11.4.1; xem [log kiểm tra](../testing/evidence/sprint-3/diagrams.txt).
 
 ## Quy ước
 

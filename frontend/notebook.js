@@ -211,6 +211,7 @@
                 <div class="nb-suggest" id="nb-suggest" data-source-only></div>
                 <div class="nb-composer">
                     <textarea class="nb-input" id="nb-q" aria-label="Câu hỏi về tài liệu" rows="1" placeholder="Bạn muốn hỏi gì về tài liệu của mình?" maxlength="1000"></textarea>
+                    <p class="nb-muted nb-ai-privacy" role="note">Câu hỏi, hội thoại liên quan và nội dung nguồn hoặc tệp bạn chọn sẽ được gửi đến Google Gemini để xử lý. Tránh gửi thông tin nhạy cảm.</p>
                     <div class="nb-composer-footer">
                         <button class="nb-chip" type="button" id="nb-mic-toggle" aria-pressed="false" aria-controls="nb-q" aria-describedby="nb-voice-status">Nhập bằng giọng nói</button>
                         <button class="nb-icon-btn" type="button" data-ui-act="focus-upload" aria-label="Mở phần tải tài liệu" title="Thêm tài liệu" data-source-only><i class="fas fa-plus" aria-hidden="true"></i></button>

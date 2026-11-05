@@ -69,11 +69,6 @@ export class AuthManager {
       });
     }
 
-    // Quick Demo Account Button
-    const btnDemo = document.getElementById('btn-demo-login');
-    if (btnDemo) {
-      btnDemo.addEventListener('click', () => this.handleDemoLogin());
-    }
   }
 
   async checkSession() {
@@ -250,25 +245,6 @@ export class AuthManager {
     showToast('Tạo tài khoản thành công! Đang tự động đăng nhập...', 'success');
     // Automatically log in after registration
     await this.login(username, password);
-  }
-
-  async handleDemoLogin() {
-    // Try logging in with demo account, or auto-create it if it doesn't exist
-    const demoUser = 'demo_user';
-    const demoPass = 'MindSprint123!';
-    const demoEmail = 'demo@mindsprint.ai';
-
-    try {
-      await this.login(demoUser, demoPass);
-    } catch (err) {
-      // If login failed, try registering demo user first
-      try {
-        await api.post('/api/Auth/register', { username: demoUser, email: demoEmail, password: demoPass });
-        await this.login(demoUser, demoPass);
-      } catch (regErr) {
-        this.showFormError('Không thể khởi tạo tài khoản Demo: ' + regErr.message);
-      }
-    }
   }
 
   logout() {

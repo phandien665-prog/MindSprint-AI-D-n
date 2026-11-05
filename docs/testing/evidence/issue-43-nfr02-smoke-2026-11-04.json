@@ -1,0 +1,228 @@
+{
+  "runId": "20261104-local-02",
+  "startedAtUtc": "2026-11-04T01:48:26.592Z",
+  "finishedAtUtc": "2026-11-04T01:48:50.954Z",
+  "configuration": {
+    "warmupMs": 3000,
+    "rampMs": 5000,
+    "steadyMs": 15000,
+    "idleMs": 1000,
+    "cycles": 1,
+    "thinkTimeMs": 1000,
+    "maxVu": 50,
+    "startVu": 20,
+    "timeoutMs": 5000,
+    "systemCards": 1814
+  },
+  "fixture": {
+    "accounts": 50,
+    "systemCards": 1814,
+    "userCards": 25000,
+    "tasks": 5000,
+    "notebooks": 500,
+    "sources": 2500,
+    "charsPerSource": 5000
+  },
+  "events": [
+    {
+      "name": "fixture-validated",
+      "atUtc": "2026-11-04T01:48:26.592Z",
+      "accounts": 50,
+      "systemCards": 1814,
+      "userCards": 25000,
+      "tasks": 5000,
+      "notebooks": 500,
+      "sources": 2500
+    },
+    {
+      "name": "warmup-start",
+      "atUtc": "2026-11-04T01:48:26.600Z",
+      "vus": 20,
+      "durationMs": 3000,
+      "thinkTimeMs": 1000
+    },
+    {
+      "name": "warmup-complete",
+      "atUtc": "2026-11-04T01:48:29.737Z",
+      "activeVu": 0
+    },
+    {
+      "name": "cycle-1-ramp-start",
+      "atUtc": "2026-11-04T01:48:29.738Z",
+      "startVu": 20,
+      "targetVu": 50,
+      "rampMs": 5000
+    },
+    {
+      "name": "cycle-1-steady-start",
+      "atUtc": "2026-11-04T01:48:35.265Z",
+      "vus": 50,
+      "durationMs": 15000
+    },
+    {
+      "name": "cycle-1-load-complete",
+      "atUtc": "2026-11-04T01:48:49.941Z"
+    },
+    {
+      "name": "cycle-1-idle-complete",
+      "atUtc": "2026-11-04T01:48:50.948Z",
+      "idleMs": 1000
+    }
+  ],
+  "memoryMarkers": [
+    {
+      "name": "baseline-after-warmup",
+      "atUtc": "2026-11-04T01:48:29.737Z"
+    },
+    {
+      "name": "after-cycle-1-idle",
+      "atUtc": "2026-11-04T01:48:50.948Z"
+    }
+  ],
+  "totalRequests": 798,
+  "unexpectedErrorCount": 18,
+  "unexpectedErrorRatePercent": 2.256,
+  "summary": {
+    "warmup | GET /api/flashcards": {
+      "samples": 60,
+      "unexpectedErrors": 0,
+      "p50Ms": 914.07,
+      "p95Ms": 1382.25,
+      "p99Ms": 1429
+    },
+    "cycle-1-ramp | GET /api/flashcards": {
+      "samples": 128,
+      "unexpectedErrors": 0,
+      "p50Ms": 1667.37,
+      "p95Ms": 2415.33,
+      "p99Ms": 2763.14
+    },
+    "cycle-1-steady | GET /api/flashcards": {
+      "samples": 220,
+      "unexpectedErrors": 5,
+      "p50Ms": 2093.17,
+      "p95Ms": 4831.68,
+      "p99Ms": 5013.07
+    },
+    "cycle-1-steady | GET /api/tasks": {
+      "samples": 187,
+      "unexpectedErrors": 0,
+      "p50Ms": 408.2,
+      "p95Ms": 965.81,
+      "p99Ms": 1185.39
+    },
+    "cycle-1-steady | GET /api/notebooks": {
+      "samples": 127,
+      "unexpectedErrors": 0,
+      "p50Ms": 270.57,
+      "p95Ms": 587.4,
+      "p99Ms": 1081.6
+    },
+    "cycle-1-steady | POST /api/tasks": {
+      "samples": 49,
+      "unexpectedErrors": 0,
+      "p50Ms": 413.3,
+      "p95Ms": 565.96,
+      "p99Ms": 1632.78
+    },
+    "cycle-1-steady | PATCH /api/tasks/{id}/move": {
+      "samples": 27,
+      "unexpectedErrors": 13,
+      "p50Ms": 647.19,
+      "p95Ms": 907.47,
+      "p99Ms": 1052.02
+    }
+  },
+  "unexpectedErrors": [
+    {
+      "phase": "cycle-1-steady",
+      "route": "GET /api/flashcards",
+      "error": "timeout"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "GET /api/flashcards",
+      "error": "timeout"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "GET /api/flashcards",
+      "error": "timeout"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "GET /api/flashcards",
+      "error": "timeout"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "GET /api/flashcards",
+      "error": "timeout"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "HTTP 409: {\"message\":\"Cập nhật đồng thời, vui lòng thử lại.\"}"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "HTTP 409: {\"message\":\"Cập nhật đồng thời, vui lòng thử lại.\"}"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    },
+    {
+      "phase": "cycle-1-steady",
+      "route": "PATCH /api/tasks/{id}/move",
+      "error": "network TypeError: fetch failed"
+    }
+  ]
+}

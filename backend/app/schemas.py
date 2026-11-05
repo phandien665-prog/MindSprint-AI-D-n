@@ -8,13 +8,9 @@ from typing import Optional, List, Dict, Union
 import re
 from pydantic import BaseModel, Field, validator
 
-# Dual compatibility helper for Pydantic v1 & v2
+# Compatibility helper for Pydantic v2
 class BaseSchema(BaseModel):
     model_config = {"from_attributes": True}
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
 
 
 # ==========================================
