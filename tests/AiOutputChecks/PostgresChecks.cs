@@ -56,6 +56,17 @@ internal static class PostgresChecks
             values["Gemini:ApiKey"] = Environment.GetEnvironmentVariable("Gemini__ApiKey");
             if (string.IsNullOrWhiteSpace(values["Gemini:ApiKey"])) throw new ArgumentException("Gemini__ApiKey is required for --live.");
             values["Gemini:Model"] = baseline.GetProperty("model").GetString();
+            if (baseline.TryGetProperty("useApplicationFallbacks", out var appFallbacks) && appFallbacks.GetBoolean())
+            {
+                var appCfg = new ConfigurationBuilder().AddJsonFile(Path.Combine(root, "backend/MindSprint.Api/appsettings.json"))
+                    .AddJsonFile(Path.Combine(root, "backend/MindSprint.Api/appsettings.Development.json"), optional: true).AddEnvironmentVariables().Build();
+                if (appCfg["Gemini:Model"] != values["Gemini:Model"]) throw new ArgumentException("Baseline model must match current application configuration.");
+                values["Gemini:MaxRetries"] = appCfg["Gemini:MaxRetries"] ?? "2";
+                values["Gemini:AttemptTimeoutSeconds"] = appCfg["Gemini:AttemptTimeoutSeconds"] ?? "60";
+                values["Gemini:TotalTimeoutSeconds"] = appCfg["Gemini:TotalTimeoutSeconds"] ?? "150";
+                var fallbackModels = appCfg.GetSection("Gemini:FallbackModels").Get<string[]>() ?? [];
+                for (var i = 0; i < fallbackModels.Length; i++) values[$"Gemini:FallbackModels:{i}"] = fallbackModels[i];
+            }
         }
         // Unique schema in a dedicated test database. Kept for inspection; never drop an existing schema/database.
         conn.SearchPath = "nfr14_" + Guid.NewGuid().ToString("N");
@@ -112,7 +123,10 @@ internal static class PostgresChecks
         if (Directory.Exists(output)) throw new ArgumentException("Use a new output directory to avoid mixing independent runs.");
         Directory.CreateDirectory(output);
         var promptFiles = new[] { "NotebookAi", "TutorService", "GeminiService", "NotebookOutputValidation" }.ToDictionary(n => n, n => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(root, "backend/MindSprint.Api/Services", n + ".cs")))));
-        var manifest = new { mode = "live-controller-postgresql", startedAtAsiaSaigon = Stamp(), baseline, runtime = Environment.Version.ToString(), postgres = connection.PostgreSqlVersion.ToString(), schema = conn.SearchPath, fixtureSha256 = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(fixturePath))), promptFiles, retries = 0, fallbackModels = Array.Empty<string>(), temperatureWithSchema = 0.1, temperatureWithoutSchema = 0.3, maxOutputTokens = 8192 };
+        var manifest = new { mode = "live-controller-postgresql", startedAtAsiaSaigon = Stamp(), baseline, runtime = Environment.Version.ToString(), postgres = connection.PostgreSqlVersion.ToString(), schema = conn.SearchPath, fixtureSha256 = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(fixturePath))), promptFiles,
+            retries = cfg.GetValue<int>("Gemini:MaxRetries"), fallbackModels = cfg.GetSection("Gemini:FallbackModels").Get<string[]>() ?? [],
+            attemptTimeoutSeconds = cfg.GetValue<int>("Gemini:AttemptTimeoutSeconds"), totalTimeoutSeconds = cfg.GetValue<int>("Gemini:TotalTimeoutSeconds"),
+            temperatureWithSchema = 0.1, temperatureWithoutSchema = 0.3, maxOutputTokens = 8192 };
         await File.WriteAllTextAsync(Path.Combine(output, "manifest.json"), JsonSerializer.Serialize(manifest, Json));
         var gradeRows = new List<object>();
         for (var run = 1; run <= 3; run++)

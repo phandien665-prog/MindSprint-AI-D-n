@@ -3,6 +3,7 @@
   "thresholdPerGroup": 0.9,
   "runs": 3,
   "model": "SET_AN_EXPLICIT_GEMINI_MODEL_ID",
+  "useApplicationFallbacks": false,
   "approvedBy": "",
   "approvedAtAsiaSaigon": "",
   "sourceCommit": "",
