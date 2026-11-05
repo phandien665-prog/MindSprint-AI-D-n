@@ -46,3 +46,13 @@ test('duplicate and unknown rows are rejected instead of inflating scores', () =
     assert.throws(() => summarize(outputs, [...grades, grades[0]]), /duplicate/);
     assert.throws(() => summarize([{ id: 'S99', run: 1 }], []), /Invalid/);
 });
+test('a whole-group rerun reports its own 30 results and cannot claim the other 60', () => {
+    const result = summarize(outputs.filter(r => r.group === 'tutor'), grades.filter(g => g.id.startsWith('T')), ['tutor']);
+    assert.equal(result.status, 'Pass'); assert.equal(result.expectedOutputs, 30);
+    assert.equal(result.groups.length, 1); assert.equal(result.groups[0].correct, 30);
+    assert.throws(() => summarize(outputs, grades, ['tutor']), /Invalid/);
+});
+test('invalid or duplicate group scopes cannot weaken the baseline', () => {
+    assert.throws(() => summarize([], [], []), /Invalid/);
+    assert.throws(() => summarize([], [], ['tutor', 'tutor']), /Invalid/);
+});

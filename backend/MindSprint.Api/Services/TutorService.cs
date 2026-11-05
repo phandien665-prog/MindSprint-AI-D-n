@@ -130,6 +130,11 @@ public class TutorService(GeminiService gemini)
         Nếu đề mơ hồ/thiếu dữ kiện, status=needs_clarification, needsClarification=true; hỏi bổ sung, không kết luận bài sai.
         Không cho điểm hay tự tạo thang điểm. Không thay nhận xét bằng một lời giải mẫu không liên quan.
         Không đưa toàn bộ lời giải thay cho việc giúp người học tự sửa; người học có thể gửi bài đã sửa để kiểm tra tiếp.
+        Với bài sai hoặc chưa hoàn chỉnh, quy tắc này áp dụng đồng thời cho answer, feedback.reason và feedback.suggestion.
+        Chỉ sửa phép tính/lập luận tại lỗi đầu tiên và gợi MỘT hướng tự sửa; không tính tiếp ra nghiệm, đáp số cuối hay điền phần đáp án còn thiếu.
+        Khi lỗi là bỏ một nhánh/nghiệm, hãy nhắc kiến thức về dấu, giá trị tuyệt đối hoặc nhánh cần kiểm tra ở dạng tổng quát;
+        không đưa giá trị nghiệm cụ thể còn thiếu hay giải trọn phương trình để minh họa. Hãy để người học tự tìm rồi gửi lại.
+        Nếu bài đúng, được đối chiếu các kết quả người học đã cung cấp để giải thích vì sao đúng.
         """;
     private const string CheckSchema = """
         Chỉ trả JSON hợp lệ: {"answer":"Nhận xét Markdown: vị trí lỗi, lý do và hướng sửa hoặc vì sao bài đúng",

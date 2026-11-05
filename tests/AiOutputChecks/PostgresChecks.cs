@@ -39,6 +39,10 @@ internal static class PostgresChecks
         var root = Directory.GetCurrentDirectory();
         var fixturePath = Path.Combine(root, "tests/AiOutputChecks/fixtures.json");
         using var fixture = JsonDocument.Parse(await File.ReadAllTextAsync(fixturePath));
+        var selectedGroup = args.FirstOrDefault(a => a.StartsWith("--group="))?[8..];
+        if (selectedGroup is not null and not ("source" or "tutor" or "hint")) throw new ArgumentException("--group must be source, tutor or hint.");
+        var selectedCases = fixture.RootElement.GetProperty("cases").EnumerateArray()
+            .Where(c => selectedGroup is null || c.GetProperty("group").GetString() == selectedGroup).ToArray();
         var values = new Dictionary<string, string?> { ["Gemini:ApiKey"] = "synthetic-test-key", ["Gemini:Model"] = "synthetic-provider", ["Gemini:MaxRetries"] = "0", ["Gemini:AttemptTimeoutSeconds"] = "60", ["Gemini:TotalTimeoutSeconds"] = "90" };
         JsonElement baseline = default;
         if (live)
@@ -133,11 +137,12 @@ internal static class PostgresChecks
             retries = cfg.GetValue<int>("Gemini:MaxRetries"), fallbackModels = cfg.GetSection("Gemini:FallbackModels").Get<string[]>() ?? [],
             attemptTimeoutSeconds = cfg.GetValue<int>("Gemini:AttemptTimeoutSeconds"), totalTimeoutSeconds = cfg.GetValue<int>("Gemini:TotalTimeoutSeconds"),
             temperatureWithSchema = 0.1, temperatureWithoutSchema = 0.3, maxOutputTokens = 8192,
-            collectorAvailabilityAttempts = 3, collectorMaxRetryAfterSeconds = 60, collectorInterCaseDelayMs = 1000 };
+            collectorAvailabilityAttempts = 3, collectorMaxRetryAfterSeconds = 60, collectorInterCaseDelayMs = 1000,
+            selectedGroups = selectedGroup is null ? new[] { "source", "tutor", "hint" } : new[] { selectedGroup }, expectedOutputs = selectedCases.Length * 3 };
         await File.WriteAllTextAsync(Path.Combine(output, "manifest.json"), JsonSerializer.Serialize(manifest, Json));
         var gradeRows = new List<object>();
         for (var run = 1; run <= 3; run++)
-        foreach (var item in fixture.RootElement.GetProperty("cases").EnumerateArray())
+        foreach (var item in selectedCases)
         {
             // Force a new provider generation, even for repeated source questions.
             await db.NotebookGenerationCaches.ExecuteDeleteAsync();
@@ -167,7 +172,7 @@ internal static class PostgresChecks
             await Task.Delay(1000);
         }
         await File.WriteAllTextAsync(Path.Combine(output, "grades.json"), JsonSerializer.Serialize(gradeRows, Json));
-        Console.WriteLine("BLOCKED pending human grading: 90 outputs collected. Run node tests/AiOutputChecks/report.mjs <output directory> after grading.");
+        Console.WriteLine($"BLOCKED pending human grading: {gradeRows.Count} records collected. Run node tests/AiOutputChecks/report.mjs <output directory> after grading.");
         return 2;
     }
 
