@@ -25,7 +25,7 @@ public static class NotebookOutputValidation
             if (!Text(cite.Quote, 1000) || Canonical(cite.Quote!).Split(' ').Length >= 25
                 || !Canonical(source.Content ?? "").Contains(Canonical(cite.Quote!), StringComparison.Ordinal)) throw Invalid();
         }
-        foreach (Match marker in Regex.Matches(answer.Answer, @"\[(\d+)\]"))
+        foreach (Match marker in Regex.Matches(answer.Answer, @"\[(?:S)?(\d+)\]", RegexOptions.IgnoreCase))
             if (!int.TryParse(marker.Groups[1].Value, out var index) || !answer.Citations.Any(c => c.Source == index)) throw Invalid();
     }
 

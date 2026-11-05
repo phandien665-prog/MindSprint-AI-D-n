@@ -18,7 +18,7 @@ Tài khoản GitHub đang kết nối là `tungtungsahul`. Công việc được
 | `backend/MindSprint.Api/Services/NotebookOutputValidation.cs` | Kiểm tra cấu trúc, số lượng, kích thước học liệu; trích dẫn phải khớp nguồn và ký hiệu dẫn nguồn phải có metadata |
 | `backend/MindSprint.Api/Services/NotebookAi.cs` | Gọi validation trước trả/lưu kết quả và khi đọc cache; đổi revision cache chat/mindmap; lỗi JSON cache được chuyển thành lỗi có kiểm soát |
 | `backend/TutorChecks/SharedSourceChecks.cs` | Sửa provider giả lập để trả quiz đúng hợp đồng và không tạo đoạn trích OCR cho nguồn không có lớp chữ; giữ nguyên các assertion nghiệp vụ |
-| `tests/AiOutputChecks/Program.cs` | 40 kiểm tra hợp đồng dùng HTTP provider giả lập, gồm 12 JSON sai và 8 mindmap sai |
+| `tests/AiOutputChecks/Program.cs` | 41 kiểm tra hợp đồng dùng HTTP provider giả lập, gồm 12 JSON sai và 8 mindmap sai |
 | `tests/AiOutputChecks/PostgresChecks.cs` | Kiểm tra controller/ownership/cache trên PostgreSQL và chế độ thu 90 đầu ra Gemini thật |
 | `tests/AiOutputChecks/fixtures.json` | 30 câu, đáp án chuẩn và rubric; chỉ dữ liệu tự tạo |
 | `tests/AiOutputChecks/report.mjs` | Tổng hợp kết quả theo nhóm/lượt; tạo một file `report.md` chứa fixture, manifest, bảng chấm và 90 đầu ra gốc |
@@ -43,7 +43,7 @@ Môi trường local: Windows, .NET SDK **10.0.401**, target ứng dụng **net8
 
 | Lệnh từ root | Kết quả | Phạm vi |
 |---|---|---|
-| `dotnet run --project tests/AiOutputChecks -c Release --no-restore` | **40 pass, 0 fail** | ASP.NET Core services + provider HTTP giả lập; không truy cập DB/model thật |
+| `dotnet run --project tests/AiOutputChecks -c Release --no-restore` | **41 pass, 0 fail** | ASP.NET Core services + provider HTTP giả lập; không truy cập DB/model thật |
 | `node --test tests/AiOutputChecks/report.test.mjs` | **8 pass, 0 fail** | Fixture và tính đúng của bảng tổng hợp; đầu vào chấm trong test là dữ liệu tổng hợp |
 | `node --test tests/AiOutputChecks/browser.test.cjs` | **1 test tổng hợp pass**, 5 nhóm luồng UI, 0 lỗi JavaScript trang | Browser thật + API giả lập |
 | `dotnet run --project backend/TutorChecks -c Release --no-restore` | **59 pass** | Regression có sẵn; SQLite trong bộ nhớ + provider giả lập, chỉ là regression bổ trợ |
@@ -56,7 +56,7 @@ Môi trường local: Windows, .NET SDK **10.0.401**, target ứng dụng **net8
 
 **CI PostgreSQL/Chromium đã PASS:** [run 42007247750](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions/runs/42007247750), job `contracts` — bản tích hợp `c0acf99d263c9075b7d18a06924a2026f6769c7c`. Đủ 40 contract checks, **10 kiểm tra controller/cache/ownership trên PostgreSQL 16**, 8 kiểm tra fixture/chấm điểm, browser test Chromium với 5 nhóm luồng. Provider vẫn giả lập. Lần chạy trước [42007063389](https://github.com/tungtungsahul/MindSprint-AI-D-n/actions/runs/42007063389) cũng pass. Đã xác nhận kết quả từ trạng thái từng bước GitHub Actions, không suy ra từ việc workflow tồn tại.
 
-Đã làm kiểm tra nhạy hồi quy: tạm đổi giới hạn quiz từ `correctIndex <= 3` sang `<= 4`; ca **J08 thất bại** với thông báo `unsafe output accepted` và bộ kiểm tra trả lỗi (39 pass / 1 fail). Đã phục hồi mã nguồn rồi chạy lại. Điều này chứng minh test bắt được việc làm yếu kiểm tra chỉ số đáp án.
+Đã làm kiểm tra nhạy hồi quy: tạm đổi giới hạn quiz từ `correctIndex <= 3` sang `<= 4`; ca **J08 thất bại** với thông báo `unsafe output accepted` và bộ kiểm tra trả lỗi (39 pass / 1 fail). Đã phục hồi mã nguồn rồi chạy lại. Điều này chứng minh test bắt được việc làm yếu kiểm tra chỉ số đáp án. Mutation chạy trên bộ 40 ca trước khi bổ sung C09. Ca C09 bổ sung đã tái hiện `[S99]` lọt validation (40 pass / 1 fail), sau sửa bộ cuối đạt 41 pass / 0 fail; nguồn `[n]`, `[Sn]` và `[sn]` được kiểm tra cùng metadata.
 
 Vấn đề công cụ đã xử lý: lần khởi động Edge trong sandbox thất bại trước khi chạy UI; chạy lại Edge với quyền phù hợp, vẫn hồ sơ tạm, đã pass. Một lần build đồng thời hai project tranh chấp DLL; chạy lại tuần tự đã pass. NuGet audit không truy cập được feed mạng ở lần restore local; không tuyên bố đã audit lỗ hổng dependency. Không sửa cấu hình project để tắt audit.
 
@@ -176,15 +176,15 @@ Thời điểm đóng gói log local: 2026-11-05T16:59:31+07:00 (Asia/Saigon).
 ]
 ```
 
-### SHA256 tệp triển khai
+### SHA256 tệp triển khai (UTF-8, chuẩn hóa xuống dòng LF)
 
 | Tệp | SHA256 |
 |---|---|
 | `backend/MindSprint.Api/Services/NotebookAi.cs` | `f953cff22206fbde22b1bfa9f53184ae5cbca07b31cde2e03e964a0eb8919821` |
-| `backend/MindSprint.Api/Services/NotebookOutputValidation.cs` | `8ae0e57341d2c949f3456d4ae1c707e79a748281d6b28b7dc8870f5d760f5fa8` |
+| `backend/MindSprint.Api/Services/NotebookOutputValidation.cs` | `cb7260af730380ac8c9308bdff81c3534ca80f90244ee429c484243f40ae2083` |
 | `tests/AiOutputChecks/fixtures.json` | `e586e85ba24520eff9d1ca8b6808f730949eb03d2d11df6106275f102d8fea04` |
-| `tests/AiOutputChecks/Program.cs` | `d1de3f850a17919cf077de35852b9ea6b4f500cbe2292c511a487fc5ca0288d9` |
-| `tests/AiOutputChecks/PostgresChecks.cs` | `55498dfb3c5cb8c03b47614959e9575ef40ee76d4d5ce29909f915e753041130` |
+| `tests/AiOutputChecks/Program.cs` | `3b7b80187594fca4dc4e4a75679755910cc3e854d94bb8aff81f982dec79366d` |
+| `tests/AiOutputChecks/PostgresChecks.cs` | `6444cdc46565f9edb89ecdb866b9c017c18fb737783caac6245cbcdcd5a44b14` |
 | `tests/AiOutputChecks/report.mjs` | `d53b4b44235aeb73873c946dd79974bc3eacec52c8bc6162fddd4ab39ba8fa38` |
 
 ### Log contracts.log
@@ -337,4 +337,51 @@ Build succeeded.
     0 Error(s)
 
 Time Elapsed 00:00:02.37
+```
+
+### Log contracts-final.log — sau rà soát và sửa định dạng [Sn]
+
+```text
+PASS J01 syntax
+PASS J02 wrong root
+PASS J03 missing answer
+PASS J04 wrong type
+PASS J05 too many cards
+PASS J06 blank question
+PASS J07 too few options
+PASS J08 answer index
+PASS J09 negative index
+PASS J10 null item
+PASS J11 too long
+PASS J12 empty array
+PASS valid flashcards
+PASS valid quiz
+PASS M01 wrong root
+PASS M02 missing title
+PASS M03 nonarray children
+PASS M04 null child
+PASS M05 fourth level
+PASS M06 long title
+PASS M07 too many children
+PASS M08 too many nodes
+PASS valid mindmap
+PASS C01 outside notebook
+PASS C02 fabricated quote
+PASS C03 null quotes
+PASS C04 missing citations
+PASS C05 unlisted marker
+PASS C06 null citation
+PASS C07 zero source
+PASS C08 oversized answer
+PASS C09 unlisted S marker
+PASS valid verbatim citation and whitespace normalization
+PASS missing facts may have no citations
+PASS image-only citation cannot pretend to have a text quote
+PASS image-only file citation has no fabricated quote
+PASS hint fail closed {"isSafe":false}
+PASS hint fail closed {}
+PASS hint fail closed not json
+PASS hint verifier outage never publishes candidate
+PASS safe hint uses independent review
+Contracts: 41 passed; 0 failed. Synthetic HTTP provider, ASP.NET Core services; no model quality or PostgreSQL acceptance claimed.
 ```

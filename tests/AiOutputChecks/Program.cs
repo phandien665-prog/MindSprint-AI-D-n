@@ -87,10 +87,11 @@ foreach (var (name, answer) in new (string, ChatAnswer)[] {
     ("C05 unlisted marker", new("[2]", [new(1, "Nước sôi")])),
     ("C06 null citation", new("[1]", [null!])),
     ("C07 zero source", new("[0]", [new(0, "Nước sôi")])),
-    ("C08 oversized answer", new(new string('a', 20001), []))
+    ("C08 oversized answer", new(new string('a', 20001), [])),
+    ("C09 unlisted S marker", new("[S99]", [new(1, "Nước sôi")]))
 }) await Case(name, () => Invalid(() => { NotebookOutputValidation.Chat(answer, sources); return Task.CompletedTask; }));
 await Case("valid verbatim citation and whitespace normalization", () => {
-    NotebookOutputValidation.Chat(new("Nước sôi ở 100 °C [1].", [new(1, "Nước sôi ở 100 °C\n tại áp suất 1 atm.")]), sources);
+    NotebookOutputValidation.Chat(new("Nước sôi ở 100 °C [1] [S1].", [new(1, "Nước sôi ở 100 °C\n tại áp suất 1 atm.")]), sources);
     return Task.CompletedTask;
 });
 await Case("missing facts may have no citations", () => {
