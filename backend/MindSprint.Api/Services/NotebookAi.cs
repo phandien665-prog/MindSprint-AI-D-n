@@ -190,7 +190,7 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
         var normalizedQuestion = NormalizeText(question);
         var historyKey = ChatHistoryCacheKey(question, history);
         var sourcesHash = HashSources(sources);
-        var requestHash = Sha256($"chat-nfr14-v1\u001f{normalizedQuestion}\u001f{historyKey}");
+        var requestHash = Sha256($"chat-nfr14-v2\u001f{normalizedQuestion}\u001f{historyKey}");
         var lockKey = $"chat:{sourcesHash}:{requestHash}";
         var gate = CacheLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync();
@@ -221,6 +221,9 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
             Mọi quote phải xuất hiện nguyên văn trong lớp chữ của nguồn đó; không bịa đoạn trích.
             Chỉ với nguồn ảnh/PDF không có lớp chữ, đặt quote=null; vẫn dẫn đúng số nguồn để người học đối chiếu tệp gốc.
             Không đủ dữ kiện thì nói rõ phần thiếu, không tự bổ sung kiến thức ngoài nguồn.
+            Nếu chỉ báo không tìm thấy dữ kiện hoặc không có dữ liệu tài khoản được hỏi, không gắn [n]/[Sn] và trả citations=[].
+            Mỗi marker [n]/[Sn] có trong answer BẮT BUỘC có phần tử citations tương ứng với quote hợp lệ;
+            không gắn marker trang trí cho lời từ chối hoặc cho nguồn không chứng minh câu trả lời.
 
             LỊCH SỬ:
             {{hist}}
