@@ -124,6 +124,60 @@ await Case("all failed models report busy without exposing provider details", as
     Check(handler.Models.Count == 6 && error.StatusCode == 503, "Retry bound failed");
     Check(!error.Message.Contains("test-key") && !error.Message.Contains("private document"), "Sensitive error");
 });
+await Case("primary timeout cooldown is shared and leaves the configured backup usable", async () =>
+{
+    var (service, handler, state) = Client(async (request, token) => {
+        if (request.RequestUri!.AbsolutePath.Contains("primary")) await Task.Delay(5000, token);
+        return Reply(200);
+    }, new Dictionary<string, string?> { ["Gemini:AttemptTimeoutSeconds"] = "1" });
+    Check(await service.TextAsync("first") == "OK", "Initial fallback failed");
+    var (next, nextHandler, _) = Client((_, _) => Task.FromResult(Reply(200)), state: state);
+    Check(await next.TextAsync("next") == "OK", "Backup not usable during primary pause");
+    Check(handler.Models.SequenceEqual(new[] { "primary", "backup" }) && nextHandler.Models.SequenceEqual(new[] { "backup" }), "Slow primary was attempted again during cooldown");
+});
+await Case("exhausted transient retries pause only the failing model", async () =>
+{
+    var (service, handler, state) = Client((request, _) => Task.FromResult(Reply(request.RequestUri!.AbsolutePath.Contains("primary") ? 503 : 200)));
+    Check(await service.TextAsync("first") == "OK", "Initial fallback failed");
+    var (next, nextHandler, _) = Client((_, _) => Task.FromResult(Reply(200)), state: state);
+    await next.TextAsync("next");
+    Check(handler.Models.SequenceEqual(new[] { "primary", "primary", "primary", "backup" }), "Configured retries changed");
+    Check(nextHandler.Models.SequenceEqual(new[] { "backup" }), "Failed primary was retried during cooldown");
+});
+await Case("paused busy models remain a busy error and cause no new provider calls", async () =>
+{
+    var (service, _, state) = Client((_, _) => Task.FromResult(Reply(503)));
+    await Error(() => service.TextAsync("first"), "ai_busy");
+    var (next, nextHandler, _) = Client((_, _) => Task.FromResult(Reply(200)), state: state);
+    var error = await Error(() => next.TextAsync("next"), "ai_busy");
+    Check(error.StatusCode == 503 && nextHandler.Models.Count == 0, "Pause became a configuration failure or reached provider");
+});
+await Case("paused timed-out models keep timeout classification", async () =>
+{
+    var (service, _, state) = Client(async (_, token) => { await Task.Delay(5000, token); return Reply(200); },
+        new Dictionary<string, string?> { ["Gemini:AttemptTimeoutSeconds"] = "1" });
+    await Error(() => service.TextAsync("first"), "ai_timeout");
+    var (next, nextHandler, _) = Client((_, _) => Task.FromResult(Reply(200)), state: state);
+    var error = await Error(() => next.TextAsync("next"), "ai_timeout");
+    Check(error.StatusCode == 504 && nextHandler.Models.Count == 0, "Timeout cooldown lost error classification");
+});
+await Case("transient cooldown cannot shorten an existing quota pause", () =>
+{
+    var (_, _, state) = Client((_, _) => Task.FromResult(Reply(200)));
+    state.Pause("model-key", "ai_rate_limited", TimeSpan.FromHours(12));
+    var quota = state.GetPause("model-key");
+    state.Pause("model-key", "ai_busy", TimeSpan.FromSeconds(30));
+    Check(state.GetPause("model-key") == quota, "A shorter transient pause replaced quota");
+    return Task.CompletedTask;
+});
+await Case("transient cooldown is isolated by credential fingerprint", async () =>
+{
+    var (service, _, state) = Client((_, _) => Task.FromResult(Reply(503)));
+    await Error(() => service.TextAsync("first"), "ai_busy");
+    var (other, handler, _) = Client((_, _) => Task.FromResult(Reply(200)),
+        new Dictionary<string, string?> { ["Gemini:ApiKey"] = "different-test-key" }, state: state);
+    Check(await other.TextAsync("next") == "OK" && handler.Models.SequenceEqual(new[] { "primary" }), "Cooldown leaked between credentials");
+});
 await Case("multipart answers join text and omit thinking parts", async () =>
 {
     var (service, _, _) = Client((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)

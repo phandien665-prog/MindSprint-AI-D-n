@@ -137,9 +137,12 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
                 var modelKey = fingerprint + ":" + model;
                 if (availability.GetPause(modelKey) is { } pause)
                 {
-                    failures.Add(pause.Code == "ai_rate_limited"
-                        ? RateLimitError((int)Math.Ceiling((pause.Until - DateTimeOffset.UtcNow).TotalSeconds))
-                        : ConfigurationError());
+                    failures.Add(pause.Code switch {
+                        "ai_rate_limited" => RateLimitError((int)Math.Ceiling((pause.Until - DateTimeOffset.UtcNow).TotalSeconds)),
+                        "ai_timeout" => TimeoutError(),
+                        "ai_busy" => BusyError(),
+                        _ => ConfigurationError()
+                    });
                     continue;
                 }
                 var retries = Math.Clamp(cfg.GetValue("Gemini:MaxRetries", 2), 0, 3);
@@ -155,13 +158,17 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
                     catch (OperationCanceledException) when (!budget.IsCancellationRequested)
                     {
                         // A slow model should not consume the whole fallback budget.
+                        availability.Pause(modelKey, "ai_timeout", TimeSpan.FromSeconds(60));
                         failures.Add(TimeoutError());
                         break;
                     }
                     catch (HttpRequestException)
                     {
                         failures.Add(BusyError());
-                        if (attempt == retries) break;
+                        if (attempt == retries) {
+                            availability.Pause(modelKey, "ai_busy", TimeSpan.FromSeconds(30));
+                            break;
+                        }
                     }
                     catch (ModelFailure failure)
                     {
@@ -185,9 +192,11 @@ public class GeminiService(HttpClient http, IConfiguration cfg, GeminiAvailabili
                         if (!IsTransient(failure.Status))
                             throw new GeminiUnavailableException("ai_request_rejected", "AI chưa xử lý được tài liệu này. Hãy thử nội dung ngắn hơn hoặc đổi trọng tâm.", 422);
                         failures.Add(BusyError());
-                        if (attempt == retries) break;
                         providerDelay = failure.RetryAfterSeconds;
-                        if (providerDelay > 15) break;
+                        if (attempt == retries || providerDelay > 15) {
+                            availability.Pause(modelKey, "ai_busy", TimeSpan.FromSeconds(Math.Clamp(providerDelay ?? 30, 30, 86400)));
+                            break;
+                        }
                     }
                     var baseDelay = Math.Clamp(cfg.GetValue("Gemini:RetryDelayMilliseconds", 1000), 1, 5000);
                     var delayMilliseconds = Math.Max(providerDelay.GetValueOrDefault() * 1000d,
