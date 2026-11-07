@@ -10,7 +10,7 @@ public sealed class GeminiUnavailableException(string code, string message, int 
     public int? RetryAfterSeconds { get; } = retryAfterSeconds;
 }
 
-// Shared across requests: avoid repeatedly calling a model that is out of quota.
+// Shared across requests: avoid repeatedly calling a model that is exhausted or unavailable.
 public sealed class GeminiAvailability(IConfiguration cfg)
 {
     private readonly ConcurrentDictionary<string, (DateTimeOffset Until, string Code)> pauses = new();
@@ -24,6 +24,10 @@ public sealed class GeminiAvailability(IConfiguration cfg)
         return null;
     }
 
-    public void Pause(string key, string code, TimeSpan delay) =>
-        pauses[key] = (DateTimeOffset.UtcNow.Add(delay), code);
+    public void Pause(string key, string code, TimeSpan delay)
+    {
+        var requested = (Until: DateTimeOffset.UtcNow.Add(delay), Code: code);
+        // Concurrent transient failures must not shorten an existing quota pause.
+        pauses.AddOrUpdate(key, requested, (_, current) => current.Until >= requested.Until ? current : requested);
+    }
 }

@@ -190,7 +190,7 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
         var normalizedQuestion = NormalizeText(question);
         var historyKey = ChatHistoryCacheKey(question, history);
         var sourcesHash = HashSources(sources);
-        var requestHash = Sha256($"chat\u001f{normalizedQuestion}\u001f{historyKey}");
+        var requestHash = Sha256($"chat-nfr14-v2\u001f{normalizedQuestion}\u001f{historyKey}");
         var lockKey = $"chat:{sourcesHash}:{requestHash}";
         var gate = CacheLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync();
@@ -202,7 +202,9 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
             if (cached is not null)
             {
                 Console.WriteLine("[AI cache] hit type=chat");
-                return JsonSerializer.Deserialize<ChatAnswer>(cached.ContentJson)!;
+                var cachedAnswer = ReadChatCache(cached);
+                NotebookOutputValidation.Chat(cachedAnswer, sources);
+                return cachedAnswer;
             }
 
             var hist = string.Join("\n", (history ?? []).TakeLast(6)
@@ -216,6 +218,12 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
             {{Rules}}
             Chỉ sử dụng các đoạn được chọn theo độ liên quan và tệp gốc đính kèm. Khi dùng thông tin từ nguồn, gắn số nguồn dạng [1], [2] ngay sau câu đó (số = S trong nguồn).
             Trả về JSON: {"answer":"...(markdown, có [n])","citations":[{"source":1,"quote":"đoạn trích NGUYÊN VĂN ngắn dưới 25 từ từ nguồn đó"}]}
+            Mọi quote phải xuất hiện nguyên văn trong lớp chữ của nguồn đó; không bịa đoạn trích.
+            Chỉ với nguồn ảnh/PDF không có lớp chữ, đặt quote=null; vẫn dẫn đúng số nguồn để người học đối chiếu tệp gốc.
+            Không đủ dữ kiện thì nói rõ phần thiếu, không tự bổ sung kiến thức ngoài nguồn.
+            Nếu chỉ báo không tìm thấy dữ kiện hoặc không có dữ liệu tài khoản được hỏi, không gắn [n]/[Sn] và trả citations=[].
+            Mỗi marker [n]/[Sn] có trong answer BẮT BUỘC có phần tử citations tương ứng với quote hợp lệ;
+            không gắn marker trang trí cho lời từ chối hoặc cho nguồn không chứng minh câu trả lời.
 
             LỊCH SỬ:
             {{hist}}
@@ -226,8 +234,7 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
             CÂU HỎI: {{question}}
             """;
             var answer = await gemini.JsonAsync<ChatAnswer>(prompt, ChatSchema, attachments: Attachments(sources));
-            if (string.IsNullOrWhiteSpace(answer.Answer) || answer.Answer.Any(c => char.IsControl(c) && c is not ('\n' or '\r' or '\t')) || answer.Citations?.Any(c => c is null || c.Source < 1 || c.Source > sources.Count) == true)
-                throw new GeminiUnavailableException("ai_invalid_response", "AI chưa trả lời hoặc dẫn nguồn hợp lệ. Hãy thử lại.", 502);
+            NotebookOutputValidation.Chat(answer, sources);
             var entry = new NotebookGenerationCache
             {
                 NotebookId = sources[0].NotebookId,
@@ -249,7 +256,9 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
                     c.NotebookId == sources[0].NotebookId && c.Type == "chat" &&
                     c.RequestHash == requestHash && c.SourcesHash == sourcesHash);
                 if (concurrentlyCached is null) throw;
-                return JsonSerializer.Deserialize<ChatAnswer>(concurrentlyCached.ContentJson)!;
+                var concurrentAnswer = ReadChatCache(concurrentlyCached);
+                NotebookOutputValidation.Chat(concurrentAnswer, sources);
+                return concurrentAnswer;
             }
             Console.WriteLine("[AI cache] stored type=chat");
             return answer;
@@ -276,7 +285,7 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
             return await GenerateUncachedAsync(sources, type, focus, count);
 
         var sourcesHash = HashSources(sources);
-        var requestHash = Sha256($"{type}\u001f{NormalizeText(focus ?? "")}");
+        var requestHash = Sha256($"{(type == "mindmap" ? "mindmap-nfr14-v1" : type)}\u001f{NormalizeText(focus ?? "")}");
         var lockKey = $"{notebookId}:{type}:{requestHash}:{sourcesHash}";
         var gate = CacheLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync();
@@ -288,7 +297,9 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
             if (cached is not null)
             {
                 Console.WriteLine($"[AI cache] hit type={type}");
-                return ReadCache(cached);
+                var result = ReadCache(cached);
+                if (type == "mindmap") NotebookOutputValidation.Generation(result.content is JsonElement json ? json : default, type, count);
+                return result;
             }
 
             var generated = await GenerateUncachedAsync(sources, type, focus, count);
@@ -313,7 +324,9 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
                     c.NotebookId == notebookId && c.Type == type &&
                     c.RequestHash == requestHash && c.SourcesHash == sourcesHash);
                 if (concurrentlyCached is null) throw;
-                return ReadCache(concurrentlyCached);
+                var result = ReadCache(concurrentlyCached);
+                if (type == "mindmap") NotebookOutputValidation.Generation(result.content is JsonElement json ? json : default, type, count);
+                return result;
             }
             Console.WriteLine($"[AI cache] stored type={type}");
             return generated;
@@ -326,9 +339,19 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
 
     private static (bool isJson, object content) ReadCache(NotebookGenerationCache cached)
     {
-        if (cached.IsJson)
-            return (true, JsonSerializer.Deserialize<JsonElement>(cached.ContentJson));
-        return (false, JsonSerializer.Deserialize<string>(cached.ContentJson) ?? "");
+        try
+        {
+            if (cached.IsJson)
+                return (true, JsonSerializer.Deserialize<JsonElement>(cached.ContentJson));
+            return (false, JsonSerializer.Deserialize<string>(cached.ContentJson) ?? "");
+        }
+        catch (JsonException) { throw new GeminiUnavailableException("ai_invalid_response", "AI chưa tạo được kết quả hợp lệ. Bạn có thể thử lại.", 502); }
+    }
+
+    private static ChatAnswer ReadChatCache(NotebookGenerationCache cached)
+    {
+        try { return JsonSerializer.Deserialize<ChatAnswer>(cached.ContentJson) ?? throw new JsonException(); }
+        catch (JsonException) { throw new GeminiUnavailableException("ai_invalid_response", "AI chưa trả dẫn nguồn hợp lệ. Bạn có thể thử lại.", 502); }
     }
 
     private static string HashSources(IReadOnlyList<NotebookSource> sources)
@@ -389,29 +412,32 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
                     {{ctx}}
                     """, attachments: attachments));
             case "mindmap":
-                return (true, await gemini.JsonAsync<JsonElement>($$"""
+                return (true, await GenerateJsonAsync($$"""
                     {{Rules}}{{f}}
                     Tạo sơ đồ tư duy tối đa 3 cấp, mỗi nút tiêu đề ngắn (dưới 8 từ). Trả về JSON: {"title":"...","children":[{"title":"...","children":[{"title":"..."}]}]}
+                    Tối đa 100 nút, mỗi nút tối đa 12 con, tiêu đề tối đa 100 ký tự.
 
                     NGUỒN:
                     {{ctx}}
-                    """, attachments: attachments));
+                    """, type, count, attachments));
             case "flashcards":
-                return (true, await gemini.JsonAsync<JsonElement>($$"""
+                return (true, await GenerateJsonAsync($$"""
                     {{Rules}}{{f}}
                     Tạo đúng {{count}} flashcard. Trả về JSON: [{"question":"...","answer":"...","example":"..."}]
+                    Câu hỏi/ví dụ tối đa 2000 ký tự; câu trả lời tối đa 4000 ký tự; không để trống câu hỏi/câu trả lời.
 
                     NGUỒN:
                     {{ctx}}
-                    """, attachments: attachments));
+                    """, type, count, attachments));
             case "quiz":
-                return (true, await gemini.JsonAsync<JsonElement>($$"""
+                return (true, await GenerateJsonAsync($$"""
                     {{Rules}}{{f}}
                     Tạo đúng {{count}} câu trắc nghiệm 4 đáp án, đáp án sai phải hợp lý. Trả về JSON: [{"question":"...","options":["..","..","..",".."],"correctIndex":0,"explanation":"..."}]
+                    Câu hỏi/đáp án tối đa 2000 ký tự; giải thích tối đa 4000 ký tự. Bốn lựa chọn phải khác nhau, correctIndex là số nguyên 0..3.
 
                     NGUỒN:
                     {{ctx}}
-                    """, attachments: attachments));
+                    """, type, count, attachments));
             case "audio":
                 return (true, await gemini.JsonAsync<JsonElement>($$"""
                     {{Rules}}{{f}}
@@ -423,5 +449,12 @@ public class NotebookAi(AppDbContext db, GeminiService gemini)
             default:
                 throw new ArgumentException("type không hợp lệ.");
         }
+    }
+
+    private async Task<JsonElement> GenerateJsonAsync(string prompt, string type, int count, IReadOnlyList<GeminiAttachment> attachments)
+    {
+        var content = await gemini.JsonAsync<JsonElement>(prompt, attachments: attachments);
+        NotebookOutputValidation.Generation(content, type, count);
+        return content;
     }
 }

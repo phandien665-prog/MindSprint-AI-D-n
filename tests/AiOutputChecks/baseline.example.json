@@ -1,0 +1,13 @@
+{
+  "fixtureRevision": "nfr14-2026-11-05-v1",
+  "thresholdPerGroup": 0.9,
+  "runs": 3,
+  "model": "SET_AN_EXPLICIT_GEMINI_MODEL_ID",
+  "useApplicationFallbacks": false,
+  "approvedBy": "",
+  "approvedAtAsiaSaigon": "",
+  "sourceCommit": "",
+  "imageOrDeployment": "",
+  "nfr04Evidence": "",
+  "nfr06Evidence": ""
+}

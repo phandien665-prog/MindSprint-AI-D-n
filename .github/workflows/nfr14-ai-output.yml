@@ -1,0 +1,62 @@
+name: NFR-14 AI output contracts
+
+on:
+  pull_request:
+    paths:
+      - 'backend/MindSprint.Api/**'
+      - 'tests/AiOutputChecks/**'
+      - '.github/workflows/nfr14-ai-output.yml'
+  push:
+    branches: [codex/issue-55-ai-output-safety]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: mindsprint_nfr14_ci
+          POSTGRES_USER: nfr14_test
+          # Disposable runner-only service, synthetic data, no application credentials.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nfr14_test -d mindsprint_nfr14_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      MINDSPRINT_NFR14_DB: Host=127.0.0.1;Port=5432;Database=mindsprint_nfr14_ci;Username=nfr14_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build checks and API
+        run: dotnet build tests/AiOutputChecks -c Release
+      - name: Validate contracts with synthetic Gemini
+        run: dotnet run --project tests/AiOutputChecks -c Release --no-build
+      - name: PostgreSQL controller and cache checks
+        run: dotnet run --project tests/AiOutputChecks -c Release --no-build -- --postgres
+      - name: Fixture and grading checks
+        run: node --test tests/AiOutputChecks/report.test.mjs tests/AiOutputChecks/review.test.mjs
+      - name: Install isolated test browser
+        run: node backend/MindSprint.Api/bin/Release/net8.0/.playwright/package/cli.js install --with-deps chromium
+      - name: Browser error and retry checks
+        run: node --test tests/AiOutputChecks/browser.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfr14-ui-evidence
+          path: artifacts/nfr14/
+          if-no-files-found: ignore
