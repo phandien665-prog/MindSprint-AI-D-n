@@ -179,12 +179,9 @@ public class TutorService(GeminiService gemini)
                 Với quy tắc tổng quát, xét cả không có nghiệm, nghiệm trùng và nghiệm phân biệt khi phù hợp;
                 bỏ các khái quát không cần thiết thay vì đưa ra điều kiện rộng hơn điều đã chứng minh.
                 Nếu đề thiếu dữ kiện, hỏi bổ sung đúng phần thiếu, không tự đặt số hay hoàn thiện đề.
-                Với chế độ check: tự đối chiếu bài làm, chỉ ra lỗi đầu tiên và giúp người học tự sửa.
-                Nếu bài sai/chưa hoàn chỉnh, rà soát TẤT CẢ answer, feedback.reason, feedback.suggestion:
-                không được có đáp số cuối, nghiệm cụ thể còn thiếu hoặc chuỗi tính toán hoàn thành bài thay người học.
-                Đặc biệt feedback.reason chỉ giải thích quy tắc và chỗ sai; không dùng việc công bố nghiệm để giải thích.
-                Lỗi bỏ một nhánh/nghiệm: chỉ nhắc quy tắc về dấu/nhánh ở dạng tổng quát, không điền giá trị còn thiếu.
-                Với bài đúng, được đối chiếu kết quả đã có trong submission; không tạo lỗi giả.
+                {{(request.Action == "check" ? CheckInstructions : "CHẾ ĐỘ SOLVE/SOLUTION: khi đề đủ dữ kiện, phải hoàn tất lời giải và nêu rõ đáp án cuối, tất cả nghiệm và điều kiện. Không chuyển sang hint/check hoặc dừng ở lời nhắc tự hoàn thành. Nếu đề thiếu dữ kiện mới hỏi bổ sung với needsClarification=true.")}}
+                Kiểm tra định dạng toán trước khi xuất: đóng đủ cặp $/$$, ngoặc nhóm và ngoặc tập hợp LaTeX;
+                không để ký tự thừa, chỉ số thiếu hoặc dấu toán chưa đóng. Giữ các ký tự LaTeX được escape đúng trong JSON.
                 Chỉ trả JSON của BẢN CUỐI đã sửa theo đúng schema gốc; không thêm bình luận biên tập, không trả bản nháp.
 
                 YÊU CẦU GỐC:
@@ -194,8 +191,8 @@ public class TutorService(GeminiService gemini)
                 {{draft}}
 
                 CHỐT BẢN CUỐI: sửa hoặc bỏ phát biểu tổng quát chưa kiểm tra điều kiện biên.
-                Nếu check bài sai/chưa hoàn chỉnh, đọc lại TỪNG TRƯỜNG JSON và xóa mọi nghiệm/đáp số cuối còn thiếu;
-                chỉ giữ lỗi đầu tiên, lý do tổng quát và hướng người học tự làm. Chỉ xuất JSON bản cuối theo schema.
+                {{(request.Action == "check" ? "Đây là CHECK: nếu bài sai/chưa hoàn chỉnh, đọc lại TỪNG TRƯỜNG JSON, bỏ nghiệm/đáp số cuối còn thiếu, chỉ giữ lỗi đầu tiên và hướng tự sửa." : "Đây là SOLVE/SOLUTION: đề đủ dữ kiện phải có lời giải và đáp án cuối đầy đủ; không kết thúc bằng yêu cầu người học tự tìm đáp án.")}}
+                Chỉ xuất JSON bản cuối theo schema.
                 """, ResponseSchema(request.Action), file?.Bytes, file?.MimeType, attachments);
             ValidateReply(reply, request.Action);
         }
