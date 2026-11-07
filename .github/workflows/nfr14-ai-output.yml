@@ -49,7 +49,7 @@ jobs:
       - name: PostgreSQL controller and cache checks
         run: dotnet run --project tests/AiOutputChecks -c Release --no-build -- --postgres
       - name: Fixture and grading checks
-        run: node --test tests/AiOutputChecks/report.test.mjs
+        run: node --test tests/AiOutputChecks/report.test.mjs tests/AiOutputChecks/review.test.mjs
       - name: Install isolated test browser
         run: node backend/MindSprint.Api/bin/Release/net8.0/.playwright/package/cli.js install --with-deps chromium
       - name: Browser error and retry checks
