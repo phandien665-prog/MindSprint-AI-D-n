@@ -54,6 +54,17 @@ Rejects(() => SecurityConfiguration.GetCorsOrigins(configuration, true), "Cors__
 configuration["Cors:Origins:0"] = "http://localhost:5500";
 Check(SecurityConfiguration.GetCorsOrigins(configuration, false).SequenceEqual(["http://localhost:5500"]), "development retains local HTTP CORS origin");
 
+// Self-host security tests
+configuration["SelfHost"] = "true";
+configuration["Cors:AllowedOrigins"] = null;
+Check(SecurityConfiguration.GetCorsOrigins(configuration, true).Length == 0, "self-host in production allows same-origin without CORS cloud domain");
+configuration["Cors:AllowedOrigins"] = "http://127.0.0.1:8080";
+Check(SecurityConfiguration.GetCorsOrigins(configuration, true).SequenceEqual(["http://127.0.0.1:8080"]), "self-host in production accepts local HTTP origin");
+configuration["ConnectionStrings:Default"] = "Host=db;Database=mindsprint;Username=postgres;Password=secret";
+Check(SecurityConfiguration.GetConnectionString(configuration, true).Contains("Host=db"), "self-host accepts container internal db host");
+configuration["SelfHost"] = null;
+configuration["Cors:AllowedOrigins"] = null;
+
 await using var connection = new SqliteConnection("Data Source=:memory:");
 await connection.OpenAsync();
 await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).Options);

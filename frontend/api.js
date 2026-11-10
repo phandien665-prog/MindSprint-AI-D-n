@@ -2,9 +2,15 @@
 // Tự động thử luân chuyển cổng 5000 và 5100 nếu một trong hai đang lắng nghe.
 (function () {
     const configuredApiBase = window.MINDSPRINT_CONFIG?.apiBase?.trim();
+    const isPort8080 = window.location?.port === '8080';
     const isLocal = ['localhost', '127.0.0.1', '::1'].includes(window.location?.hostname ?? 'localhost');
-    const DEFAULT_API_BASE = configuredApiBase || (isLocal ? 'http://localhost:5000' : '');
-    let API_BASE = localStorage.getItem('api-base') || DEFAULT_API_BASE;
+    const DEFAULT_API_BASE = configuredApiBase || (isPort8080 ? window.location.origin : (isLocal ? 'http://localhost:5000' : ''));
+    let storedBase = localStorage.getItem('api-base');
+    if (isPort8080 && storedBase && (storedBase.includes(':5000') || storedBase.includes(':5100'))) {
+        localStorage.removeItem('api-base');
+        storedBase = null;
+    }
+    let API_BASE = storedBase || DEFAULT_API_BASE;
     const TOKEN_KEY = 'ms-token';
     const USER_KEY = 'ms-user';
     const REFRESH_TOKEN_KEY = 'ms-refresh-token';

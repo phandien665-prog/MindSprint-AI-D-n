@@ -1,0 +1,50 @@
+# ====================================================================
+# Multi-stage Dockerfile for MindSprint AI Laptop Self-Host
+# Issues: #105, #107, #109
+# Serves both ASP.NET Core API and static frontend on port 8080
+# ====================================================================
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy csproj and restore dependencies
+COPY backend/MindSprint.Api/*.csproj ./backend/MindSprint.Api/
+RUN dotnet restore ./backend/MindSprint.Api/MindSprint.Api.csproj
+
+# Copy backend source code and build Release
+COPY backend/MindSprint.Api/ ./backend/MindSprint.Api/
+RUN dotnet publish ./backend/MindSprint.Api/MindSprint.Api.csproj \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+# --------------------------------------------------------------------
+# Runtime Stage
+# --------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Install curl for reliable container health checking
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy compiled backend binaries
+COPY --from=build /app/publish ./
+
+# Copy static frontend assets into wwwroot directory
+COPY frontend/ ./wwwroot/
+
+# Self-host runtime configurations
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV SERVE_FRONTEND=true
+ENV SELF_HOST=true
+ENV PORT=8080
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
+  CMD curl -f http://127.0.0.1:8080/healthz || exit 1
+
+ENTRYPOINT ["dotnet", "MindSprint.Api.dll"]

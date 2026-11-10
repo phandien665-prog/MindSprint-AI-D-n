@@ -9,6 +9,7 @@ using MindSprint.Api.Models;
 using MindSprint.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using System.Threading.RateLimiting;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
@@ -98,10 +99,72 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+var serveFrontend = SecurityConfiguration.IsSelfHost(cfg);
+string? frontendRoot = null;
+if (serveFrontend)
+{
+    var candidates = new[]
+    {
+        Path.Combine(app.Environment.ContentRootPath, "wwwroot"),
+        Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "..", "frontend")),
+        Path.Combine(app.Environment.ContentRootPath, "frontend")
+    };
+    frontendRoot = candidates.FirstOrDefault(Directory.Exists);
+}
+
+if (!string.IsNullOrEmpty(frontendRoot))
+{
+    var fileProvider = new PhysicalFileProvider(frontendRoot);
+    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = fileProvider });
+    app.UseStaticFiles(new StaticFileOptions { FileProvider = fileProvider });
+}
+
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapControllers();
+
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+
+app.MapGet("/readyz", async (AppDbContext db, CancellationToken ct) =>
+{
+    try
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(3));
+        var canConnect = await db.Database.CanConnectAsync(cts.Token);
+        if (canConnect)
+            return Results.Ok(new { status = "ready", database = "connected" });
+        return Results.Json(new { status = "unhealthy", database = "cannot_connect" }, statusCode: 503);
+    }
+    catch
+    {
+        return Results.Json(new { status = "unhealthy", error = "database_unavailable" }, statusCode: 503);
+    }
+}).AllowAnonymous();
+
+if (!string.IsNullOrEmpty(frontendRoot))
+{
+    var indexPath = Path.Combine(frontendRoot, "index.html");
+    if (File.Exists(indexPath))
+    {
+        app.MapFallback(async context =>
+        {
+            var path = context.Request.Path.Value ?? "";
+            if (path.StartsWith("/api", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/healthz", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/readyz", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+            context.Response.ContentType = "text/html; charset=utf-8";
+            await context.Response.SendFileAsync(indexPath);
+        });
+    }
+}
+
 app.Run();

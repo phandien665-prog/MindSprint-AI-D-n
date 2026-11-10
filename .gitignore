@@ -28,6 +28,11 @@ node_modules/
 frontend/dist/
 frontend/.vercel/
 frontend/.env*
+
+# Selfhost environment and secrets
+.env*
+!.env.selfhost.example
+
 # Python
 __pycache__/
 *.pyc
