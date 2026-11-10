@@ -1,0 +1,63 @@
+# ====================================================================
+# Docker Compose for MindSprint AI Laptop Self-Host
+# Issues: #105, #106, #109, #111, #112, #116, #118
+# Targets: http://127.0.0.1:8080
+# ====================================================================
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: mindsprint-selfhost-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mindsprint}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Vui long dat POSTGRES_PASSWORD trong .env.selfhost}
+    volumes:
+      - mindsprint_selfhost_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mindsprint}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - mindsprint-internal
+    # PostgreSQL khong mo port ra ngoai host de dam bao an toan theo Issue #118
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.selfhost
+    container_name: mindsprint-selfhost-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      SERVE_FRONTEND: "true"
+      SELF_HOST: "true"
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB:-mindsprint};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?Vui long dat POSTGRES_PASSWORD trong .env.selfhost}"
+      Jwt__Key: ${JWT_KEY:?Vui long dat JWT_KEY trong .env.selfhost}
+      Jwt__Issuer: "MindSprint"
+      Jwt__Audience: "MindSprintClient"
+      Gemini__ApiKey: ${GEMINI_API_KEY:-}
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - mindsprint-internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  mindsprint_selfhost_pgdata:
+    name: mindsprint_selfhost_pgdata
+
+networks:
+  mindsprint-internal:
+    name: mindsprint-internal
+    driver: bridge
