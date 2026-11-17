@@ -1,0 +1,18 @@
+# Bằng chứng kiểm chứng Issue #117 — Kiểm tra phục hồi sau reboot, sleep và mất Internet
+Thời điểm: 2026-11-17T14:55:19.076Z · Máy thử: Windows 11 · Host: http://localhost:5000
+
+| Kịch bản kiểm chứng | Nhóm | Kết quả | Chi tiết |
+|---|---|---|---|
+| Đăng ký tài khoản cục bộ không cần Internet | offline-crud | Pass | Băm PBKDF2/BCrypt lưu trực tiếp SQL Server |
+| Đăng nhập và phát hành JWT cục bộ | offline-crud | Pass | JWT HMAC-SHA256 ký bằng khóa bí mật nội bộ |
+| CRUD Kanban cục bộ (offline) | offline-crud | Pass | Tạo và đọc công việc Kanban thành công |
+| CRUD Flashcards cục bộ (offline) | offline-crud | Pass | Tạo và truy vấn thẻ học trên SQL Server |
+| Tạo sổ tay và lưu nguồn tài liệu cục bộ | offline-crud | Pass | Sổ tay và nguồn văn bản lưu nguyên vẹn trong DB |
+| Tra cứu từ điển Oxford seed sẵn khi offline | offline-crud | Pass | Đọc được 473 thẻ từ vựng Oxford từ database cục bộ |
+| Phản hồi rõ ràng khi gọi Gemini không có mạng/key | ai-error | Pass | HTTP 422 (code: ai_request_rejected): "AI chưa xử lý được tài liệu này. Hãy thử nội dung ngắn hơn hoặc đổi trọng tâm." - báo lỗi rõ, không crash máy chủ |
+| Phiên đăng nhập và dữ liệu giữ nguyên sau lỗi AI | resilience | Pass | Lỗi AI không làm đăng xuất phiên JWT, không làm mất việc hay dữ liệu sổ tay |
+| Phục hồi kết nối SQL Server sau Sleep / Wake | recovery | Pass | /readyz phản hồi HTTP 200 ready (< 2s), connection pool tự động kết nối lại khi có yêu cầu |
+| Bảo toàn 100% dữ liệu volume sau chu kỳ restart | recovery | Pass | Công việc, thẻ học và nguồn tài liệu được lưu vĩnh viễn trên volume SQL Server |
+| Dọn dẹp và thu hồi phiên tài khoản thử nghiệm 117 | cleanup | Pass | Sessions revoked; dữ liệu thử đã dọn |
+
+Tổng kết: PASS (11/11 tiêu chí đạt)

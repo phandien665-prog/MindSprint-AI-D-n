@@ -151,6 +151,30 @@ Web chỉ công bố cổng `8080` trên loopback của máy chủ. SQL Server c
 Docker. Giao diện gọi API cùng origin; chế độ `Hosting:ServeFrontend` không cấp quyền
 CORS cho website khác. Cấu hình Vercel/Render cũ không thay đổi.
 
+## Phục hồi sau Sleep, Reboot và Mất kết nối Internet (Issue #116, #117)
+
+### 1. Phục hồi khi laptop Sleep và Wake up
+- **Hành vi:** Khi máy Sleep, các tiến trình và kết nối mạng tạm ngưng. Khi máy thức dậy (Wake), Docker Engine tiếp tục giữ nguyên container `db` và `web`. Pool kết nối SQL Server của backend tự động tái kết nối khi có request mới.
+- **Xác nhận:** Chủ máy mở trình duyệt kiểm tra hoặc chạy:
+  ```powershell
+  curl.exe http://127.0.0.1:8080/readyz
+  ```
+  Khi trả về `{"status":"ready"}`, hệ thống đã sẵn sàng phục vụ mà không cần khởi động lại.
+- **Lưu ý:** Không đặt mục tiêu uptime 24/7 cho máy cá nhân. Trong buổi demo/kiểm tra, nên tắt tạm thời chế độ Sleep tự động trong cài đặt Windows.
+
+### 2. Phục hồi sau Reboot hoặc Mở lại Docker Desktop
+- **Hành vi:** Sau khi khởi động lại máy, chủ máy chủ động mở **Docker Desktop**. Nhờ cấu hình `restart: unless-stopped`, các container sẽ tự động khởi động lại nếu trước đó không bị `Stop` chủ động.
+- **Lệnh đưa về trạng thái sẵn sàng:**
+  ```powershell
+  .\scripts\selfhost.ps1 -Action Status   # Xem tình trạng container
+  .\scripts\selfhost.ps1 -Action Start    # Khởi động lại nếu container đang dừng
+  ```
+- **Bảo toàn dữ liệu:** Dữ liệu tài khoản, thẻ học, sổ tay và việc Kanban được lưu trữ an toàn trong Docker volume `sqlserver-data`, không bị ảnh hưởng bởi chu kỳ reboot hay tắt Docker.
+
+### 3. Vận hành khi mất kết nối Internet (Offline)
+- **Nghiệp vụ cục bộ:** Đăng ký/đăng nhập email, tạo/sửa/xóa việc Kanban, thẻ flashcards, ôn tập SRS, ghi chú sổ tay và tra cứu từ điển Oxford 1.814 từ hoạt động bình thường trên localhost khi không có mạng ngoài.
+- **Tính năng AI (Gemini):** Khi ngắt Internet, các chức năng gọi AI trả về thông báo lỗi rõ ràng (`ai_busy`, HTTP 503/422). Hệ thống không bị crash, dữ liệu tài liệu đã nhập không bị mất, phiên đăng nhập của người dùng được giữ nguyên. Khi có mạng trở lại, tính năng AI tự động phục hồi.
+
 ## Kiểm tra khi gặp lỗi
 
 ```powershell
