@@ -1,0 +1,18 @@
+# Bằng chứng kiểm chứng Issue #116 — Khởi động đúng thứ tự và tự phục hồi container
+Thời điểm: 2026-11-17T14:54:40.256Z · Máy thử: Windows 11 · Host: http://localhost:5000
+
+| Tiêu chí / Kịch bản | Loại | Kết quả | Chi tiết |
+|---|---|---|---|
+| Compose restart policy | config | Pass | db và web đều cấu hình restart: unless-stopped |
+| Compose thứ tự khởi động (db trước web) | config | Pass | web depends_on db (service_healthy); db healthcheck SELECT 1 |
+| Compose web probe và volume dữ liệu | config | Pass | web probe /readyz; volume sqlserver-data được định nghĩa độc lập |
+| Liveness probe (/healthz) | live | Pass | Trả về HTTP 200 ok (tiến trình sống) |
+| Readiness probe (/readyz) khi DB sẵn sàng | live | Pass | Trả về HTTP 200 ready (SELECT 1 thành công) |
+| Phân biệt tiến trình sống và database sẵn sàng | logic | Pass | DatabaseHealthCheck giới hạn ConnectTimeout=2s, RetryCount=0, chỉ Healthy khi SELECT 1 thành công; không báo ready giả khi DB chưa lên |
+| Đăng ký tài khoản thử nghiệm trên DB | live | Pass | Tài khoản recovery116-048c51b8@example.com |
+| Ghi và đọc dữ liệu nghiệp vụ trên DB | live | Pass | Task và Flashcard ghi thành công vào SQL Server |
+| Dọn dẹp và thu hồi phiên tài khoản thử nghiệm | live | Pass | Sessions revoked; dữ liệu thử đã dọn |
+| Lệnh Stop chủ động giữ nguyên volume | script | Pass | scripts/selfhost.ps1 Stop dùng docker compose down (không có cờ -v/--volumes, giữ dữ liệu) |
+| Khởi động chờ container báo healthy | script | Pass | scripts/selfhost.ps1 dùng up --wait --wait-timeout 240 db web, kiểm tra /readyz trước khi hoàn tất |
+
+Tổng kết: PASS (11/11 tiêu chí đạt)
